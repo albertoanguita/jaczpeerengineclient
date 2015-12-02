@@ -18,10 +18,10 @@ import jacz.peerengineservice.util.datatransfer.resource_accession.BasicFileWrit
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWriter;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
-import jacz.peerengineclient.dbs.LibraryManager;
-import jacz.peerengineclient.dbs.LibraryManagerIO;
-import jacz.peerengineclient.dbs.LibraryManagerNotifications;
-import jacz.peerengineclient.dbs.ListAccessorManager;
+import jacz.peerengineclient.dbs_old.LibraryManager;
+import jacz.peerengineclient.dbs_old.LibraryManagerIO;
+import jacz.peerengineclient.dbs_old.LibraryManagerNotifications;
+import jacz.peerengineclient.dbs_old.ListAccessorManager;
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.file_system.PeerIDInfo;
@@ -583,7 +583,7 @@ public class JPeerEngineClient {
         return downloadResource(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
     }
 
-    public DownloadManager downloadResource(
+    private DownloadManager downloadResource(
             PeerID serverPeerID,
             String resourceID,
             String finalPath,
@@ -750,6 +750,7 @@ public class JPeerEngineClient {
         return tempDownloadsDirectory;
     }
 
+    // todo remove
     public void synchronizeList(PeerID peerID, String list, int level, long timeout) {
         peerClient.getListSynchronizer().synchronizeList(peerID, list, level, timeout);
     }
@@ -770,6 +771,7 @@ public class JPeerEngineClient {
 //        peerClient.getListSynchronizer().synchronizeList(peerID, list, levelList, timeout);
 //    }
 
+    // todo remove?
     public void synchronizeList(PeerID peerID, String list, List<Integer> levelList, long timeout, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
         peerClient.getListSynchronizer().synchronizeList(peerID, list, levelList, timeout, progress);
     }

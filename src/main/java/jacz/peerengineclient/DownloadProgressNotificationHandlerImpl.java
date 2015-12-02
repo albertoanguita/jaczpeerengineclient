@@ -7,7 +7,7 @@ import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.util.concurrency.execution_control.PausableElement;
 import jacz.util.files.FileUtil;
-import jacz.util.numeric.LongRange;
+import jacz.util.numeric.range.LongRange;
 
 import java.io.IOException;
 

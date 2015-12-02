@@ -6,7 +6,7 @@ import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.PeerRelations;
 import jacz.peerengineservice.util.data_synchronization.premade_lists.old.SimplePersonalData;
-import jacz.peerengineclient.dbs.LibraryManagerIO;
+import jacz.peerengineclient.dbs_old.LibraryManagerIO;
 import jacz.peerengineclient.file_system.*;
 import jacz.util.files.FileUtil;
 import jacz.util.hash.hashdb.FileHashDatabase;

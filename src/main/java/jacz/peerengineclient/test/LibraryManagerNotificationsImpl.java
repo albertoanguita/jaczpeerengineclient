@@ -2,7 +2,7 @@ package jacz.peerengineclient.test;
 
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.SynchronizeError;
-import jacz.peerengineclient.dbs.LibraryManagerNotifications;
+import jacz.peerengineclient.dbs_old.LibraryManagerNotifications;
 import jacz.util.identifier.UniqueIdentifier;
 import jacz.util.notification.ProgressNotificationWithError;
 

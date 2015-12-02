@@ -4,7 +4,7 @@ import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineclient.DownloadEvents;
 import jacz.peerengineclient.DownloadManager;
-import jacz.util.numeric.LongRange;
+import jacz.util.numeric.range.LongRange;
 
 import java.io.Serializable;
 import java.util.Map;

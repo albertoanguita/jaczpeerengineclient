@@ -63,11 +63,11 @@
       <artifactId>util</artifactId>
       <version>0.1</version>
     </dependency>
-    <dependency>
-      <groupId>jacz.commengine</groupId>
-      <artifactId>commengine</artifactId>
-      <version>0.9</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>jacz.commengine</groupId>-->
+      <!--<artifactId>commengine</artifactId>-->
+      <!--<version>0.9</version>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>jacz.peerengine</groupId>
       <artifactId>peerengineservice</artifactId>
@@ -76,7 +76,7 @@
     <dependency>
       <groupId>jacz.store</groupId>
       <artifactId>store</artifactId>
-      <version>0.1</version>
+      <version>0.1a</version>
     </dependency>
   </dependencies>
 </project>

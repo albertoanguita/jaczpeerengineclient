@@ -6,7 +6,7 @@ import jacz.peerengineservice.util.data_synchronization.ListContainer;
 import jacz.peerengineservice.util.data_synchronization.old.ListNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.old.NonIndexedListAccessorBridge;
 import jacz.peerengineservice.util.data_synchronization.premade_lists.old.SimplePersonalData;
-import jacz.peerengineclient.dbs.LibraryManager;
+import jacz.peerengineclient.dbs_old.LibraryManager;
 
 /**
  * List container implementation
