@@ -1,29 +1,51 @@
 package jacz.peerengineclient.libraries.library_images;
 
 import jacz.peerengineservice.PeerID;
-import jacz.store.Database;
+import jacz.store.database.DatabaseMediator;
+import jacz.util.io.object_serialization.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The integrated database. This is what the user visualizes in the interface, and is the result of merging the local database and the remote
  * databases
  */
-public class IntegratedDatabase extends GenericDatabase {
+public class IntegratedDatabase extends GenericDatabase implements VersionedObject {
 
-    public static class PeerAndId implements Serializable {
+    public static class PeerAndLibraryId extends LibraryId {
 
-        public final PeerID peerID;
+        public PeerID peerID;
 
-        public final String id;
+        public PeerAndLibraryId() {
+        }
 
-        public PeerAndId(PeerID peerID, String id) {
+        public PeerAndLibraryId(DatabaseMediator.ITEM_TYPE type, int id, PeerID peerID) {
+            super(type, id);
             this.peerID = peerID;
-            this.id = id;
+        }
+
+        public static PeerAndLibraryId deserialize(byte[] data, MutableOffset offset) throws VersionedSerializationException {
+            PeerAndLibraryId peerAndLibraryId = new PeerAndLibraryId();
+            VersionedObjectSerializer.deserialize(peerAndLibraryId, data, offset);
+            return peerAndLibraryId;
+        }
+
+
+        @Override
+        public Map<String, Serializable> serialize() {
+            Map<String, Serializable> attributes = super.serialize();
+            attributes.put("peerID", peerID.toString());
+            return attributes;
+        }
+
+        @Override
+        public void deserialize(Map<String, Object> attributes) {
+            super.deserialize(attributes);
+            peerID = new PeerID((String) attributes.get("peerID"));
         }
 
         @Override
@@ -35,90 +57,83 @@ public class IntegratedDatabase extends GenericDatabase {
         }
     }
 
+    private static final String VERSION_0_1 = "0.1";
+
+    private static final String CURRENT_VERSION = VERSION_0_1;
+
     private static final Object ITEMS_TO_LOCAL_ITEMS_LOCK = new Object();
 
     private static final Object ITEMS_TO_REMOTE_ITEMS_LOCK = new Object();
 
     /**
-     * Date at which the last item integration took place
-     */
-    private final Date dateOfLastIntegration;
-
-    /**
      * Links integrated ids to local ids (for faster item lookup)
      */
-    private final HashMap<String, String> itemsToLocalItems;
+    private final HashMap<LibraryId, LibraryId> itemsToLocalItems;
 
     /**
      * Links integrated ids to remote ids (for faster item lookup)
      */
-    private final HashMap<String, List<PeerAndId>> itemsToRemoteItems;
+    private final HashMap<LibraryId, List<PeerAndLibraryId>> itemsToRemoteItems;
 
     /**
      * Sets up a fresh store. The store itself must be created before
      *
-     * @param database path to the store
+     * @param databasePath path to the library
      */
-    public IntegratedDatabase(Database database) {
-        this(database, new Date(), new HashMap<String, String>(), new HashMap<String, List<PeerAndId>>());
+    public IntegratedDatabase(String databasePath) {
+        this(databasePath, new HashMap<>(), new HashMap<>());
     }
 
     /**
      * Recovers an existing store
      *
-     * @param database              path to the store
-     * @param dateOfLastIntegration date of last item integration
+     * @param databasePath          path to the library
      * @param itemsToLocalItems     pointers of integrated ids to local ids
      * @param itemsToRemoteItems    pointers of integrated ids to remote ids
      */
-    public IntegratedDatabase(Database database, Date dateOfLastIntegration, HashMap<String, String> itemsToLocalItems, HashMap<String, List<PeerAndId>> itemsToRemoteItems) {
-        super(database);
-        this.dateOfLastIntegration = dateOfLastIntegration;
+    public IntegratedDatabase(String databasePath, HashMap<LibraryId, LibraryId> itemsToLocalItems, HashMap<LibraryId, List<PeerAndLibraryId>> itemsToRemoteItems) {
+        super(databasePath);
         this.itemsToLocalItems = itemsToLocalItems;
         this.itemsToRemoteItems = itemsToRemoteItems;
     }
 
-    public Date getDateOfLastIntegration() {
-        return dateOfLastIntegration;
-    }
-
-    public HashMap<String, String> getItemsToLocalItems() {
+    public HashMap<LibraryId, LibraryId> getItemsToLocalItems() {
         // only for saving object state!!!
         return itemsToLocalItems;
     }
 
-    public boolean containsKeyToLocalItem(String integratedId) {
+    public boolean containsKeyToLocalItem(LibraryId integratedId) {
         synchronized (ITEMS_TO_LOCAL_ITEMS_LOCK) {
             return itemsToLocalItems.containsKey(integratedId);
         }
     }
 
-    public String getItemToLocalItem(String integratedId) {
+    public LibraryId getItemToLocalItem(LibraryId integratedId) {
         synchronized (ITEMS_TO_LOCAL_ITEMS_LOCK) {
             return itemsToLocalItems.get(integratedId);
         }
     }
 
-    public void putItemToLocalItem(String integratedId, String localId) {
+    public void putItemToLocalItem(LibraryId integratedId, LibraryId localId) {
         synchronized (ITEMS_TO_LOCAL_ITEMS_LOCK) {
             itemsToLocalItems.put(integratedId, localId);
         }
     }
 
-    public HashMap<String, List<PeerAndId>> getItemsToRemoteItems() {
+    public HashMap<LibraryId, List<PeerAndLibraryId>> getItemsToRemoteItems() {
         return itemsToRemoteItems;
     }
 
-    public void addRemoteLink(String integratedID, PeerID remotePeer, String remoteID) {
+    public void addRemoteLink(LibraryId integratedID, PeerID remotePeer, LibraryId remoteID) {
         synchronized (ITEMS_TO_REMOTE_ITEMS_LOCK) {
             if (!itemsToRemoteItems.containsKey(integratedID)) {
-                itemsToRemoteItems.put(integratedID, new ArrayList<PeerAndId>());
+                itemsToRemoteItems.put(integratedID, new ArrayList<>());
             }
-            itemsToRemoteItems.get(integratedID).add(new PeerAndId(remotePeer, remoteID));
+            itemsToRemoteItems.get(integratedID).add(new PeerAndLibraryId(remoteID.type, remoteID.id, remotePeer));
         }
     }
 
-    public List<PeerAndId> getRemotePeerAndID(String integratedID) {
+    public List<PeerAndLibraryId> getRemotePeerAndID(LibraryId integratedID) {
         synchronized (ITEMS_TO_REMOTE_ITEMS_LOCK) {
             if (itemsToRemoteItems.containsKey(integratedID)) {
                 return itemsToRemoteItems.get(integratedID);
@@ -126,5 +141,62 @@ public class IntegratedDatabase extends GenericDatabase {
                 return new ArrayList<>();
             }
         }
+    }
+
+    @Override
+    public String getCurrentVersion() {
+        return CURRENT_VERSION;
+    }
+
+    @Override
+    public Map<String, Serializable> serialize() {
+        Map<String, Serializable> attributes = new HashMap<>();
+        FragmentedByteArray itemsToLocalItemsBytes = new FragmentedByteArray(Serializer.serialize(itemsToLocalItems.size()));
+        for (Map.Entry<LibraryId, LibraryId> itemToLocalItem : itemsToLocalItems.entrySet()) {
+            itemsToLocalItemsBytes.addArrays(
+                    VersionedObjectSerializer.serialize(itemToLocalItem.getKey(), 4),
+                    VersionedObjectSerializer.serialize(itemToLocalItem.getValue(), 4));
+        }
+        attributes.put("itemsToLocalItems", itemsToLocalItemsBytes.generateArray());
+        FragmentedByteArray itemsToRemoteItemsBytes = new FragmentedByteArray(Serializer.serialize(itemsToRemoteItems.size()));
+        for (Map.Entry<LibraryId, List<PeerAndLibraryId>> itemToRemoteItem : itemsToRemoteItems.entrySet()) {
+            itemsToLocalItemsBytes.addArrays(
+                    VersionedObjectSerializer.serialize(itemToRemoteItem.getKey(), 4),
+                    Serializer.serialize(itemToRemoteItem.getValue().size()),
+                    VersionedObjectSerializer.serialize(itemToRemoteItem.getValue(), 4));
+        }
+        attributes.put("itemsToRemoteItems", itemsToRemoteItemsBytes.generateArray());
+        return attributes;
+    }
+
+    @Override
+    public void deserialize(Map<String, Object> attributes) {
+        try {
+            byte[] itemsToLocalItemsBytes = (byte[]) attributes.get("itemsToLocalItems");
+            MutableOffset offset = new MutableOffset();
+            int entryCount = Serializer.deserializeInt(itemsToLocalItemsBytes, offset);
+            for (int i = 0; i < entryCount; i++) {
+                itemsToLocalItems.put(LibraryId.deserialize(itemsToLocalItemsBytes, offset), LibraryId.deserialize(itemsToLocalItemsBytes, offset));
+            }
+            byte[] itemsToRemoteItemsBytes = (byte[]) attributes.get("itemsToRemoteItems");
+            offset = new MutableOffset();
+            entryCount = Serializer.deserializeInt(itemsToRemoteItemsBytes, offset);
+            for (int i = 0; i < entryCount; i++) {
+                LibraryId key = LibraryId.deserialize(itemsToRemoteItemsBytes, offset);
+                int listLength = Serializer.deserializeInt(itemsToRemoteItemsBytes, offset);
+                List<PeerAndLibraryId> value = new ArrayList<>();
+                for (int j = 0; j < listLength; j++) {
+                    value.add(PeerAndLibraryId.deserialize(itemsToRemoteItemsBytes, offset));
+                }
+                itemsToRemoteItems.put(key, value);
+            }
+        } catch (VersionedSerializationException e) {
+            throw new RuntimeException("Error deserializing integrated database");
+        }
+    }
+
+    @Override
+    public void deserializeOldVersion(String version, Map<String, Object> attributes) throws UnrecognizedVersionException {
+        throw new UnrecognizedVersionException();
     }
 }

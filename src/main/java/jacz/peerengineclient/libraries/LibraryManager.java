@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Created by Alberto on 02/12/2015.
+ * This class manages data libraries and their proper synchronization and integration
  */
 public class LibraryManager {
 
@@ -49,6 +49,7 @@ public class LibraryManager {
     /**
      * Relation of remote items that have been modified since the last library integration, and thus need to be re-integrated. We collect all these
      * items during the remote synching process, and once synching is complete, we use this information to integrate the libraries
+     * todo remove
      */
     private RemoteDatabasesIntegrator.RemoteModifiedItems remoteModifiedItems;
 
@@ -62,8 +63,6 @@ public class LibraryManager {
 
     private final RemoteDatabasesIntegrator remoteDatabasesIntegrator;
 
-    private final LibraryManagerNotifications libraryManagerNotifications;
-
     private boolean alive;
 
 
@@ -71,14 +70,12 @@ public class LibraryManager {
             IntegratedDatabase integratedDatabase,
             LocalDatabase localDatabase,
             Map<PeerID, RemoteDatabase> remoteDatabases,
-            LibraryManagerNotifications libraryManagerNotifications,
             LibrarySynchEvents librarySynchEvents,
             JPeerEngineClient peerEngineClient) {
         this.integratedDatabase = integratedDatabase;
         this.localDatabase = localDatabase;
         this.remoteDatabases = remoteDatabases;
         this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient);
-        this.libraryManagerNotifications = libraryManagerNotifications;
         remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
         concurrencyController = new LibraryManagerConcurrencyController();
         remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, itemLockManager);
