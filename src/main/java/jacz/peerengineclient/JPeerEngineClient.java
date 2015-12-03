@@ -1,5 +1,7 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineservice.util.data_synchronization.DataSynchronizer;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.store.db_mediator.CorruptDataException;
 import jacz.store.db_mediator.DBException;
 import jacz.peerengineservice.PeerID;
@@ -67,8 +69,10 @@ public class JPeerEngineClient {
         }
 
         @Override
-        public void requestSynchList(PeerID peerID, String library, List<Integer> levelList, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
-            jPeerEngineClient.synchronizeList(peerID, library, levelList, 15000, progress);
+        public boolean requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+
+            // todo decide accessor name
+            return jPeerEngineClient.synchronizeList(peerID, "STORE_", 15000, progress);
         }
 
         @Override
@@ -751,9 +755,9 @@ public class JPeerEngineClient {
     }
 
     // todo remove
-    public void synchronizeList(PeerID peerID, String list, int level, long timeout) {
-        peerClient.getListSynchronizer().synchronizeList(peerID, list, level, timeout);
-    }
+//    public boolean synchronizeList(PeerID peerID, String list, long timeout) {
+//        return peerClient.getDataSynchronizer().synchronizeData(peerID, list, timeout);
+//    }
 
 //    public void synchronizeList(PeerID peerID, String list, int level, long timeout, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
 //        peerClient.getListSynchronizer().synchronizeList(peerID, list, level, timeout, progress);
@@ -772,8 +776,8 @@ public class JPeerEngineClient {
 //    }
 
     // todo remove?
-    public void synchronizeList(PeerID peerID, String list, List<Integer> levelList, long timeout, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
-        peerClient.getListSynchronizer().synchronizeList(peerID, list, levelList, timeout, progress);
+    public DataSynchronizer.SynchRequestResult synchronizeList(PeerID peerID, String dataAccessorName, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) {
+        return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessorName, timeout, progress);
     }
 
 //    public void synchronizeElement(PeerID peerID, String list, String elementHash, int level, long timeout) {

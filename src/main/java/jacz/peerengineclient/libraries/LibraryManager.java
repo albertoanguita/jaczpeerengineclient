@@ -1,23 +1,20 @@
-package jacz.peerengineclient.stores;
+package jacz.peerengineclient.libraries;
 
-import jacz.peerengineclient.dbs_old.GenericSynchProgressManager;
+import jacz.peerengineclient.JPeerEngineClient;
 import jacz.peerengineclient.dbs_old.LibraryManagerConcurrencyController;
 import jacz.peerengineclient.dbs_old.LibraryManagerIO;
 import jacz.peerengineclient.dbs_old.LibraryManagerNotifications;
-import jacz.peerengineclient.stores.store_images.IntegratedDatabase;
-import jacz.peerengineclient.stores.store_images.LocalDatabase;
-import jacz.peerengineclient.stores.store_images.RemoteDatabase;
+import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
+import jacz.peerengineclient.libraries.library_images.LocalDatabase;
+import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
+import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
+import jacz.peerengineclient.libraries.synch.LibrarySynchManager;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
-import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.store.database.DatabaseMediator;
-import jacz.store.db_mediator.CorruptDataException;
-import jacz.store.db_mediator.DBException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
-import jacz.util.identifier.UniqueIdentifier;
-import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
 import java.util.Map;
@@ -47,7 +44,7 @@ public class LibraryManager {
     /**
      * Management of synch processes
      */
-    private final SynchManager synchManager;
+    private final LibrarySynchManager librarySynchManager;
 
     /**
      * Relation of remote items that have been modified since the last library integration, and thus need to be re-integrated. We collect all these
@@ -71,14 +68,16 @@ public class LibraryManager {
 
 
     public LibraryManager(
-            jacz.peerengineclient.stores.store_images.IntegratedDatabase integratedDatabase,
-            jacz.peerengineclient.stores.store_images.LocalDatabase localDatabase,
-            Map<PeerID, jacz.peerengineclient.stores.store_images.RemoteDatabase> remoteDatabases,
-            LibraryManagerNotifications libraryManagerNotifications) {
+            IntegratedDatabase integratedDatabase,
+            LocalDatabase localDatabase,
+            Map<PeerID, RemoteDatabase> remoteDatabases,
+            LibraryManagerNotifications libraryManagerNotifications,
+            LibrarySynchEvents librarySynchEvents,
+            JPeerEngineClient peerEngineClient) {
         this.integratedDatabase = integratedDatabase;
         this.localDatabase = localDatabase;
         this.remoteDatabases = remoteDatabases;
-        this.synchManager = new SynchManager(libraryManagerNotifications);
+        this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient);
         this.libraryManagerNotifications = libraryManagerNotifications;
         remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
         concurrencyController = new LibraryManagerConcurrencyController();
@@ -181,20 +180,9 @@ public class LibraryManager {
 
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
-     * <p>
-     * This process can happen along with any other process*. We just must take care that the retrieval of index and hash lists is properly
-     * synchronized with other operations. A local or remote item integration might of course break the synchronization, but that is a risk that
-     * we must assume, and the other peer will be notified of this.
-     * <p>
-     * The library manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
-     * and we would be waisting bandwidth
      */
     public synchronized ServerSynchRequestAnswer requestForSharedLibrarySynchFromRemotePeer(PeerID peerID) {
-        return synchManager.requestForSharedLibrarySynch(peerID);
-    }
-
-    public synchronized void synchRemoteLibrary(PeerID peerID) {
-        synchManager.synchRemoteLibrary(peerID);
+        return librarySynchManager.requestForSharedLibrarySynch(peerID);
     }
 
     /**
@@ -203,10 +191,9 @@ public class LibraryManager {
      *
      * @param peerID new friend peer
      */
-    public synchronized void addPeer(String path, PeerID peerID) throws IOException, DBException, CorruptDataException {
-        // todo check is alive
+    public synchronized void addPeer(String path, PeerID peerID) throws IOException {
         if (!remoteDatabases.containsKey(peerID)) {
-            jacz.peerengineclient.stores.store_images.RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID);
+            RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID);
             remoteDatabases.put(peerID, remoteDatabase);
         }
     }
@@ -219,7 +206,7 @@ public class LibraryManager {
      */
     public synchronized void removePeer(String path, PeerID peerID) {
         if (remoteDatabases.containsKey(peerID)) {
-            jacz.peerengineclient.stores.store_images.RemoteDatabase remoteDatabase = remoteDatabases.remove(peerID);
+            jacz.peerengineclient.libraries.library_images.RemoteDatabase remoteDatabase = remoteDatabases.remove(peerID);
             LibraryManagerIO.removeRemoteDatabase(path, peerID);
             // todo remove from integrated, and copy necessary info to local database
         }
@@ -239,5 +226,6 @@ public class LibraryManager {
             alive = false;
         }
         concurrencyController.stopAndWaitForFinalization();
+        librarySynchManager.stop();
     }
 }

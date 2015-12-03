@@ -1,4 +1,4 @@
-package jacz.peerengineclient.stores;
+package jacz.peerengineclient.libraries.synch;
 
 import jacz.store.database.DatabaseMediator;
 
@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 
 /**
- * Created by Alberto on 28/11/2015.
+ * The serialization of a library item
  */
 public class SerializedItem implements Serializable {
 

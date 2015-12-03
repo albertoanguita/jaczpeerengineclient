@@ -1,4 +1,4 @@
-package jacz.peerengineclient.stores;
+package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.dbs_old.*;
 import jacz.peerengineclient.dbs_old.LibraryManager;

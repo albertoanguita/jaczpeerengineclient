@@ -1,6 +1,7 @@
 package jacz.peerengineclient.test;
 
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.data_synchronization.SynchronizeError;
 import jacz.peerengineclient.dbs_old.LibraryManagerNotifications;
 import jacz.util.identifier.UniqueIdentifier;
@@ -24,8 +25,9 @@ public class LibraryManagerNotificationsImpl implements LibraryManagerNotificati
     }
 
     @Override
-    public void requestSynchList(PeerID peerID, String library, List<Integer> levelList, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
-        System.out.println("Request to synch remote library: " + peerID + ", " + library + ", " + levelList);
+    public boolean requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+        System.out.println("Request to synch remote library: " + peerID);
+        return true;
     }
 
     @Override

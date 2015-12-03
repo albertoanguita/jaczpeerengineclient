@@ -1,4 +1,4 @@
-package jacz.peerengineclient.stores;
+package jacz.peerengineclient.libraries.synch;
 
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
@@ -9,11 +9,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Accessor implementation for data stores
+ * Accessor implementation for data libraries
  */
-public class StoreAccessor implements DataAccessor {
+public class LibraryAccessor implements DataAccessor {
 
-    private static final int ELEMENTS_PER_MESSAGE = 10;
+    private static final int ELEMENTS_PER_MESSAGE = 5;
 
     private static final int CRC_BYTES = 4;
 

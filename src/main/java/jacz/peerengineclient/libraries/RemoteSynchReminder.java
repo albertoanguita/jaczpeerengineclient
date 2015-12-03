@@ -1,4 +1,4 @@
-package jacz.peerengineclient.stores;
+package jacz.peerengineclient.libraries;
 
 /**
  * Periodically reminds the library manager to request synching with other peers

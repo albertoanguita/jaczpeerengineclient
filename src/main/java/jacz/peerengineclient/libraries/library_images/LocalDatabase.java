@@ -1,4 +1,4 @@
-package jacz.peerengineclient.stores.store_images;
+package jacz.peerengineclient.libraries.library_images;
 
 import jacz.store.Database;
 

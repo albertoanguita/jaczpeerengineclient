@@ -31,7 +31,7 @@ public interface LibraryManagerNotifications {
      *
      * @param peerID
      */
-    void requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress);
+    boolean requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress);
 
     /**
      * The shared library (integrated items with a local item) has been modified. Other peers should be notified as soon as possible so they
@@ -112,20 +112,15 @@ public interface LibraryManagerNotifications {
      * @param library      library being synched
      * @param level        level being synched on the library
      */
-    void sharedSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, int level);
+    void sharedSynchStarted(PeerID remotePeerID);
 
     /**
      * Reports the progress in the synch of a shared library
      *
-     * @param id                   id of this task
      * @param remotePeerID         remote peer who synchronizes our shared library
-     * @param library              reported library
-     * @param level                level being synched on the library
-     * @param progress             progress of the synch task
-     * @param peerActiveSynchTasks total number of active synch tasks for this peer
-     * @param peerAverageProgress  average progress for the synch tasks of this peer
+     * @param progress             progress of the synch task (over 100)
      */
-    void sharedSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int progress, int peerActiveSynchTasks, int peerAverageProgress);
+    void sharedSynchProgress(PeerID remotePeerID, int progress);
 
     /**
      * Error in a synch task of a shared library
