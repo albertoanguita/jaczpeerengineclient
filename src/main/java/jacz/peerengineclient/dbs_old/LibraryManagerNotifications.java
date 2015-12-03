@@ -1,6 +1,7 @@
 package jacz.peerengineclient.dbs_old;
 
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.data_synchronization.old.SynchronizeError;
 import jacz.util.identifier.UniqueIdentifier;
 import jacz.util.notification.ProgressNotificationWithError;
@@ -23,14 +24,14 @@ public interface LibraryManagerNotifications {
      * @param library
      * @param id
      */
-    public void integratedItemModified(String library, String id);
+    void integratedItemModified(String library, String id);
 
     /**
      * Request to initiate the synchronization of a list of a remote peer
      *
      * @param peerID
      */
-    public void requestSynchList(PeerID peerID, String library, List<Integer> levelList, ProgressNotificationWithError<Integer, SynchronizeError> progress);
+    void requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress);
 
     /**
      * The shared library (integrated items with a local item) has been modified. Other peers should be notified as soon as possible so they
@@ -38,9 +39,10 @@ public interface LibraryManagerNotifications {
      *
      * @param modifiedSharedLibraries libraries from the shared database that have been modified
      */
-    public void reportSharedLibraryModified(Map<String, List<Integer>> modifiedSharedLibraries);
+    // todo remove
+    void reportSharedLibraryModified(Map<String, List<Integer>> modifiedSharedLibraries);
 
-    public void reportErrorAccessingDatabases();
+    void reportErrorAccessingDatabases();
 
     /**
      * The synch of a remote library begins
@@ -50,7 +52,7 @@ public interface LibraryManagerNotifications {
      * @param library      library being synched
      * @param levelList    list of levels being lynched
      */
-    public void remoteSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList);
+    void remoteSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList);
 
     /**
      * Reports the progress in the synch of a remote library
@@ -63,7 +65,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void remoteSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int progress, int peerActiveSynchTasks, int peerAverageProgress);
+    void remoteSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int progress, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Error in a synch task of a remote library
@@ -76,7 +78,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void remoteSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress);
+    void remoteSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Timeout in a synch task of a remote library
@@ -88,7 +90,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void remoteSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress);
+    void remoteSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Completion of a synch task of a remote library
@@ -100,7 +102,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void remoteSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress);
+    void remoteSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * The synch of a shared library begins
@@ -110,7 +112,7 @@ public interface LibraryManagerNotifications {
      * @param library      library being synched
      * @param level        level being synched on the library
      */
-    public void sharedSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, int level);
+    void sharedSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, int level);
 
     /**
      * Reports the progress in the synch of a shared library
@@ -123,7 +125,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void sharedSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int progress, int peerActiveSynchTasks, int peerAverageProgress);
+    void sharedSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int progress, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Error in a synch task of a shared library
@@ -136,7 +138,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void sharedSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, int level, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress);
+    void sharedSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, int level, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Timeout in a synch task of a shared library
@@ -148,7 +150,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void sharedSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress);
+    void sharedSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress);
 
     /**
      * Completion of a synch task of a shared library
@@ -160,7 +162,7 @@ public interface LibraryManagerNotifications {
      * @param peerActiveSynchTasks total number of active synch tasks for this peer
      * @param peerAverageProgress  average progress for the synch tasks of this peer
      */
-    public void sharedSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress);
+    void sharedSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress);
 
-    public void fatalErrorInSynch(SynchronizeError error);
+    void fatalErrorInSynch(SynchronizeError error);
 }

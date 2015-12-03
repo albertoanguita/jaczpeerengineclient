@@ -12,7 +12,7 @@ public class LocalDatabase extends GenericDatabase {
     private final HashMap<String, String> itemsToIntegratedItems;
 
     public LocalDatabase(Database database) {
-        this(database, new HashMap<String, String>());
+        this(database, new HashMap<>());
     }
 
     public LocalDatabase(Database database, HashMap<String, String> itemsToIntegratedItems) {

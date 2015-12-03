@@ -1,5 +1,7 @@
 package jacz.peerengineclient.stores;
 
+import jacz.store.database.DatabaseMediator;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,7 +11,7 @@ import java.util.HashMap;
  */
 public class SerializedItem implements Serializable {
 
-    private String type;
+    private DatabaseMediator.ITEM_TYPE type;
 
     private String id;
 
@@ -22,7 +24,7 @@ public class SerializedItem implements Serializable {
     private HashMap<String, Long> longFields;
     private HashMap<String, Date> dateFields;
 
-    public SerializedItem(String type, String id, Integer timestamp, boolean alive) {
+    public SerializedItem(DatabaseMediator.ITEM_TYPE type, String id, Integer timestamp, boolean alive) {
         this.type = type;
         this.id = id;
         this.timestamp = timestamp;
@@ -31,6 +33,22 @@ public class SerializedItem implements Serializable {
         integerFields = null;
         longFields = null;
         dateFields = null;
+    }
+
+    public DatabaseMediator.ITEM_TYPE getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public Integer getTimestamp() {
+        return timestamp;
+    }
+
+    public boolean isAlive() {
+        return alive;
     }
 
     public SerializedItem addString(String field, String value) {
@@ -63,5 +81,21 @@ public class SerializedItem implements Serializable {
         }
         dateFields.put(field, value);
         return this;
+    }
+
+    public String getString(String field) {
+        return stringFields.get(field);
+    }
+
+    public Integer getInteger(String field) {
+        return integerFields.get(field);
+    }
+
+    public Long getLong(String field) {
+        return longFields.get(field);
+    }
+
+    public Date getDate(String field) {
+        return dateFields.get(field);
     }
 }

@@ -9,9 +9,13 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by Alberto on 28/11/2015.
+ * Accessor implementation for data stores
  */
 public class StoreAccessor implements DataAccessor {
+
+    private static final int ELEMENTS_PER_MESSAGE = 10;
+
+    private static final int CRC_BYTES = 4;
 
     @Override
     public void beginSynchProcess(Mode mode) {
@@ -20,39 +24,63 @@ public class StoreAccessor implements DataAccessor {
 
     @Override
     public String getDatabaseID() {
+        // todo get metadata id
         return null;
     }
 
     @Override
     public void setDatabaseID(String databaseID) {
-        // todo
+        // todo set metadata id
     }
 
     @Override
     public Integer getLastTimestamp() throws DataAccessException {
-        // todo
+        // todo in client get stored last timestamp
         return null;
     }
 
     @Override
     public List<? extends Serializable> getElementsFrom(int fromTimestamp) throws DataAccessException {
-        // todo
+        // todo ask server to collect elements from timestamp, order them by timestamp
         return null;
     }
 
     @Override
     public int elementsPerMessage() {
-        return 10;
+        return ELEMENTS_PER_MESSAGE;
     }
 
     @Override
     public int CRCBytes() {
-        return 4;
+        return CRC_BYTES;
     }
 
     @Override
     public void setElement(Object element) throws DataAccessException {
         SerializedItem item = (SerializedItem) element;
+        if (!item.isAlive()) {
+            // delete item
+            // todo
+        } else {
+            switch (item.getType()) {
+                case MOVIE:
+                    break;
+                case TV_SERIES:
+                    break;
+                case CHAPTER:
+                    break;
+                case PERSON:
+                    break;
+                case COMPANY:
+                    break;
+                case VIDEO_FILE:
+                    break;
+                case SUBTITLE_FILE:
+                    break;
+                case IMAGE_FILE:
+                    break;
+            }
+        }
         // todo write item to db
     }
 

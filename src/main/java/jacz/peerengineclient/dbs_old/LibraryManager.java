@@ -1,5 +1,6 @@
 package jacz.peerengineclient.dbs_old;
 
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.store.Database;
 import jacz.store.IllegalDataException;
 import jacz.store.common.LibraryItem;
@@ -383,7 +384,7 @@ public class LibraryManager {
         handleSynchProcessError(remotePeerID, isRemoteLibrary, library, levelList, error);
     }
 
-    private void handleSynchProcessError(PeerID remotePeerID, boolean isRemoteLibrary, String library, List<Integer> levelList, SynchronizeError error) {
+    private void handleSynchProcessError(PeerID remotePeerID, boolean isRemoteLibrary, String library, List<Integer> levelList, SynchError error) {
         // some errors produce a fatal synch error. Others require requesting the synch again
         switch (error.type) {
 
