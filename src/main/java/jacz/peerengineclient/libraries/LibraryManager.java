@@ -2,16 +2,12 @@ package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.JPeerEngineClient;
 import jacz.peerengineclient.dbs_old.LibraryManagerConcurrencyController;
-import jacz.peerengineclient.dbs_old.LibraryManagerIO;
-import jacz.peerengineclient.dbs_old.LibraryManagerNotifications;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
 import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
 import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
 import jacz.peerengineclient.libraries.synch.LibrarySynchManager;
 import jacz.peerengineservice.PeerID;
-import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
-import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
 import jacz.store.database.DatabaseMediator;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
@@ -23,6 +19,8 @@ import java.util.Map;
  * This class manages data libraries and their proper synchronization and integration
  */
 public class LibraryManager {
+
+    private static final String DATABASE_VERSION = "0.1";
 
     /**
      * The integrated database, composed by the local database and the remote databases. This is what the user visualizes
@@ -78,7 +76,7 @@ public class LibraryManager {
         this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient);
         remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
         concurrencyController = new LibraryManagerConcurrencyController();
-        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, itemLockManager);
+        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, null);
         alive = true;
     }
 
@@ -163,17 +161,17 @@ public class LibraryManager {
 //        // todo is this needed?
 //        libraryManagerNotifications.reportErrorAccessingDatabases();
 //    }
-    public synchronized DataAccessor getSharedListAccessor() {
-        return localDatabase.getDataAccessor();
-    }
+//    public synchronized DataAccessor getSharedListAccessor() {
+//        return localDatabase.getDataAccessor();
+//    }
 
-    public synchronized DataAccessor getRemoteListAccessor(PeerID peerID) throws AccessorNotFoundException {
-        if (remoteDatabases.containsKey(peerID)) {
-            return remoteDatabases.get(peerID).getDataAccessor();
-        } else {
-            throw new AccessorNotFoundException();
-        }
-    }
+//    public synchronized DataAccessor getRemoteListAccessor(PeerID peerID) throws AccessorNotFoundException {
+//        if (remoteDatabases.containsKey(peerID)) {
+//            return remoteDatabases.get(peerID).getDataAccessor();
+//        } else {
+//            throw new AccessorNotFoundException();
+//        }
+//    }
 
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
@@ -190,7 +188,7 @@ public class LibraryManager {
      */
     public synchronized void addPeer(String path, PeerID peerID) throws IOException {
         if (!remoteDatabases.containsKey(peerID)) {
-            RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID);
+            RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID, DATABASE_VERSION);
             remoteDatabases.put(peerID, remoteDatabase);
         }
     }
@@ -203,7 +201,7 @@ public class LibraryManager {
      */
     public synchronized void removePeer(String path, PeerID peerID) {
         if (remoteDatabases.containsKey(peerID)) {
-            jacz.peerengineclient.libraries.library_images.RemoteDatabase remoteDatabase = remoteDatabases.remove(peerID);
+            RemoteDatabase remoteDatabase = remoteDatabases.remove(peerID);
             LibraryManagerIO.removeRemoteDatabase(path, peerID);
             // todo remove from integrated, and copy necessary info to local database
         }

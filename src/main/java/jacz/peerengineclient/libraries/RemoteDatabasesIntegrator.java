@@ -1,7 +1,10 @@
 package jacz.peerengineclient.libraries;
 
-import jacz.peerengineclient.dbs_old.*;
-import jacz.peerengineclient.dbs_old.LibraryManager;
+import jacz.peerengineclient.dbs_old.ItemLockManager;
+import jacz.peerengineclient.dbs_old.LibraryManagerConcurrencyController;
+import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
+import jacz.peerengineclient.libraries.library_images.LocalDatabase;
+import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
 import jacz.peerengineservice.PeerID;
 import jacz.store.Database;
 import jacz.store.common.LibraryItem;
@@ -116,7 +119,7 @@ public class RemoteDatabasesIntegrator implements DaemonAction {
 
     private final ConcurrencyController concurrencyController;
 
-    private final jacz.peerengineclient.dbs_old.LibraryManager libraryManager;
+    private final LibraryManager libraryManager;
 
     private final RemoteModifiedItems remoteModifiedItems;
 
@@ -132,7 +135,14 @@ public class RemoteDatabasesIntegrator implements DaemonAction {
 
     private final MutableBoolean currentlyIntegrating;
 
-    public RemoteDatabasesIntegrator(ConcurrencyController concurrencyController, LibraryManager libraryManager, RemoteModifiedItems remoteModifiedItems, IntegratedDatabase integratedDatabase, LocalDatabase localDatabase, Map<PeerID, RemoteDatabase> remoteDatabases, ItemLockManager itemLockManager) {
+    public RemoteDatabasesIntegrator(
+            ConcurrencyController concurrencyController,
+            LibraryManager libraryManager,
+            RemoteModifiedItems remoteModifiedItems,
+            IntegratedDatabase integratedDatabase,
+            LocalDatabase localDatabase,
+            Map<PeerID, RemoteDatabase> remoteDatabases,
+            ItemLockManager itemLockManager) {
         this.concurrencyController = concurrencyController;
         this.libraryManager = libraryManager;
         this.remoteModifiedItems = remoteModifiedItems;

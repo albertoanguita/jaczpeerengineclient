@@ -63,11 +63,6 @@
       <artifactId>util</artifactId>
       <version>0.1</version>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>jacz.commengine</groupId>-->
-      <!--<artifactId>commengine</artifactId>-->
-      <!--<version>0.9</version>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>jacz.peerengine</groupId>
       <artifactId>peerengineservice</artifactId>
@@ -77,6 +72,11 @@
       <groupId>jacz.store</groupId>
       <artifactId>store</artifactId>
       <version>0.1a</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.commons</groupId>
+    	<artifactId>commons-lang3</artifactId>
+    	<version>3.4</version>
     </dependency>
   </dependencies>
 </project>
