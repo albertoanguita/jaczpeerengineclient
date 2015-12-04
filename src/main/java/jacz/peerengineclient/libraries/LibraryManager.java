@@ -1,6 +1,6 @@
 package jacz.peerengineclient.libraries;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.dbs_old.LibraryManagerConcurrencyController;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
@@ -69,7 +69,7 @@ public class LibraryManager {
             LocalDatabase localDatabase,
             Map<PeerID, RemoteDatabase> remoteDatabases,
             LibrarySynchEvents librarySynchEvents,
-            JPeerEngineClient peerEngineClient) {
+            PeerEngineClient peerEngineClient) {
         this.integratedDatabase = integratedDatabase;
         this.localDatabase = localDatabase;
         this.remoteDatabases = remoteDatabases;

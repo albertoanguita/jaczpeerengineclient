@@ -1,10 +1,12 @@
 package jacz.peerengineclient.libraries.library_images;
 
 import jacz.store.database.DatabaseMediator;
-import jacz.util.io.object_serialization.*;
+import jacz.util.io.object_serialization.FragmentedByteArray;
+import jacz.util.io.object_serialization.MutableOffset;
+import jacz.util.io.object_serialization.Serializer;
+import jacz.util.io.object_serialization.VersionedSerializationException;
 
-import java.io.Serializable;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,52 +14,23 @@ import java.util.Map;
  */
 public abstract class GenericDatabase {
 
-    public static class LibraryId implements VersionedObject {
+    public static class LibraryId {
 
-        private static final String VERSION_0_1 = "0.1";
+        public final DatabaseMediator.ItemType type;
 
-        private static final String CURRENT_VERSION = VERSION_0_1;
+        public final int id;
 
-        public DatabaseMediator.ITEM_TYPE type;
-
-        public int id;
-
-        public LibraryId() {
-        }
-
-        public LibraryId(DatabaseMediator.ITEM_TYPE type, int id) {
+        public LibraryId(DatabaseMediator.ItemType type, int id) {
             this.type = type;
             this.id = id;
         }
 
-        public static LibraryId deserialize(byte[] data, MutableOffset offset) throws VersionedSerializationException {
-            LibraryId libraryId = new LibraryId();
-            VersionedObjectSerializer.deserialize(libraryId, data, offset);
-            return libraryId;
+        public byte[] serialize() {
+            return Serializer.addArrays(Serializer.serialize(type), Serializer.serialize(id));
         }
 
-        @Override
-        public String getCurrentVersion() {
-            return CURRENT_VERSION;
-        }
-
-        @Override
-        public Map<String, Serializable> serialize() {
-            Map<String, Serializable> attributes = new HashMap<>();
-            attributes.put("type", type.name());
-            attributes.put("id", id);
-            return attributes;
-        }
-
-        @Override
-        public void deserialize(Map<String, Object> attributes) {
-            type = DatabaseMediator.ITEM_TYPE.valueOf((String) attributes.get("type"));
-            id = (Integer) attributes.get("id");
-        }
-
-        @Override
-        public void deserializeOldVersion(String version, Map<String, Object> attributes) throws UnrecognizedVersionException {
-            throw new UnrecognizedVersionException();
+        public static LibraryId deserialize(byte[] data, MutableOffset offset) {
+            return new LibraryId(Serializer.deserializeEnum(DatabaseMediator.ItemType.class, data, offset), Serializer.deserializeInt(data, offset));
         }
     }
 
@@ -72,5 +45,23 @@ public abstract class GenericDatabase {
 
     public String getDatabase() {
         return databasePath;
+    }
+
+    static byte[] serializeLibraryIdMap(Map<LibraryId, LibraryId> map) {
+        FragmentedByteArray mapBytes = new FragmentedByteArray(Serializer.serialize(map.size()));
+        for (Map.Entry<LibraryId, LibraryId> itemToLocalItem : map.entrySet()) {
+            mapBytes.addArrays(
+                    itemToLocalItem.getKey().serialize(),
+                    itemToLocalItem.getValue().serialize());
+        }
+        return mapBytes.generateArray();
+    }
+
+    static void deserializeLibraryIdMap(Map<LibraryId, LibraryId> map, byte[] data) {
+        MutableOffset offset = new MutableOffset();
+        int entryCount = Serializer.deserializeInt(data, offset);
+        for (int i = 0; i < entryCount; i++) {
+            map.put(LibraryId.deserialize(data, offset), LibraryId.deserialize(data, offset));
+        }
     }
 }

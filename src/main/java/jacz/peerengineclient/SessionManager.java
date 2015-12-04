@@ -79,7 +79,7 @@ public class SessionManager {
         return userPaths;
     }
 
-    public static synchronized JPeerEngineClient load(String userPath, JacuzziPeerClientAction jacuzziPeerClientAction) throws IOException, XMLStreamException, ParseException {
+    public static synchronized PeerEngineClient load(String userPath, JacuzziPeerClientAction jacuzziPeerClientAction) throws IOException, XMLStreamException, ParseException {
         PeerIDInfo peerIDInfo = FileIO.readPeerID(userPath);
         PersonalData personalData = FileIO.readPersonalData(userPath);
         NetworkConfig networkConfig = FileIO.readNetworkConfig(userPath);
@@ -89,29 +89,29 @@ public class SessionManager {
         PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
         FileHashDatabase fileHashDatabase = FileIO.readFileHashDatabase(userPath);
 
-        JPeerEngineClient jPeerEngineClient = new JPeerEngineClient(userPath, jacuzziPeerClientAction, peerIDInfo, networkConfig.port, serversInfo.servers.get(0).ip, serversInfo.servers.get(0).port, personalData.ownNick, personalData.peerNicks, peerRelations, engineConfig.tempDownloads, fileHashDatabase, generalConfig.baseDataDir);
-        jPeerEngineClient.setMaxDesiredDownloadSpeed(engineConfig.maxDownloadSpeed);
-        jPeerEngineClient.setMaxDesiredUploadSpeed(engineConfig.maxUploadSpeed);
-        jPeerEngineClient.setDownloadPartSelectionAccuracy(engineConfig.precision);
-        return jPeerEngineClient;
+        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, jacuzziPeerClientAction, peerIDInfo, networkConfig.port, serversInfo.servers.get(0).ip, serversInfo.servers.get(0).port, personalData.ownNick, personalData.peerNicks, peerRelations, engineConfig.tempDownloads, fileHashDatabase, generalConfig.baseDataDir);
+        peerEngineClient.setMaxDesiredDownloadSpeed(engineConfig.maxDownloadSpeed);
+        peerEngineClient.setMaxDesiredUploadSpeed(engineConfig.maxUploadSpeed);
+        peerEngineClient.setDownloadPartSelectionAccuracy(engineConfig.precision);
+        return peerEngineClient;
     }
 
-    public static synchronized void save(JPeerEngineClient jPeerEngineClient) throws IOException, XMLStreamException {
-        String userPath = jPeerEngineClient.getConfigPath();
+    public static synchronized void save(PeerEngineClient peerEngineClient) throws IOException, XMLStreamException {
+        String userPath = peerEngineClient.getConfigPath();
 
-        PeerIDInfo peerIDInfo = new PeerIDInfo(jPeerEngineClient.getPeerIDInfo().peerID, jPeerEngineClient.getPeerIDInfo().keySizeForPeerGeneration);
+        PeerIDInfo peerIDInfo = new PeerIDInfo(peerEngineClient.getPeerIDInfo().peerID, peerEngineClient.getPeerIDInfo().keySizeForPeerGeneration);
         Map<PeerID, String> peerNicks = new HashMap<>();
-        for (Map.Entry<PeerID, SimplePersonalData> peerPersonalData : jPeerEngineClient.getAllPeersPersonalData().entrySet()) {
+        for (Map.Entry<PeerID, SimplePersonalData> peerPersonalData : peerEngineClient.getAllPeersPersonalData().entrySet()) {
             peerNicks.put(peerPersonalData.getKey(), peerPersonalData.getValue().getNick());
         }
-        PersonalData personalData = new PersonalData(jPeerEngineClient.getOwnNick(), peerNicks);
-        NetworkConfig networkConfig = new NetworkConfig(jPeerEngineClient.getListeningPort());
-        EngineConfig engineConfig = new EngineConfig(jPeerEngineClient.getTempDownloadsDirectory(), jPeerEngineClient.getMaxDesiredUploadSpeed(), jPeerEngineClient.getMaxDesiredDownloadSpeed(), jPeerEngineClient.getDownloadPartSelectionAccuracy());
-        GeneralConfig generalConfig = new GeneralConfig(jPeerEngineClient.getBaseDataDir());
-        ServersInfo.ServerInfo serverInfo = new ServersInfo.ServerInfo(jPeerEngineClient.getPeerServerData().getIp4Port().getIp(), jPeerEngineClient.getPeerServerData().getIp4Port().getPort());
+        PersonalData personalData = new PersonalData(peerEngineClient.getOwnNick(), peerNicks);
+        NetworkConfig networkConfig = new NetworkConfig(peerEngineClient.getListeningPort());
+        EngineConfig engineConfig = new EngineConfig(peerEngineClient.getTempDownloadsDirectory(), peerEngineClient.getMaxDesiredUploadSpeed(), peerEngineClient.getMaxDesiredDownloadSpeed(), peerEngineClient.getDownloadPartSelectionAccuracy());
+        GeneralConfig generalConfig = new GeneralConfig(peerEngineClient.getBaseDataDir());
+        ServersInfo.ServerInfo serverInfo = new ServersInfo.ServerInfo(peerEngineClient.getPeerServerData().getIp4Port().getIp(), peerEngineClient.getPeerServerData().getIp4Port().getPort());
         ServersInfo serversInfo = new ServersInfo(serverInfo);
-        PeerRelations peerRelations = new PeerRelations(jPeerEngineClient.getFriendPeers(), jPeerEngineClient.getBlockedPeers());
-        FileHashDatabase fileHashDatabase = jPeerEngineClient.getFileHashDatabase();
+        PeerRelations peerRelations = new PeerRelations(peerEngineClient.getFriendPeers(), peerEngineClient.getBlockedPeers());
+        FileHashDatabase fileHashDatabase = peerEngineClient.getFileHashDatabase();
 
         FileIO.writePeerID(userPath, peerIDInfo);
         FileIO.writePersonalData(userPath, personalData);

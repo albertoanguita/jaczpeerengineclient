@@ -74,7 +74,7 @@ public class DownloadManager  {
     }
 
     public String getStoreName() {
-        return peerEngineDownloadManager.getStoreName().equals(JPeerEngineClient.DEFAULT_STORE) ? null : peerEngineDownloadManager.getStoreName();
+        return peerEngineDownloadManager.getStoreName().equals(PeerEngineClient.DEFAULT_STORE) ? null : peerEngineDownloadManager.getStoreName();
     }
 
     public DownloadEvents getDownloadEvents() {
@@ -100,7 +100,7 @@ public class DownloadManager  {
     public synchronized void setFinalPath(String finalPath) {
         this.finalPath = finalPath;
         try {
-            resourceWriter.setUserGenericDataField(JPeerEngineClient.OWN_GENERIC_DATA_FIELD_GROUP, JPeerEngineClient.FINAL_PATH_GENERIC_DATA_FIELD, finalPath);
+            resourceWriter.setUserGenericDataField(PeerEngineClient.OWN_GENERIC_DATA_FIELD_GROUP, PeerEngineClient.FINAL_PATH_GENERIC_DATA_FIELD, finalPath);
         } catch (IOException e) {
             // writing procedure failed, download must be cancelled
             // we set a flag indicating that the cancellation reason is an error instead of user-issued

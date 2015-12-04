@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class BridgePeerClientAction implements PeerClientAction {
 
-    private JPeerEngineClient jPeerEngineClient;
+    private PeerEngineClient peerEngineClient;
 
     private final JacuzziPeerClientAction jacuzziPeerClientAction;
 
@@ -28,8 +28,8 @@ public class BridgePeerClientAction implements PeerClientAction {
 
     private final DownloadsManager downloadsManager;
 
-    public BridgePeerClientAction(JPeerEngineClient jPeerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction, DownloadsManager downloadsManager) {
-        this.jPeerEngineClient = jPeerEngineClient;
+    public BridgePeerClientAction(PeerEngineClient peerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction, DownloadsManager downloadsManager) {
+        this.peerEngineClient = peerEngineClient;
         this.jacuzziPeerClientAction = jacuzziPeerClientAction;
         this.downloadsManager = downloadsManager;
         visibleDownloads = new HashMap<>();
@@ -41,44 +41,44 @@ public class BridgePeerClientAction implements PeerClientAction {
 
     @Override
     public void peerAddedAsFriend(PeerID peerID, PeerRelations peerRelations) {
-        jPeerEngineClient.savePeerRelations(peerRelations);
-        jPeerEngineClient.peerIsNowFriend(peerID);
+        peerEngineClient.savePeerRelations(peerRelations);
+        peerEngineClient.peerIsNowFriend(peerID);
         jacuzziPeerClientAction.peerAddedAsFriend(peerID, peerRelations);
     }
 
     @Override
     public void peerRemovedAsFriend(PeerID peerID, PeerRelations peerRelations) {
-        jPeerEngineClient.savePeerRelations(peerRelations);
-        jPeerEngineClient.peerIsNoLongerFriend(peerID);
+        peerEngineClient.savePeerRelations(peerRelations);
+        peerEngineClient.peerIsNoLongerFriend(peerID);
         jacuzziPeerClientAction.peerRemovedAsFriend(peerID, peerRelations);
     }
 
     @Override
     public void peerAddedAsBlocked(PeerID peerID, PeerRelations peerRelations) {
-        jPeerEngineClient.savePeerRelations(peerRelations);
+        peerEngineClient.savePeerRelations(peerRelations);
         jacuzziPeerClientAction.peerAddedAsBlocked(peerID, peerRelations);
     }
 
     @Override
     public void peerRemovedAsBlocked(PeerID peerID, PeerRelations peerRelations) {
-        jPeerEngineClient.savePeerRelations(peerRelations);
+        peerEngineClient.savePeerRelations(peerRelations);
         jacuzziPeerClientAction.peerRemovedAsBlocked(peerID, peerRelations);
     }
 
     @Override
     public void newPeerConnected(PeerID peerID, ConnectionStatus status) {
-        jPeerEngineClient.newPeerConnected(peerID);
+        peerEngineClient.newPeerConnected(peerID);
         jacuzziPeerClientAction.newPeerConnected(peerID, status);
     }
 
     @Override
     public void newObjectMessage(PeerID peerID, Object message) {
         if (message instanceof ModifiedPersonalDataNotification) {
-            jPeerEngineClient.synchPersonalData(peerID);
+            peerEngineClient.synchPersonalData(peerID);
         } else if (message instanceof ModifiedSharedLibrariesMessage) {
             // remote libraries were modified -> report client
             ModifiedSharedLibrariesMessage modifiedSharedLibrariesMessage = (ModifiedSharedLibrariesMessage) message;
-            jPeerEngineClient.remoteLibrariesNeedSynchronizing(peerID, modifiedSharedLibrariesMessage.modifiedLibraries);
+            peerEngineClient.remoteLibrariesNeedSynchronizing(peerID, modifiedSharedLibrariesMessage.modifiedLibraries);
         } else {
             jacuzziPeerClientAction.newObjectMessage(peerID, message);
         }
@@ -91,7 +91,7 @@ public class BridgePeerClientAction implements PeerClientAction {
 
     @Override
     public void peerValidatedUs(PeerID peerID) {
-        jPeerEngineClient.synchPersonalData(peerID);
+        peerEngineClient.synchPersonalData(peerID);
         jacuzziPeerClientAction.peerValidatedUs(peerID);
     }
 

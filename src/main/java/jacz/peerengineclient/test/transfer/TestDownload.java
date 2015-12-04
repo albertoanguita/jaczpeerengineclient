@@ -12,7 +12,7 @@ public class TestDownload {
     public static void main(String args[]) throws Exception {
 
 //        ForeignStoreShare defaultForeignStoreShare = new ForeignStoreShare();
-//        JPeerEngineClient jPeerEngineClient = new JPeerEngineClient(".\\examples\\clientConf_1.xml", new SimpleJacuzziPeerClientActionTransfer("Pid1: "), defaultForeignStoreShare);
+//        PeerEngineClient jPeerEngineClient = new PeerEngineClient(".\\examples\\clientConf_1.xml", new SimpleJacuzziPeerClientActionTransfer("Pid1: "), defaultForeignStoreShare);
 //        jPeerEngineClient.connect();
 //
 //        jPeerEngineClient.setVisibleDownloadsManagerTimer(2000);

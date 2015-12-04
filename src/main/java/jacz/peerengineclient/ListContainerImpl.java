@@ -13,35 +13,35 @@ import jacz.peerengineclient.dbs_old.LibraryManager;
  */
 public class ListContainerImpl implements ListContainer {
 
-    private final JPeerEngineClient jPeerEngineClient;
+    private final PeerEngineClient peerEngineClient;
 
     private final LibraryManager libraryManager;
 
-    public ListContainerImpl(JPeerEngineClient jPeerEngineClient, LibraryManager libraryManager) {
-        this.jPeerEngineClient = jPeerEngineClient;
+    public ListContainerImpl(PeerEngineClient peerEngineClient, LibraryManager libraryManager) {
+        this.peerEngineClient = peerEngineClient;
         this.libraryManager = libraryManager;
     }
 
     @Override
     public ListAccessor getListForTransmitting(PeerID peerID, String list) throws ListNotFoundException {
         if (list.equals(SimplePersonalData.getListName())) {
-            return jPeerEngineClient.getOwnSimplePersonalDataListAccessor();
+            return peerEngineClient.getOwnSimplePersonalDataListAccessor();
         } else {
-            return libraryManager.getSharedListAccessor(list, jPeerEngineClient.getFileHashDatabase(), jPeerEngineClient.getBaseDataDir());
+            return libraryManager.getSharedListAccessor(list, peerEngineClient.getFileHashDatabase(), peerEngineClient.getBaseDataDir());
         }
     }
 
     @Override
     public ListAccessor getListForReceiving(PeerID peerID, String list) throws ListNotFoundException {
         if (list.equals(SimplePersonalData.getListName())) {
-            SimplePersonalData simplePersonalData = jPeerEngineClient.getSimplePersonalData(peerID);
+            SimplePersonalData simplePersonalData = peerEngineClient.getSimplePersonalData(peerID);
             if (simplePersonalData != null) {
                 return new NonIndexedListAccessorBridge(simplePersonalData);
             } else {
                 throw new ListNotFoundException();
             }
         } else {
-            return libraryManager.getRemoteListAccessor(peerID, list, jPeerEngineClient.getFileHashDatabase(), jPeerEngineClient.getBaseDataDir());
+            return libraryManager.getRemoteListAccessor(peerID, list, peerEngineClient.getFileHashDatabase(), peerEngineClient.getBaseDataDir());
         }
     }
 }

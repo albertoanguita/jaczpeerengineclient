@@ -1,17 +1,12 @@
 package jacz.peerengineclient.libraries;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
 import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
 import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
 import jacz.peerengineservice.PeerID;
 import jacz.store.database.DatabaseMediator;
-import jacz.store.old2.Database;
-import jacz.store.old2.db_mediator.CSVDBMediator;
-import jacz.store.old2.db_mediator.CorruptDataException;
-import jacz.store.old2.db_mediator.DBException;
-import jacz.store.old2.db_mediator.DBMediator;
 import jacz.util.files.FileUtil;
 import jacz.util.io.object_serialization.VersionedObjectSerializer;
 import jacz.util.io.object_serialization.VersionedSerializationException;
@@ -53,7 +48,7 @@ public class LibraryManagerIO {
 
     private static final int ID_LENGTH = 12;
 
-    public static LibraryManager load(String basePath, LibrarySynchEvents librarySynchEvents, JPeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
+    public static LibraryManager load(String basePath, LibrarySynchEvents librarySynchEvents, PeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
         IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath));
         VersionedObjectSerializer.deserialize(integratedDatabase, generateAnnotatedIntegratedDatabasePath(basePath), generateBackupIntegratedDatabasePath(basePath));
 

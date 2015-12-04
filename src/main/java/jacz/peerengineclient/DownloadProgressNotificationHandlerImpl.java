@@ -174,6 +174,6 @@ public class DownloadProgressNotificationHandlerImpl implements DownloadProgress
     }
 
     private String handleStore(String storeName) {
-        return storeName.equals(JPeerEngineClient.DEFAULT_STORE) ? null : storeName;
+        return storeName.equals(PeerEngineClient.DEFAULT_STORE) ? null : storeName;
     }
 }

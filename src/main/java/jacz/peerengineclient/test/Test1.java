@@ -6,7 +6,7 @@ package jacz.peerengineclient.test;
 public class Test1 {
 
     public static void main(String args[]) throws Exception {
-//        JPeerEngineClient jPeerEngineClient = new JPeerEngineClient(".\\examples\\clientConf_1.xml", new SimpleJacuzziPeerClientAction("Pid1: "), null);
+//        PeerEngineClient jPeerEngineClient = new PeerEngineClient(".\\examples\\clientConf_1.xml", new SimpleJacuzziPeerClientAction("Pid1: "), null);
 //        jPeerEngineClient.connect();
 //
 //        while (true) {

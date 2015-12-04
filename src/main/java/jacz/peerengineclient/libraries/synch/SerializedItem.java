@@ -11,9 +11,9 @@ import java.util.HashMap;
  */
 public class SerializedItem implements Serializable {
 
-    private DatabaseMediator.ITEM_TYPE type;
+    private DatabaseMediator.ItemType type;
 
-    private String id;
+    private Integer id;
 
     private Integer timestamp;
 
@@ -24,7 +24,7 @@ public class SerializedItem implements Serializable {
     private HashMap<String, Long> longFields;
     private HashMap<String, Date> dateFields;
 
-    public SerializedItem(DatabaseMediator.ITEM_TYPE type, String id, Integer timestamp, boolean alive) {
+    public SerializedItem(DatabaseMediator.ItemType type, Integer id, Integer timestamp, boolean alive) {
         this.type = type;
         this.id = id;
         this.timestamp = timestamp;
@@ -35,11 +35,11 @@ public class SerializedItem implements Serializable {
         dateFields = null;
     }
 
-    public DatabaseMediator.ITEM_TYPE getType() {
+    public DatabaseMediator.ItemType getType() {
         return type;
     }
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 

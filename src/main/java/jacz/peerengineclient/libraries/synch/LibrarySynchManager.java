@@ -1,6 +1,6 @@
 package jacz.peerengineclient.libraries.synch;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataSynchronizer;
 import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
@@ -28,7 +28,7 @@ public class LibrarySynchManager {
 
     private final LibrarySynchEvents librarySynchEvents;
 
-    private final JPeerEngineClient peerEngineClient;
+    private final PeerEngineClient peerEngineClient;
 
     private final Set<PeerID> activeSharedSynchs;
 
@@ -40,7 +40,7 @@ public class LibrarySynchManager {
 
     private final SynchRecord remoteSynchRecord;
 
-    public LibrarySynchManager(LibrarySynchEvents librarySynchEvents, JPeerEngineClient peerEngineClient) {
+    public LibrarySynchManager(LibrarySynchEvents librarySynchEvents, PeerEngineClient peerEngineClient) {
         this.librarySynchEvents = librarySynchEvents;
         this.peerEngineClient = peerEngineClient;
         activeSharedSynchs = new HashSet<>();

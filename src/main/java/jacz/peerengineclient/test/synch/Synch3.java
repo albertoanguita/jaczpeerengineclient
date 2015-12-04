@@ -1,6 +1,6 @@
 package jacz.peerengineclient.test.synch;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
 import jacz.util.concurrency.ThreadUtil;
 
@@ -13,14 +13,14 @@ public class Synch3 {
 
 
         SynchAction synchAction = new SynchAction("P3: ");
-        JPeerEngineClient jPeerEngineClient = SessionManager.load("./examples/configs/user_2", synchAction);
-        synchAction.setjPeerEngineClient(jPeerEngineClient);
+        PeerEngineClient peerEngineClient = SessionManager.load("./examples/configs/user_2", synchAction);
+        synchAction.setPeerEngineClient(peerEngineClient);
 
-        jPeerEngineClient.connect();
+        peerEngineClient.connect();
 
         ThreadUtil.safeSleep(45000);
         System.out.println("STOPPING...");
-        jPeerEngineClient.stop();
+        peerEngineClient.stop();
         System.out.println("END");
     }
 }

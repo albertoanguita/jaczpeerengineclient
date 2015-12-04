@@ -25,7 +25,7 @@ public class GeneralResourceStoreImpl implements GeneralResourceStore {
     @Override
     public ResourceStoreResponse requestResource(String resourceStore, PeerID peerID, String resourceID) {
         ResourceRequestResult resourceRequestResult;
-        if (resourceStore.equals(JPeerEngineClient.DEFAULT_STORE)) {
+        if (resourceStore.equals(PeerEngineClient.DEFAULT_STORE)) {
             resourceRequestResult = jacuzziPeerClientAction.requestResourceDefaultStore(peerID, resourceID);
         } else {
             resourceRequestResult = jacuzziPeerClientAction.requestResource(peerID, resourceID, resourceStore);

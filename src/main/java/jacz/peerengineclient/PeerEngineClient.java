@@ -50,16 +50,16 @@ import java.util.Set;
  * <p/>
  * todo si no tiene conexion, tarda mucho en dar un unable to connect to server (unos 25 segs)
  */
-public class JPeerEngineClient {
+public class PeerEngineClient {
 
     private static class LibraryManagerNotificationsImpl implements LibraryManagerNotifications {
 
-        private final JPeerEngineClient jPeerEngineClient;
+        private final PeerEngineClient peerEngineClient;
 
         private final JacuzziPeerClientAction jacuzziPeerClientAction;
 
-        private LibraryManagerNotificationsImpl(JPeerEngineClient jPeerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction) {
-            this.jPeerEngineClient = jPeerEngineClient;
+        private LibraryManagerNotificationsImpl(PeerEngineClient peerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction) {
+            this.peerEngineClient = peerEngineClient;
             this.jacuzziPeerClientAction = jacuzziPeerClientAction;
         }
 
@@ -72,12 +72,12 @@ public class JPeerEngineClient {
         public boolean requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
 
             // todo decide accessor name
-            return jPeerEngineClient.synchronizeList(peerID, "STORE_", 15000, progress);
+            return peerEngineClient.synchronizeList(peerID, "STORE_", 15000, progress);
         }
 
         @Override
         public void reportSharedLibraryModified(Map<String, List<Integer>> modifiedSharedLibraries) {
-            jPeerEngineClient.reportModifiedSharedLibraries(modifiedSharedLibraries);
+            peerEngineClient.reportModifiedSharedLibraries(modifiedSharedLibraries);
         }
 
         @Override
@@ -195,7 +195,7 @@ public class JPeerEngineClient {
     private String baseDataDir;
 
 
-    public JPeerEngineClient(String configPath, JacuzziPeerClientAction jacuzziPeerClientAction, PeerIDInfo peerIDInfo, int port, String serverIP, int serverPort, String ownNick, Map<PeerID, String> peerNicks, PeerRelations peerRelations, String tempDownloadsDirectory, FileHashDatabase fileHashDatabase, String baseDataDir) throws IOException {
+    public PeerEngineClient(String configPath, JacuzziPeerClientAction jacuzziPeerClientAction, PeerIDInfo peerIDInfo, int port, String serverIP, int serverPort, String ownNick, Map<PeerID, String> peerNicks, PeerRelations peerRelations, String tempDownloadsDirectory, FileHashDatabase fileHashDatabase, String baseDataDir) throws IOException {
         this.configPath = configPath;
         this.jacuzziPeerClientAction = jacuzziPeerClientAction;
         ownData = new SimplePersonalData(peerIDInfo.peerID, ownNick, null);

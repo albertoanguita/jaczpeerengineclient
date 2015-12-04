@@ -10,7 +10,7 @@ package jacz.peerengineclient.test.transfer;
 public class TestUpload {
 
     public static void main(String args[]) throws Exception {
-//            JPeerEngineClient jPeerEngineClient = new JPeerEngineClient(".\\examples\\clientConf_2.xml", new SimpleJacuzziPeerClientActionTransfer("Pid2: "), null);
+//            PeerEngineClient jPeerEngineClient = new PeerEngineClient(".\\examples\\clientConf_2.xml", new SimpleJacuzziPeerClientActionTransfer("Pid2: "), null);
 //            jPeerEngineClient.connect();
             //jPeerEngineClient.setMaxDesiredUploadSpeed(725);
     }

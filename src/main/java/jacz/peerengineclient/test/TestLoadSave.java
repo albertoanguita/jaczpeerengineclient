@@ -1,6 +1,6 @@
 package jacz.peerengineclient.test;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
 
 /**
@@ -10,10 +10,10 @@ public class TestLoadSave {
 
     public static void main(String[] args) throws Exception {
 
-        JPeerEngineClient jPeerEngineClient = SessionManager.load("./examples/user_0", new SimpleJacuzziPeerClientAction("init"));
+        PeerEngineClient peerEngineClient = SessionManager.load("./examples/user_0", new SimpleJacuzziPeerClientAction("init"));
 
-        jPeerEngineClient.stop();
-        SessionManager.save(jPeerEngineClient);
+        peerEngineClient.stop();
+        SessionManager.save(peerEngineClient);
 
     }
 }

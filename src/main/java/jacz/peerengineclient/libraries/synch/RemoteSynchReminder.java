@@ -1,6 +1,6 @@
 package jacz.peerengineclient.libraries.synch;
 
-import jacz.peerengineclient.JPeerEngineClient;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerID;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyControllerAction;
@@ -25,7 +25,7 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
     private static final int MAX_CONCURRENT_SYNCH_PROCESSES = 10;
 
 
-    private final JPeerEngineClient peerEngineClient;
+    private final PeerEngineClient peerEngineClient;
 
     private final LibrarySynchManager librarySynchManager;
 
@@ -39,7 +39,7 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
 
     private final ConcurrencyController remoteSynchConcurrencyController;
 
-    public RemoteSynchReminder(JPeerEngineClient peerEngineClient, LibrarySynchManager librarySynchManager) {
+    public RemoteSynchReminder(PeerEngineClient peerEngineClient, LibrarySynchManager librarySynchManager) {
         this.peerEngineClient = peerEngineClient;
         this.librarySynchManager = librarySynchManager;
         peersToSynch = new ConcurrentLinkedDeque<>();

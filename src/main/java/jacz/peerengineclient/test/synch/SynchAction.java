@@ -1,8 +1,8 @@
 package jacz.peerengineclient.test.synch;
 
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.ConnectionStatus;
-import jacz.peerengineclient.JPeerEngineClient;
 import jacz.peerengineclient.test.SimpleJacuzziPeerClientAction;
 
 /**
@@ -10,14 +10,14 @@ import jacz.peerengineclient.test.SimpleJacuzziPeerClientAction;
  */
 public class SynchAction extends SimpleJacuzziPeerClientAction {
 
-    private JPeerEngineClient jPeerEngineClient;
+    private PeerEngineClient peerEngineClient;
 
     public SynchAction(String initMessage) {
         super(initMessage);
     }
 
-    public void setjPeerEngineClient(JPeerEngineClient jPeerEngineClient) {
-        this.jPeerEngineClient = jPeerEngineClient;
+    public void setPeerEngineClient(PeerEngineClient peerEngineClient) {
+        this.peerEngineClient = peerEngineClient;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class SynchAction extends SimpleJacuzziPeerClientAction {
         super.newPeerConnected(peerID, status);
 //        if (status == ConnectionStatus.CORRECT) {
 //            // synch person db
-//            jPeerEngineClient.synchAllPeerLibraries(peerID);
+//            peerEngineClient.synchAllPeerLibraries(peerID);
 //        }
     }
 }
