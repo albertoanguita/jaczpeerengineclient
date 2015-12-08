@@ -4,9 +4,7 @@ import jacz.store.database.DatabaseMediator;
 import jacz.util.io.object_serialization.FragmentedByteArray;
 import jacz.util.io.object_serialization.MutableOffset;
 import jacz.util.io.object_serialization.Serializer;
-import jacz.util.io.object_serialization.VersionedSerializationException;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,6 +29,25 @@ public abstract class GenericDatabase {
 
         public static LibraryId deserialize(byte[] data, MutableOffset offset) {
             return new LibraryId(Serializer.deserializeEnum(DatabaseMediator.ItemType.class, data, offset), Serializer.deserializeInt(data, offset));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            LibraryId libraryId = (LibraryId) o;
+
+            if (id != libraryId.id) return false;
+            return type == libraryId.type;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = type.hashCode();
+            result = 31 * result + id;
+            return result;
         }
     }
 

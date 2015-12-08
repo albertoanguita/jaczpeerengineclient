@@ -46,6 +46,7 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
      * Links integrated ids to shared ids (for faster item lookup)
      */
     private final Map<LibraryId, LibraryId> itemsToSharedItems;
+
     /**
      * Links integrated ids to local ids (for faster item lookup)
      */
@@ -57,12 +58,17 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
     private final Map<LibraryId, List<PeerAndLibraryId>> itemsToRemoteItems;
 
     /**
+     * Links integrated ids to shared ids (for faster item lookup)
+     */
+    private final Map<LibraryId, LibraryId> itemsToDeletedRemoteItems;
+    
+    /**
      * Sets up a fresh store. The store itself must be created before
      *
      * @param databasePath path to the library
      */
     public IntegratedDatabase(String databasePath) {
-        this(databasePath, new HashMap<>(), new HashMap<>(), new HashMap<>());
+        this(databasePath, new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
     }
 
     /**
@@ -72,11 +78,17 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
      * @param itemsToLocalItems  pointers of integrated ids to local ids
      * @param itemsToRemoteItems pointers of integrated ids to remote ids
      */
-    public IntegratedDatabase(String databasePath, Map<LibraryId, LibraryId> itemsToSharedItems, Map<LibraryId, LibraryId> itemsToLocalItems, Map<LibraryId, List<PeerAndLibraryId>> itemsToRemoteItems) {
+    public IntegratedDatabase(
+            String databasePath,
+            Map<LibraryId, LibraryId> itemsToSharedItems,
+            Map<LibraryId, LibraryId> itemsToLocalItems,
+            Map<LibraryId, List<PeerAndLibraryId>> itemsToRemoteItems,
+            Map<LibraryId, LibraryId> itemsToDeletedRemoteItems) {
         super(databasePath);
         this.itemsToSharedItems = itemsToSharedItems;
         this.itemsToLocalItems = itemsToLocalItems;
         this.itemsToRemoteItems = itemsToRemoteItems;
+        this.itemsToDeletedRemoteItems = itemsToDeletedRemoteItems;
     }
 
     public Map<LibraryId, LibraryId> getItemsToSharedItems() {
@@ -85,6 +97,14 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
 
     public Map<LibraryId, LibraryId> getItemsToLocalItems() {
         return itemsToLocalItems;
+    }
+
+    public Map<LibraryId, List<PeerAndLibraryId>> getItemsToRemoteItems() {
+        return itemsToRemoteItems;
+    }
+
+    public Map<LibraryId, LibraryId> getItemsToDeletedRemoteItems() {
+        return itemsToDeletedRemoteItems;
     }
 
     public boolean containsKeyToLocalItem(LibraryId integratedId) {
@@ -99,22 +119,19 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
         }
     }
 
-    public void putItemToLocalItem(LibraryId integratedId, LibraryId localId) {
+    public void putItemToLocalItem(DatabaseMediator.ItemType type, Integer integratedId, Integer localId) {
         synchronized (ITEMS_TO_LOCAL_ITEMS_LOCK) {
-            itemsToLocalItems.put(integratedId, localId);
+            itemsToLocalItems.put(new LibraryId(type, integratedId), new LibraryId(type, localId));
         }
     }
 
-    public Map<LibraryId, List<PeerAndLibraryId>> getItemsToRemoteItems() {
-        return itemsToRemoteItems;
-    }
-
-    public void addRemoteLink(LibraryId integratedID, PeerID remotePeer, LibraryId remoteID) {
+    public void addRemoteLink(DatabaseMediator.ItemType type, Integer integratedID, PeerID remotePeer, Integer remoteID) {
         synchronized (ITEMS_TO_REMOTE_ITEMS_LOCK) {
-            if (!itemsToRemoteItems.containsKey(integratedID)) {
-                itemsToRemoteItems.put(integratedID, new ArrayList<>());
+            LibraryId integratedLibraryId = new LibraryId(type, integratedID);
+            if (!itemsToRemoteItems.containsKey(integratedLibraryId)) {
+                itemsToRemoteItems.put(integratedLibraryId, new ArrayList<>());
             }
-            itemsToRemoteItems.get(integratedID).add(new PeerAndLibraryId(remoteID.type, remoteID.id, remotePeer));
+            itemsToRemoteItems.get(integratedLibraryId).add(new PeerAndLibraryId(type, remoteID, remotePeer));
         }
     }
 
@@ -139,6 +156,7 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
         attributes.put("itemsToSharedItems", serializeLibraryIdMap(itemsToSharedItems));
         attributes.put("itemsToLocalItems", serializeLibraryIdMap(itemsToLocalItems));
         attributes.put("itemsToRemoteItems", serializeLibraryIdMapList(itemsToRemoteItems));
+        attributes.put("itemsToDeletedRemoteItems", serializeLibraryIdMap(itemsToDeletedRemoteItems));
         return attributes;
     }
 
@@ -147,6 +165,7 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
         deserializeLibraryIdMap(itemsToSharedItems, (byte[]) attributes.get("itemsToSharedItems"));
         deserializeLibraryIdMap(itemsToLocalItems, (byte[]) attributes.get("itemsToLocalItems"));
         deserializeLibraryIdMapList(itemsToRemoteItems, (byte[]) attributes.get("itemsToRemoteItems"));
+        deserializeLibraryIdMap(itemsToDeletedRemoteItems, (byte[]) attributes.get("itemsToDeletedRemoteItems"));
     }
 
     @Override
