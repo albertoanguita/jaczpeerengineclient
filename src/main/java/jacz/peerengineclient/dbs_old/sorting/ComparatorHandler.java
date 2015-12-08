@@ -1,6 +1,6 @@
 package jacz.peerengineclient.dbs_old.sorting;
 
-import jacz.store.common.LibraryItem;
+import jacz.store.LibraryItem;
 
 import java.util.Comparator;
 import java.util.HashMap;

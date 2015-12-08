@@ -42,6 +42,8 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
 
     private static final Object ITEMS_TO_REMOTE_ITEMS_LOCK = new Object();
 
+    private static final Object ITEMS_TO_DELETED_ITEMS_LOCK = new Object();
+
     /**
      * Links integrated ids to shared ids (for faster item lookup)
      */
@@ -142,6 +144,24 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
             } else {
                 return new ArrayList<>();
             }
+        }
+    }
+
+    public boolean containsKeyToDeletedItem(LibraryId integratedId) {
+        synchronized (ITEMS_TO_DELETED_ITEMS_LOCK) {
+            return itemsToDeletedRemoteItems.containsKey(integratedId);
+        }
+    }
+
+    public LibraryId getItemToDeletedItem(LibraryId integratedId) {
+        synchronized (ITEMS_TO_DELETED_ITEMS_LOCK) {
+            return itemsToDeletedRemoteItems.get(integratedId);
+        }
+    }
+
+    public void putItemToDeletedItem(DatabaseMediator.ItemType type, Integer integratedId, Integer deletedId) {
+        synchronized (ITEMS_TO_DELETED_ITEMS_LOCK) {
+            itemsToDeletedRemoteItems.put(new LibraryId(type, integratedId), new LibraryId(type, deletedId));
         }
     }
 
