@@ -14,7 +14,7 @@ public interface LibraryIntegrationEvents {
      * @param itemType type of the item
      * @param id       id of the item in the integrated database
      */
-    void integratedItemModified(DatabaseMediator.ITEM_TYPE itemType, Integer id);
+    void integratedItemModified(DatabaseMediator.ItemType itemType, Integer id);
 
 
 }

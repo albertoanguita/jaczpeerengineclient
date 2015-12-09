@@ -144,7 +144,7 @@ public class LibraryManagerIO {
     public static void createNewDatabaseFileStructure(String basePath, String version) throws IOException {
         // create local and integrated database. Create directories. Generate random identifiers
         DatabaseMediator.dropAndCreate(generateIntegratedDatabasePath(basePath), version, RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath), new HashMap<>(), new HashMap<>());
+        IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath), new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         saveIntegratedDatabase(basePath, integratedDatabase);
 
         DatabaseMediator.dropAndCreate(generateLocalDatabasePath(basePath), version, RandomStringUtils.randomAlphanumeric(ID_LENGTH));

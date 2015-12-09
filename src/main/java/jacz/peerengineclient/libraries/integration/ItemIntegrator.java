@@ -1,6 +1,5 @@
 package jacz.peerengineclient.libraries.integration;
 
-import jacz.peerengineclient.dbs_old.ItemLockManager;
 import jacz.peerengineclient.libraries.library_images.*;
 import jacz.peerengineservice.PeerID;
 import jacz.store.Chapter;
@@ -51,11 +50,15 @@ public class ItemIntegrator {
     private static final CreationDateComparator creationDateComparator = new CreationDateComparator();
 
 
-
     private final ConcurrencyController concurrencyController;
 
     public ItemIntegrator() {
         concurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
+    }
+
+    public void stop() {
+        // todo we might still receive jobs!!! we should be disconnected from all peers
+        concurrencyController.stopAndWaitForFinalization();
     }
 
     void integrateLocalItem() {
@@ -71,7 +74,6 @@ public class ItemIntegrator {
             DeletedRemoteItemsLibrary deletedRemoteItemsLibrary,
             SharedLibrary sharedLibrary,
             DatabaseMediator.ItemType type,
-            ItemLockManager itemLockManager,
             PeerID remotePeerID,
             LibraryItem externalItem,
             Map<Integer, Integer> externalToIntegratedItems) throws ParseException, IOException, IllegalDataException {
@@ -82,10 +84,13 @@ public class ItemIntegrator {
             // the given external item is not mapped to any integrated item
             // (the remote item is new and it is not linked to any integrated item)
             // we must find its corresponding integrated item, or create a new one
-            List<LibraryItem> allIntegratedItems =...
+            List<? extends LibraryItem> allIntegratedItems =
+                    DatabaseMediator.getItems(integratedDatabase.getDatabase(), type);
             matchedIntegratedItem = null;
             for (LibraryItem integratedItem : allIntegratedItems) {
+                // todo check lists of external references. We don't need to access the db, we just need the ids
                 if (externalItem.match(integratedItem) >= MATCH_THRESHOLD) {
+                    // todo we should search all items, and get the one with MAX match value
                     // match found! -> remember the integrated item
                     matchedIntegratedItem = integratedItem;
                     break;
@@ -93,28 +98,43 @@ public class ItemIntegrator {
             }
             if (matchedIntegratedItem == null) {
                 // we did not find any match -> create a new integrated item
-                matchedIntegratedItem = integratedDatabase.createNewItem(type);
+                matchedIntegratedItem = DatabaseMediator.createNewItem(integratedDatabase.getDatabase(), type);
                 isNewIntegratedItem = true;
             }
             externalToIntegratedItems.put(externalItem.getId(), matchedIntegratedItem.getId());
-            // we must put the equivalent pointer in the integrated database. Different cases for local item (remotePeerID == null) or remote item
+            // we must put the equivalent pointer in the integrated database.
+            // Different cases for local item (remotePeerID == null) or remote item
             if (remotePeerID == null) {
                 // local item
                 integratedDatabase.putItemToLocalItem(type, matchedIntegratedItem.getId(), externalItem.getId());
             } else {
                 // remote item
-                integratedDatabase.addRemoteLink(type, matchedIntegratedItem.getId(), remotePeerID, externalItem.getId());
+                integratedDatabase.addRemoteLink(
+                        type,
+                        matchedIntegratedItem.getId(),
+                        remotePeerID,
+                        externalItem.getId());
             }
         } else {
             // we have a matching integrated item -> use it
-            matchedIntegratedItem = integratedDatabase.getDatabase().getItem(type, externalToIntegratedItems.get(externalItem.getId()));
+            matchedIntegratedItem = DatabaseMediator.getItem(
+                    integratedDatabase.getDatabase(),
+                    type,
+                    externalToIntegratedItems.get(externalItem.getId()));
         }
 
         // now copy the required information from the remote item to the matched integrated item
-        // this requires creating the integrated item from zero, with all the information of its local and remote composers
-        boolean hasNewContent = populateIntegratedItemStatic(integratedDatabase, localDatabase, remoteDatabases, deletedRemoteItemsLibrary, sharedLibrary, matchedIntegratedItem, type);
+        // this requires creating the integrated item from zero,
+        // with all the information of its local and remote composers
+        boolean hasNewContent = populateIntegratedItemStatic(
+                integratedDatabase,
+                localDatabase,
+                remoteDatabases,
+                deletedRemoteItemsLibrary,
+                sharedLibrary,
+                matchedIntegratedItem,
+                type);
         return new IntegrationResult(matchedIntegratedItem, isNewIntegratedItem, hasNewContent);
-//        return new Triple<>(changedFields, matchedIntegratedItem.getIdentifier(), integratedDatabase.containsKeyToLocalItem(matchedIntegratedItem.getIdentifier()));
     }
 
     private IntegrationResult removeExternalItem(
@@ -122,7 +142,6 @@ public class ItemIntegrator {
             LocalDatabase localDatabase,
             Map<PeerID, RemoteDatabase> remoteDatabases,
             String library,
-            ItemLockManager itemLockManager,
             PeerID remotePeerID,
             String externalItemID,
             LibraryItem externalItem,
@@ -156,31 +175,45 @@ public class ItemIntegrator {
         // Finally, the deleted remote item (if any)
 
         // we must check if, at the end, the media content has changed with respect to the initial state
-        // todo transactions
         String oldVideoFilesHash = getMediaContentHash(integratedItem, type);
 
         GenericDatabase.LibraryId integratedId = new GenericDatabase.LibraryId(type, integratedItem.getId());
-        integratedItem.reset();
+        integratedItem.resetPostponed();
 
         // local item
         if (integratedDatabase.containsKeyToLocalItem(integratedId)) {
-            integratedItem.merge(localDatabase.getDatabase().getItem(type, integratedDatabase.getItemToLocalItem(integratedId)));
+            LibraryItem localItem = DatabaseMediator.getItem(
+                    localDatabase.getDatabase(),
+                    type,
+                    integratedDatabase.getItemToLocalItem(integratedId).id);
+            integratedItem.mergePostponed(localItem);
         }
 
         // remote items
         List<LibraryItem> remoteItems = new ArrayList<>();
         for (IntegratedDatabase.PeerAndLibraryId peerAndLibraryId : integratedDatabase.getRemotePeerAndID(integratedId)) {
-            remoteItems.add(remoteDatabases.get(peerAndLibraryId.peerID).getDatabase().getItem(type, peerAndLibraryId.id));
+            LibraryItem remoteItem = DatabaseMediator.getItem(
+                    remoteDatabases.get(peerAndLibraryId.peerID).getDatabase(),
+                    type,
+                    peerAndLibraryId.id);
+            remoteItems.add(remoteItem);
         }
         Collections.sort(remoteItems, creationDateComparator);
         for (LibraryItem remoteItem : remoteItems) {
-            integratedItem.merge(remoteItem);
+            integratedItem.mergePostponed(remoteItem);
         }
 
         // deleted item
         if (integratedDatabase.containsKeyToDeletedItem(integratedId)) {
-            integratedItem.merge(deletedRemoteItemsLibrary.getDatabase().getItem(type, integratedDatabase.getItemToLocalItem(integratedId)));
+            LibraryItem deletedItem = DatabaseMediator.getItem(
+                    deletedRemoteItemsLibrary.getDatabase(),
+                    type,
+                    integratedDatabase.getItemToDeletedItem(integratedId).id);
+            integratedItem.mergePostponed(deletedItem);
         }
+
+        // flush all changes in the integrated item
+        integratedItem.flushChanges();
 
         // if there have been changes in media content, notify them
         String newVideoFilesHash = getMediaContentHash(integratedItem, type);

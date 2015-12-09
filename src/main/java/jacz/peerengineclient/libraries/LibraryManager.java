@@ -1,7 +1,7 @@
 package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.dbs_old.LibraryManagerConcurrencyController;
+import jacz.peerengineclient.libraries.integration.ItemIntegrator;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
 import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
@@ -10,13 +10,13 @@ import jacz.peerengineclient.libraries.synch.LibrarySynchManager;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
 import jacz.store.database.DatabaseMediator;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 
 import java.io.IOException;
 import java.util.Map;
 
 /**
  * This class manages data libraries and their proper synchronization and integration
+ * todo check synch statements, maybe not needed (e.g. integrate local item)
  */
 public class LibraryManager {
 
@@ -49,7 +49,7 @@ public class LibraryManager {
      * items during the remote synching process, and once synching is complete, we use this information to integrate the libraries
      * todo remove
      */
-    private RemoteDatabasesIntegrator.RemoteModifiedItems remoteModifiedItems;
+//    private RemoteDatabasesIntegrator.RemoteModifiedItems remoteModifiedItems;
 
     /**
      * A concurrency controller for controlling the execution of the different integration processes
@@ -57,9 +57,11 @@ public class LibraryManager {
      * Local items have higher priorities than remote items
      */
     // todo move to integrator, we only use it there
-    private final ConcurrencyController concurrencyController;
+//    private final ConcurrencyController concurrencyController;
 
-    private final RemoteDatabasesIntegrator remoteDatabasesIntegrator;
+//    private final RemoteDatabasesIntegrator remoteDatabasesIntegrator;
+
+    private final ItemIntegrator itemIntegrator;
 
     private boolean alive;
 
@@ -74,9 +76,10 @@ public class LibraryManager {
         this.localDatabase = localDatabase;
         this.remoteDatabases = remoteDatabases;
         this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient);
-        remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
-        concurrencyController = new LibraryManagerConcurrencyController();
-        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, null);
+//        remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
+//        concurrencyController = new LibraryManagerConcurrencyController();
+//        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, null);
+        itemIntegrator = new ItemIntegrator();
         alive = true;
     }
 
@@ -105,7 +108,6 @@ public class LibraryManager {
         // local item modifications are served as soon as possible, interrupting if necessary the integration of remote items
         // the method is blocking, waiting until the item has been integrated
         if (alive) {
-            concurrencyController.beginActivity(LibraryManagerConcurrencyController.INTEGRATE_LOCAL_ITEM);
             // todo integrate local item
 //            try {
 //                Triple<Set<String>, String, Boolean> hasChangedItemIdAndHasLocal = integrateLocalItem(library, elementIndex);
@@ -115,7 +117,6 @@ public class LibraryManager {
 //            } catch (Exception e) {
 //                databasesCannotBeAccessed();
 //            }
-            concurrencyController.endActivity(LibraryManagerConcurrencyController.INTEGRATE_LOCAL_ITEM);
         } else {
             throw new IllegalStateException();
         }
@@ -144,7 +145,7 @@ public class LibraryManager {
      * @param itemId id of the element to integrate
      * @param alive  if this item is alive (true) or has been deleted (false)
      */
-    public synchronized void remoteItemModified(PeerID peerID, DatabaseMediator.ITEM_TYPE type, String itemId, boolean alive) {
+    public synchronized void remoteItemModified(PeerID peerID, DatabaseMediator.ItemType type, String itemId, boolean alive) {
         // todo integrate this single item
 //        remoteModifiedItems.addItem(peerID, library, elementIndex);
 //        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
@@ -207,9 +208,9 @@ public class LibraryManager {
         }
     }
 
-    private boolean isRemoteDatabaseBeingIntegrated() {
-        return remoteDatabasesIntegrator.isCurrentlyIntegrating();
-    }
+//    private boolean isRemoteDatabaseBeingIntegrated() {
+//        return remoteDatabasesIntegrator.isCurrentlyIntegrating();
+//    }
 
     /**
      * Issues an order for stopping all actions. Databases will be no longer modified. The method blocks until operation is complete
@@ -220,7 +221,7 @@ public class LibraryManager {
         synchronized (this) {
             alive = false;
         }
-        concurrencyController.stopAndWaitForFinalization();
         librarySynchManager.stop();
+        itemIntegrator.stop();
     }
 }
