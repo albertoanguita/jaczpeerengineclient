@@ -2,11 +2,18 @@ package jacz.peerengineclient.file_system;
 
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.client.PeerClientData;
 import jacz.peerengineservice.client.PeerRelations;
+import jacz.peerengineservice.client.PeerServerData;
+import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.util.files.FileReaderWriter;
 import jacz.util.hash.hashdb.FileHashDatabase;
+import jacz.util.io.object_serialization.StrCast;
+import jacz.util.io.object_serialization.XMLReader;
 import jacz.util.io.xml.Element;
 import jacz.util.io.xml.XMLDom;
+import jacz.util.lists.Triple;
+import jacz.util.network.IP4Port;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.FileNotFoundException;
@@ -20,6 +27,58 @@ import java.util.*;
  * todo meter un formato especifioc para parametros guardados en fich config que sean null (ej: NOT_DEFINED)
  */
 public class FileIO {
+
+    public static PeerClientData readPeerClientData(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
+        XMLReader xmlReader = new XMLReader(Paths.getPeerClientData(userPath));
+        xmlReader.getStruct("peer-server-data");
+        String ip = xmlReader.getFieldValue("ip");
+        int port = StrCast.asInteger(xmlReader.getFieldValue("port"));
+        PeerServerData peerServerData = new PeerServerData(new IP4Port(ip, port));
+        xmlReader.gotoParent();
+        return new PeerClientData(new PeerID(xmlReader.getFieldValue("peer-id")), StrCast.asInteger(xmlReader.getFieldValue("port")), peerServerData);
+    }
+
+    public static PeersPersonalData readPeersPersonalData(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
+        XMLReader xmlReader = new XMLReader(path);
+        PeersPersonalData peersPersonalData = new PeersPersonalData("UNNAMED_PEER", xmlReader.getFieldValue("nick"));
+        xmlReader.getStruct("friend-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            String nick = xmlReader.getFieldValue("nick");
+            peersPersonalData.setPeersNicks(peerID, nick);
+            xmlReader.gotoParent();
+        }
+        xmlReader.getStruct("blocked-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            String nick = xmlReader.getFieldValue("nick");
+            peersPersonalData.setPeersNicks(peerID, nick);
+            xmlReader.gotoParent();
+        }
+        return peersPersonalData;
+    }
+
+    public static PeerRelations readPeerRelations(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
+        XMLReader xmlReader = new XMLReader(path);
+        PeerRelations peerRelations = new PeerRelations();
+        xmlReader.getStruct("friend-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            peerRelations.addFriendPeer(peerID);
+            xmlReader.gotoParent();
+        }
+        xmlReader.getStruct("blocked-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            peerRelations.addBlockedPeer(peerID);
+            xmlReader.gotoParent();
+        }
+        return peerRelations;
+    }
 
     public static PeerIDInfo readPeerID(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
         Element root = XMLDom.parse(Paths.getPeerIdFile(userPath));
@@ -178,12 +237,12 @@ public class FileIO {
         XMLDom.write(Paths.getServersFile(userPath), root);
     }
 
-    public static PeerRelations readPeerRelations(String userPath) throws FileNotFoundException, XMLStreamException {
-        Element root = XMLDom.parse(Paths.getPeerRelationsFile(userPath));
-        Set<PeerID> friendPeers = buildPeerSet(root.getChild("friend-peers").getChildren());
-        Set<PeerID> blockedPeers = buildPeerSet(root.getChild("blocked-peers").getChildren());
-        return new PeerRelations(friendPeers, blockedPeers);
-    }
+//    public static PeerRelations readPeerRelations(String userPath) throws FileNotFoundException, XMLStreamException {
+//        Element root = XMLDom.parse(Paths.getPeerRelationsFile(userPath));
+//        Set<PeerID> friendPeers = buildPeerSet(root.getChild("friend-peers").getChildren());
+//        Set<PeerID> blockedPeers = buildPeerSet(root.getChild("blocked-peers").getChildren());
+//        return new PeerRelations(friendPeers, blockedPeers);
+//    }
 
     private static Set<PeerID> buildPeerSet(List<Element> elements) {
         Set<PeerID> peerIDs = new HashSet<>();

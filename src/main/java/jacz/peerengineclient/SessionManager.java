@@ -4,7 +4,13 @@ import jacz.peerengineclient.file_system.*;
 import jacz.peerengineclient.libraries.LibraryManagerIO;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.client.GeneralEvents;
+import jacz.peerengineservice.client.PeerClientData;
 import jacz.peerengineservice.client.PeerRelations;
+import jacz.peerengineservice.client.PeersPersonalData;
+import jacz.peerengineservice.client.connection.ConnectionEvents;
+import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
+import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.store.old2.db_mediator.CorruptDataException;
 import jacz.util.files.FileUtil;
 import jacz.util.hash.hashdb.FileHashDatabase;
@@ -77,17 +83,27 @@ public class SessionManager {
         return userPaths;
     }
 
-    public static synchronized PeerEngineClient load(String userPath, JacuzziPeerClientAction jacuzziPeerClientAction) throws IOException, XMLStreamException, ParseException {
+    public static synchronized PeerEngineClient load(
+            String userPath,
+            GeneralEvents generalEvents,
+            ConnectionEvents connectionEvents,
+            ResourceTransferEvents resourceTransferEvents) throws IOException, XMLStreamException, ParseException {
+        PeerClientData peerClientData = FileIO.readPeerClientData(userPath);
+        PeersPersonalData peersPersonalData = FileIO.readPeersPersonalData(userPath);
+        PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
+        TransferStatistics transferStatistics = new TransferStatistics("path");
+
         PeerIDInfo peerIDInfo = FileIO.readPeerID(userPath);
         PersonalData personalData = FileIO.readPersonalData(userPath);
         NetworkConfig networkConfig = FileIO.readNetworkConfig(userPath);
         EngineConfig engineConfig = FileIO.readEngineConfig(userPath);
         GeneralConfig generalConfig = FileIO.readGeneralConfig(userPath);
         ServersInfo serversInfo = FileIO.readServers(userPath);
-        PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
+//        PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
         FileHashDatabase fileHashDatabase = FileIO.readFileHashDatabase(userPath);
 
-        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, jacuzziPeerClientAction, peerIDInfo, networkConfig.port, serversInfo.servers.get(0).ip, serversInfo.servers.get(0).port, personalData.ownNick, personalData.peerNicks, peerRelations, engineConfig.tempDownloads, fileHashDatabase, generalConfig.baseDataDir);
+//        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, peerClientData, peerIDInfo, networkConfig.port, serversInfo.servers.get(0).ip, serversInfo.servers.get(0).port, personalData.ownNick, personalData.peerNicks, peerRelations, engineConfig.tempDownloads, fileHashDatabase, generalConfig.baseDataDir);
+        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, peerClientData, generalEvents, connectionEvents, resourceTransferEvents, peersPersonalData, transferStatistics, peerRelations);
         peerEngineClient.setMaxDesiredDownloadSpeed(engineConfig.maxDownloadSpeed);
         peerEngineClient.setMaxDesiredUploadSpeed(engineConfig.maxUploadSpeed);
         peerEngineClient.setDownloadPartSelectionAccuracy(engineConfig.precision);

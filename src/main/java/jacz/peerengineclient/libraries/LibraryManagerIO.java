@@ -1,6 +1,7 @@
 package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.libraries.integration.IntegrationEvents;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
 import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
@@ -48,7 +49,12 @@ public class LibraryManagerIO {
 
     private static final int ID_LENGTH = 12;
 
-    public static LibraryManager load(String basePath, LibrarySynchEvents librarySynchEvents, PeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
+    public static LibraryManager load(
+            String basePath,
+            LibrarySynchEvents librarySynchEvents,
+            IntegrationEvents integrationEvents,
+            PeerEngineClient peerEngineClient
+    ) throws IOException, VersionedSerializationException {
         IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath));
         VersionedObjectSerializer.deserialize(integratedDatabase, generateAnnotatedIntegratedDatabasePath(basePath), generateBackupIntegratedDatabasePath(basePath));
 
@@ -63,7 +69,13 @@ public class LibraryManagerIO {
             VersionedObjectSerializer.deserialize(remoteDatabase, generateAnnotatedRemoteDatabasePath(basePath, peerIDStr), generateBackupRemoteDatabasePath(basePath, peerIDStr));
             remoteDatabases.put(peerID, remoteDatabase);
         }
-        return new LibraryManager(integratedDatabase, localDatabase, remoteDatabases, librarySynchEvents, peerEngineClient);
+        return new LibraryManager(
+                integratedDatabase,
+                localDatabase,
+                remoteDatabases,
+                librarySynchEvents,
+                integrationEvents,
+                peerEngineClient);
     }
 
     public static void save(String basePath, LibraryManager libraryManager) throws IOException {

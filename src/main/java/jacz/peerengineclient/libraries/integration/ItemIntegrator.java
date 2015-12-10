@@ -10,6 +10,7 @@ import jacz.store.database.DatabaseMediator;
 import jacz.store.old2.IllegalDataException;
 import jacz.store.old2.db_mediator.CorruptDataException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
+import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
 import jacz.util.hash.SHA_1;
 
 import java.io.IOException;
@@ -52,8 +53,15 @@ public class ItemIntegrator {
 
     private final ConcurrencyController concurrencyController;
 
-    public ItemIntegrator() {
+    // todo use
+    private final IntegrationEvents integrationEvents;
+
+    private final SequentialTaskExecutor integrationEventsTaskExecutor;
+
+    public ItemIntegrator(IntegrationEvents integrationEvents) {
         concurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
+        this.integrationEvents = integrationEvents;
+        integrationEventsTaskExecutor = new SequentialTaskExecutor();
     }
 
     public void stop() {

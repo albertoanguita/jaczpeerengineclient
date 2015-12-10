@@ -1,6 +1,7 @@
 package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.libraries.integration.IntegrationEvents;
 import jacz.peerengineclient.libraries.integration.ItemIntegrator;
 import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
 import jacz.peerengineclient.libraries.library_images.LocalDatabase;
@@ -71,6 +72,7 @@ public class LibraryManager {
             LocalDatabase localDatabase,
             Map<PeerID, RemoteDatabase> remoteDatabases,
             LibrarySynchEvents librarySynchEvents,
+            IntegrationEvents integrationEvents,
             PeerEngineClient peerEngineClient) {
         this.integratedDatabase = integratedDatabase;
         this.localDatabase = localDatabase;
@@ -79,7 +81,7 @@ public class LibraryManager {
 //        remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
 //        concurrencyController = new LibraryManagerConcurrencyController();
 //        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, null);
-        itemIntegrator = new ItemIntegrator();
+        itemIntegrator = new ItemIntegrator(integrationEvents);
         alive = true;
     }
 

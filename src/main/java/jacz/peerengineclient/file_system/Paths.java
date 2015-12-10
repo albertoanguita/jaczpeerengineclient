@@ -38,6 +38,12 @@ public final class Paths {
     private static final String FILE_HASH_DB_FILE = "file_hash_db.bin";
 
 
+    public static String getPeerClientData(String userPath) {
+        // todo
+        userPath = checkUserPath(userPath);
+        return FileUtil.generatePath(PEER_ID_FILE, userPath);
+    }
+
     public static String getPeerIdFile(String userPath) {
         userPath = checkUserPath(userPath);
         return FileUtil.generatePath(PEER_ID_FILE, userPath);

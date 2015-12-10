@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  *
  */
-public class BridgePeerClientAction implements PeerClientAction {
+public class BridgePeerClientActionOLD implements PeerClientAction {
 
     private PeerEngineClient peerEngineClient;
 
@@ -28,7 +28,7 @@ public class BridgePeerClientAction implements PeerClientAction {
 
     private final DownloadsManager downloadsManager;
 
-    public BridgePeerClientAction(PeerEngineClient peerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction, DownloadsManager downloadsManager) {
+    public BridgePeerClientActionOLD(PeerEngineClient peerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction, DownloadsManager downloadsManager) {
         this.peerEngineClient = peerEngineClient;
         this.jacuzziPeerClientAction = jacuzziPeerClientAction;
         this.downloadsManager = downloadsManager;
@@ -82,11 +82,6 @@ public class BridgePeerClientAction implements PeerClientAction {
         } else {
             jacuzziPeerClientAction.newObjectMessage(peerID, message);
         }
-    }
-
-    @Override
-    public void newChatMessage(PeerID peerID, String message) {
-        jacuzziPeerClientAction.newChatMessage(peerID, message);
     }
 
     @Override
