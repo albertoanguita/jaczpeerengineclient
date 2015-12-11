@@ -6,13 +6,15 @@ import jacz.peerengineservice.client.PeerClientData;
 import jacz.peerengineservice.client.PeerRelations;
 import jacz.peerengineservice.client.PeerServerData;
 import jacz.peerengineservice.client.PeersPersonalData;
+import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.util.files.FileReaderWriter;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.StrCast;
 import jacz.util.io.object_serialization.XMLReader;
 import jacz.util.io.xml.Element;
 import jacz.util.io.xml.XMLDom;
-import jacz.util.lists.Triple;
+import jacz.util.lists.Four_Tuple;
+import jacz.util.lists.tuple.SixTuple;
 import jacz.util.network.IP4Port;
 
 import javax.xml.stream.XMLStreamException;
@@ -23,13 +25,51 @@ import java.util.*;
 
 /**
  * Creates, reads and writes the user files. It also handles backup of the files
- * <p/>
+ * <p>
  * todo meter un formato especifioc para parametros guardados en fich config que sean null (ej: NOT_DEFINED)
  */
 public class FileIO {
 
+    public static SixTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer> readConfig(
+            String basePath,
+            String defaultNick) throws FileNotFoundException, XMLStreamException, IllegalArgumentException {
+        XMLReader xmlReader = new XMLReader(Paths.getConfigPath(basePath), Paths.getConfigBackupPath(basePath));
+
+        PeerID ownPeerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+        NetworkConfiguration networkConfiguration = new NetworkConfiguration(
+                StrCast.asInteger(xmlReader.getFieldValue("port")),
+                StrCast.asInteger(xmlReader.getFieldValue("external-port")));
+        PeersPersonalData peersPersonalData = new PeersPersonalData(defaultNick, xmlReader.getFieldValue("nick"));
+
+        PeerRelations peerRelations = new PeerRelations();
+        xmlReader.getStruct("friend-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            String nick = xmlReader.getFieldValue("nick");
+            peersPersonalData.setPeersNicks(peerID, nick);
+            peerRelations.addFriendPeer(peerID);
+            xmlReader.gotoParent();
+        }
+        xmlReader.getStruct("blocked-peers");
+        while (xmlReader.hasMoreChildren()) {
+            xmlReader.getNextStruct();
+            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            String nick = xmlReader.getFieldValue("nick");
+            peersPersonalData.setPeersNicks(peerID, nick);
+            peerRelations.addBlockedPeer(peerID);
+            xmlReader.gotoParent();
+        }
+
+        Integer maxDownloadSpeed = StrCast.asInteger(xmlReader.getFieldValue("max-download-speed"));
+        Integer maxUploadSpeed = StrCast.asInteger(xmlReader.getFieldValue("max-upload-speed"));
+
+        return new SixTuple<>(ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed);
+    }
+
+
     public static PeerClientData readPeerClientData(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
-        XMLReader xmlReader = new XMLReader(Paths.getPeerClientData(userPath));
+        XMLReader xmlReader = new XMLReader(PathsOld.getPeerClientData(userPath));
         xmlReader.getStruct("peer-server-data");
         String ip = xmlReader.getFieldValue("ip");
         int port = StrCast.asInteger(xmlReader.getFieldValue("port"));
@@ -81,7 +121,7 @@ public class FileIO {
     }
 
     public static PeerIDInfo readPeerID(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
-        Element root = XMLDom.parse(Paths.getPeerIdFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getPeerIdFile(userPath));
         Element peerIDElement = root.getChild("peer-id");
         PeerID peerID = new PeerID(peerIDElement.getText());
         Element keySizeForPeerGenerationElement = root.getChild("key-size-for-peer-generation");
@@ -102,20 +142,20 @@ public class FileIO {
         Element creationDateElement = new Element("creation-date");
         creationDateElement.setText(DateFormatting.SIMPLE_DATE_FORMAT.format(peerIDInfo.creationDate));
         root.addChild(creationDateElement);
-        XMLDom.write(Paths.getPeerIdFile(userPath), root);
+        XMLDom.write(PathsOld.getPeerIdFile(userPath), root);
     }
 
     public static PeerEncryption readPeerEncryption(String userPath) throws IOException, ClassNotFoundException {
         // todo store individual keys, so class update is supported
-        return (PeerEncryption) FileReaderWriter.readObject(Paths.getEncryptionFile(userPath));
+        return (PeerEncryption) FileReaderWriter.readObject(PathsOld.getEncryptionFile(userPath));
     }
 
     public static void writePeerEncryption(String userPath, PeerEncryption peerEncryption) throws IOException {
-        FileReaderWriter.writeObject(Paths.getEncryptionFile(userPath), peerEncryption);
+        FileReaderWriter.writeObject(PathsOld.getEncryptionFile(userPath), peerEncryption);
     }
 
     public static PersonalData readPersonalData(String userPath) throws FileNotFoundException, XMLStreamException, ParseException {
-        Element root = XMLDom.parse(Paths.getPersonalDataFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getPersonalDataFile(userPath));
         Element ownElement = root.getChild("own");
         Element ownNickElement = ownElement.getChild("nick");
         String ownNick = ownNickElement.getText();
@@ -146,11 +186,11 @@ public class FileIO {
             restElement.addChild(peerDataElement);
         }
         root.addChild(restElement);
-        XMLDom.write(Paths.getPersonalDataFile(userPath), root);
+        XMLDom.write(PathsOld.getPersonalDataFile(userPath), root);
     }
 
     public static NetworkConfig readNetworkConfig(String userPath) throws FileNotFoundException, XMLStreamException {
-        Element root = XMLDom.parse(Paths.getNetworkConfigFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getNetworkConfigFile(userPath));
         Element portElement = root.getChild("port");
         return new NetworkConfig(Integer.parseInt(portElement.getText()));
     }
@@ -160,11 +200,11 @@ public class FileIO {
         Element portElement = new Element("port");
         portElement.setText(Integer.toString(networkConfig.port));
         root.addChild(portElement);
-        XMLDom.write(Paths.getNetworkConfigFile(userPath), root);
+        XMLDom.write(PathsOld.getNetworkConfigFile(userPath), root);
     }
 
     public static EngineConfig readEngineConfig(String userPath) throws FileNotFoundException, XMLStreamException {
-        Element root = XMLDom.parse(Paths.getEngineConfigFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getEngineConfigFile(userPath));
         Element tempDownloadsElement = root.getChild("temp-downloads");
         String tempDownloads = tempDownloadsElement.getText();
         Element maxUploadSpeedElement = root.getChild("max-upload-speed");
@@ -190,11 +230,11 @@ public class FileIO {
         Element precisionElement = new Element("precision");
         precisionElement.setText(Double.toString(engineConfig.precision));
         root.addChild(precisionElement);
-        XMLDom.write(Paths.getEngineConfigFile(userPath), root);
+        XMLDom.write(PathsOld.getEngineConfigFile(userPath), root);
     }
 
     public static GeneralConfig readGeneralConfig(String userPath) throws FileNotFoundException, XMLStreamException {
-        Element root = XMLDom.parse(Paths.getGeneralConfigFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getGeneralConfigFile(userPath));
         Element baseDataDirElement = root.getChild("base-data-dir");
         String baseDataDir = baseDataDirElement.getText();
         return new GeneralConfig(baseDataDir);
@@ -205,11 +245,11 @@ public class FileIO {
         Element baseDataDirElement = new Element("base-data-dir");
         baseDataDirElement.setText(generalConfig.baseDataDir);
         root.addChild(baseDataDirElement);
-        XMLDom.write(Paths.getGeneralConfigFile(userPath), root);
+        XMLDom.write(PathsOld.getGeneralConfigFile(userPath), root);
     }
 
     public static ServersInfo readServers(String userPath) throws FileNotFoundException, XMLStreamException {
-        Element root = XMLDom.parse(Paths.getServersFile(userPath));
+        Element root = XMLDom.parse(PathsOld.getServersFile(userPath));
         List<Element> servers = root.getChildren("server");
         List<ServersInfo.ServerInfo> serverInfoList = new ArrayList<>();
         for (Element serverElement : servers) {
@@ -234,11 +274,11 @@ public class FileIO {
             serverElement.addChild(portElement);
             root.addChild(serverElement);
         }
-        XMLDom.write(Paths.getServersFile(userPath), root);
+        XMLDom.write(PathsOld.getServersFile(userPath), root);
     }
 
 //    public static PeerRelations readPeerRelations(String userPath) throws FileNotFoundException, XMLStreamException {
-//        Element root = XMLDom.parse(Paths.getPeerRelationsFile(userPath));
+//        Element root = XMLDom.parse(PathsOld.getPeerRelationsFile(userPath));
 //        Set<PeerID> friendPeers = buildPeerSet(root.getChild("friend-peers").getChildren());
 //        Set<PeerID> blockedPeers = buildPeerSet(root.getChild("blocked-peers").getChildren());
 //        return new PeerRelations(friendPeers, blockedPeers);
@@ -260,7 +300,7 @@ public class FileIO {
         Element blockedPeersElement = new Element("blocked-peers");
         populatePeersElement(blockedPeersElement, peerRelations.getBlockedPeers());
         root.addChild(blockedPeersElement);
-        XMLDom.write(Paths.getPeerRelationsFile(userPath), root);
+        XMLDom.write(PathsOld.getPeerRelationsFile(userPath), root);
     }
 
     private static void populatePeersElement(Element peersElement, Set<PeerID> peerIDs) {
@@ -281,19 +321,19 @@ public class FileIO {
 
     public static FileHashDatabase readFileHashDatabase(String userPath) throws IOException {
         try {
-            return (FileHashDatabase) FileReaderWriter.readObject(Paths.getFileHashDatabaseFile(userPath));
+            return (FileHashDatabase) FileReaderWriter.readObject(PathsOld.getFileHashDatabaseFile(userPath));
         } catch (ClassNotFoundException e) {
             throw new IOException();
         }
     }
 
     public static void writeFileHashDatabase(String userPath, FileHashDatabase fileHashDatabase) throws IOException {
-        FileReaderWriter.writeObject(Paths.getFileHashDatabaseFile(userPath), fileHashDatabase);
+        FileReaderWriter.writeObject(PathsOld.getFileHashDatabaseFile(userPath), fileHashDatabase);
     }
 
 //    public static Triple<IntegratedDatabase, LocalDatabase, Map<PeerID, RemoteDatabase>> readDatabases(String userPath) throws IOException {
 //        try {
-//            String integratedDatabasePath = Paths.getIntegratedDatabasePath(userPath);
+//            String integratedDatabasePath = PathsOld.getIntegratedDatabasePath(userPath);
 //            Database databaseForIntegrated = new Database(new CSVDBMediator(integratedDatabasePath), true);
 //            Date dateOfLastIntegration = (Date) FileReaderWriter.readObject(integratedDatabasePath + "dateOfLastIntegration.bin");
 //            //noinspection unchecked
@@ -302,7 +342,7 @@ public class FileIO {
 //            HashMap<String, List<IntegratedDatabase.PeerAndId>> itemsToRemoteItems = (HashMap<String, List<IntegratedDatabase.PeerAndId>>) FileReaderWriter.readObject(integratedDatabasePath + "itemsToRemoteItems.bin");
 //            IntegratedDatabase integratedDatabase = new IntegratedDatabase(databaseForIntegrated, dateOfLastIntegration, itemsToLocalItems, itemsToRemoteItems);
 //
-//            String localDatabasePath = Paths.getLocalDatabasePath(userPath);
+//            String localDatabasePath = PathsOld.getLocalDatabasePath(userPath);
 //            Database databaseForLocal = new Database(new CSVDBMediator(localDatabasePath), true);
 //            //noinspection unchecked
 //            HashMap<String, String> itemsToIntegratedItems = (HashMap<String, String>) FileReaderWriter.readObject(integratedDatabasePath + "itemsToIntegratedItems.bin");

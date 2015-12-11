@@ -2,99 +2,74 @@ package jacz.peerengineclient.file_system;
 
 import jacz.util.files.FileUtil;
 
-import java.io.File;
-
 /**
- * Contains the relative paths of all the user files, and allows retrieving them from a given user directory
- *
- * todo add file exist checking (all files) and CRC checking
+ * API hard-coded paths
  */
-public final class Paths {
+public class Paths {
 
-    private static final String PEER_ID_FILE = "peer_id.xml";
+    private static final String CONFIG_PATH = FileUtil.joinPaths("config", "config");
 
-    private static final String KEYS_FILE = "encryption.bin";
+    private static final String ENCRYPTION_PATH = FileUtil.joinPaths("encryption", "keys");
 
-    private static final String PERSONAL_DATA_FILE = "personal_data.xml";
+    private static final String STATISTICS_PATH = FileUtil.joinPaths("stats", "statistics");
 
-    private static final String NETWORK_CONFIG_FILE = "network_config.xml";
+    private static final String LOG_PATH = FileUtil.joinPaths("log", "log");
 
-    private static final String ENGINE_CONFIG_FILE = "engine_config.xml";
+    private static final String LIBRARIES_PATH = FileUtil.joinPaths("data", "libraries");
 
-    private static final String GENERAL_CONFIG_FILE = "general_config.xml";
+    private static final String HASH_PATH = FileUtil.joinPaths("data", "hash", "file-database");
 
-    private static final String SERVERS_FILE = "servers.xml";
+    private static final String DOT = "vso";
 
-    private static final String PEER_RELATIONS_FILE = "peer_relations.xml";
+    private static final String VERSIONED = DOT + "vso";
 
-    private static final String FILE_HASH_DATABASE_FILE = "file_hash_database.bin";
+    private static final String XML = DOT + "xml";
 
-    private static final String CONFIG_FILE = "config.xml";
+    private static final String TXT = DOT + "txt";
 
-    private static final String DATABASES_PATH = "databases/";
+    private static final String BACKUP = DOT + "bak";
 
-
-
-    private static final String FILE_HASH_DB_FILE = "file_hash_db.bin";
-
-
-    public static String getPeerClientData(String userPath) {
-        // todo
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(PEER_ID_FILE, userPath);
+    public static String getConfigPath(String path) {
+        return FileUtil.joinPaths(path, CONFIG_PATH + XML);
     }
 
-    public static String getPeerIdFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(PEER_ID_FILE, userPath);
+    public static String getConfigBackupPath(String path) {
+        return FileUtil.joinPaths(path, CONFIG_PATH + BACKUP);
     }
 
-    public static String getEncryptionFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(KEYS_FILE, userPath);
+    public static String getEncryptionPath(String path) {
+        return FileUtil.joinPaths(path, ENCRYPTION_PATH + VERSIONED);
     }
 
-    public static String getPersonalDataFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(PERSONAL_DATA_FILE, userPath);
+    public static String getEncryptionBackupPath(String path) {
+        return FileUtil.joinPaths(path, ENCRYPTION_PATH + BACKUP);
     }
 
-    public static String getNetworkConfigFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(NETWORK_CONFIG_FILE, userPath);
+    public static String getStatisticsPath(String path) {
+        return FileUtil.joinPaths(path, STATISTICS_PATH + VERSIONED);
     }
 
-    public static String getEngineConfigFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(ENGINE_CONFIG_FILE, userPath);
+    public static String getStatisticsBackupPath(String path) {
+        return FileUtil.joinPaths(path, STATISTICS_PATH + BACKUP);
     }
 
-    public static String getGeneralConfigFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(GENERAL_CONFIG_FILE, userPath);
+    public static String getLogPath(String path) {
+        return FileUtil.joinPaths(path, LOG_PATH + TXT);
     }
 
-    public static String getServersFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(SERVERS_FILE, userPath);
+    public static String getLogBackupPath(String path) {
+        return FileUtil.joinPaths(path, LOG_PATH + BACKUP);
     }
 
-    public static String getPeerRelationsFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(PEER_RELATIONS_FILE, userPath);
+    public static String getLibrariesPath(String path) {
+        return FileUtil.joinPaths(path, LIBRARIES_PATH);
     }
 
-    public static String getFileHashDatabaseFile(String userPath) {
-        userPath = checkUserPath(userPath);
-        return FileUtil.generatePath(FILE_HASH_DATABASE_FILE, userPath);
+    public static String getHashPath(String path) {
+        return FileUtil.joinPaths(path, HASH_PATH + VERSIONED);
     }
 
-    public static String getDatabasesPath(String userPath) {
-        userPath = checkUserPath(userPath);
-        return new File(userPath, DATABASES_PATH).getPath();
-    }
-
-    private static String checkUserPath(String userPath) {
-        return userPath;
+    public static String getHashBackupPath(String path) {
+        return FileUtil.joinPaths(path, HASH_PATH + BACKUP);
     }
 }

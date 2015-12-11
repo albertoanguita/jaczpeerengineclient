@@ -41,7 +41,7 @@ public class LibraryManagerIO {
 
     private static final String DATABASE_EXTENSION = "db";
 
-    private static final String ANNOTATED_DATABASE_EXTENSION = "lib";
+    private static final String ANNOTATED_DATABASE_EXTENSION = "lbr";
 
     private static final String BACKUP_EXTENSION = "bak";
 

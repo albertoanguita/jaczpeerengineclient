@@ -7,9 +7,9 @@ public class EngineConfig {
 
     public final String tempDownloads;
 
-    public final int maxUploadSpeed;
+    public final Float maxUploadSpeed;
 
-    public final int maxDownloadSpeed;
+    public final Float maxDownloadSpeed;
 
     public final double precision;
 

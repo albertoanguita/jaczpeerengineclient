@@ -1,15 +1,17 @@
 package jacz.peerengineclient;
 
 import jacz.peerengineclient.file_system.FileIO;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.file_system.PathsOld;
 import jacz.peerengineclient.file_system.PeerIDInfo;
 import jacz.peerengineclient.libraries.LibraryManager;
 import jacz.peerengineclient.libraries.LibraryManagerIO;
 import jacz.peerengineclient.libraries.integration.IntegrationEvents;
 import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
+import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.*;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
+import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.util.ForeignStoreShare;
 import jacz.peerengineservice.util.data_synchronization.DataAccessorContainer;
@@ -209,7 +211,7 @@ public class PeerEngineClient {
 //        this.baseDataDir = baseDataDir;
 //
 //        try {
-//            libraryManager = LibraryManagerIO.load(Paths.getDatabasesPath(configPath), new LibraryManagerNotificationsImpl(this, jacuzziPeerClientAction));
+//            libraryManager = LibraryManagerIO.load(PathsOld.getDatabasesPath(configPath), new LibraryManagerNotificationsImpl(this, jacuzziPeerClientAction));
 //        } catch (DBException | CorruptDataException e) {
 //            throw new IOException("Could not access databases");
 //        }
@@ -244,7 +246,9 @@ public class PeerEngineClient {
 
     public PeerEngineClient(
             String basePath,
-            PeerClientData peerClientData,
+            PeerID ownPeerID,
+            PeerEncryption peerEncryption,
+            NetworkConfiguration networkConfiguration,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
             ResourceTransferEvents resourceTransferEvents,
@@ -253,9 +257,7 @@ public class PeerEngineClient {
             PeerRelations peerRelations,
             Map<String, PeerFSMFactory> customFSMs,
             DataAccessorContainer dataAccessorContainer,
-            String libraryManagerBasePath,
-            LibrarySynchEvents librarySynchEvents,
-            IntegrationEvents integrationEvents) throws IOException {
+            String libraryManagerBasePath) throws IOException {
 
         this.basePath = basePath;
         this.peersPersonalData = peersPersonalData;
@@ -375,14 +377,14 @@ public class PeerEngineClient {
 
     synchronized void peerIsNowFriend(PeerID peerID) {
         try {
-            libraryManager.addPeer(Paths.getDatabasesPath(configPath), peerID);
+            libraryManager.addPeer(PathsOld.getDatabasesPath(configPath), peerID);
         } catch (IOException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
-        libraryManager.removePeer(Paths.getDatabasesPath(configPath), peerID);
+        libraryManager.removePeer(PathsOld.getDatabasesPath(configPath), peerID);
     }
 
     synchronized void newPeerConnected(PeerID peerID) {

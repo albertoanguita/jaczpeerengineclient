@@ -5,20 +5,22 @@ import jacz.peerengineclient.libraries.LibraryManagerIO;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.GeneralEvents;
-import jacz.peerengineservice.client.PeerClientData;
+import jacz.peerengineservice.client.PeerFSMFactory;
 import jacz.peerengineservice.client.PeerRelations;
 import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
+import jacz.peerengineservice.client.connection.NetworkConfiguration;
+import jacz.peerengineservice.util.data_synchronization.premade_lists.BasicDataAccessorContainer;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.store.old2.db_mediator.CorruptDataException;
 import jacz.util.files.FileUtil;
 import jacz.util.hash.hashdb.FileHashDatabase;
+import jacz.util.lists.tuple.SixTuple;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +31,9 @@ import java.util.Map;
  */
 public class SessionManager {
 
-    public static final String USER_BASE_PATH = "user_";
+    private static final String USER_BASE_PATH = "user_";
+
+    private static final String DEFAULT_NICK = "user";
 
     public static synchronized String createUserConfig(String basePath, PeerID peerID, String nick, int keySizeForPeerGeneration, int maxUploadSpeed, int maxDownloadSpeed, double precision, ServersInfo.ServerInfo serverInfo, int port, String tempDownloads, String baseDataDir) throws IOException {
         // creates a new user account
@@ -41,9 +45,9 @@ public class SessionManager {
         try {
             String userPath = FileUtil.createNonExistingDirPathWithIndex(basePath, USER_BASE_PATH, "", "", false);
 
-            String databasesPath = Paths.getDatabasesPath(userPath);
+            String databasesPath = PathsOld.getDatabasesPath(userPath);
             FileUtil.createDirectory(databasesPath);
-            LibraryManagerIO.createNewDatabaseFileStructure(Paths.getDatabasesPath(userPath));
+            LibraryManagerIO.createNewDatabaseFileStructure(PathsOld.getDatabasesPath(userPath));
 
             PeerIDInfo peerIDInfo = new PeerIDInfo(peerID, keySizeForPeerGeneration);
             PersonalData personalData = new PersonalData(nick);
@@ -87,27 +91,52 @@ public class SessionManager {
             String userPath,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
-            ResourceTransferEvents resourceTransferEvents) throws IOException, XMLStreamException, ParseException {
-        PeerClientData peerClientData = FileIO.readPeerClientData(userPath);
-        PeersPersonalData peersPersonalData = FileIO.readPeersPersonalData(userPath);
-        PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
-        TransferStatistics transferStatistics = new TransferStatistics("path");
+            ResourceTransferEvents resourceTransferEvents) throws IOException {
 
-        PeerIDInfo peerIDInfo = FileIO.readPeerID(userPath);
-        PersonalData personalData = FileIO.readPersonalData(userPath);
-        NetworkConfig networkConfig = FileIO.readNetworkConfig(userPath);
-        EngineConfig engineConfig = FileIO.readEngineConfig(userPath);
-        GeneralConfig generalConfig = FileIO.readGeneralConfig(userPath);
-        ServersInfo serversInfo = FileIO.readServers(userPath);
-//        PeerRelations peerRelations = FileIO.readPeerRelations(userPath);
-        FileHashDatabase fileHashDatabase = FileIO.readFileHashDatabase(userPath);
+        try {
+            SixTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer> config =
+                    FileIO.readConfig(userPath, DEFAULT_NICK);
+            PeerID ownPeerID = config.element1;
+            NetworkConfiguration networkConfiguration = config.element2;
+            PeersPersonalData peersPersonalData = config.element3;
+            PeerRelations peerRelations = config.element4;
+            Integer maxDownloadSpeed = config.element5;
+            Integer maxUploadSpeed = config.element6;
+            PeerEncryption peerEncryption = new PeerEncryption("path");
+            TransferStatistics transferStatistics = new TransferStatistics("path");
+            String libraryManagerBasePath = Paths.getLibrariesPath(userPath);
 
-//        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, peerClientData, peerIDInfo, networkConfig.port, serversInfo.servers.get(0).ip, serversInfo.servers.get(0).port, personalData.ownNick, personalData.peerNicks, peerRelations, engineConfig.tempDownloads, fileHashDatabase, generalConfig.baseDataDir);
-        PeerEngineClient peerEngineClient = new PeerEngineClient(userPath, peerClientData, generalEvents, connectionEvents, resourceTransferEvents, peersPersonalData, transferStatistics, peerRelations);
-        peerEngineClient.setMaxDesiredDownloadSpeed(engineConfig.maxDownloadSpeed);
-        peerEngineClient.setMaxDesiredUploadSpeed(engineConfig.maxUploadSpeed);
-        peerEngineClient.setDownloadPartSelectionAccuracy(engineConfig.precision);
-        return peerEngineClient;
+
+            FileHashDatabase fileHashDatabase = FileIO.readFileHashDatabase(userPath);
+
+            // todo add shared database accessor in constructor
+            // todo make something more advanced, with events for new and deleted peers
+            BasicDataAccessorContainer basicDataAccessorContainer = new BasicDataAccessorContainer();
+
+            PeerEngineClient peerEngineClient = new PeerEngineClient(
+                    userPath,
+                    ownPeerID,
+                    peerEncryption,
+                    networkConfiguration,
+                    generalEvents,
+                    connectionEvents,
+                    resourceTransferEvents,
+                    peersPersonalData,
+                    transferStatistics,
+                    peerRelations,
+                    new HashMap<>(),
+                    basicDataAccessorContainer,
+                    libraryManagerBasePath);
+            peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);
+            peerEngineClient.setMaxDesiredUploadSpeed(maxUploadSpeed);
+            return peerEngineClient;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage());
+        }
+    }
+
+    private static Map<String, PeerFSMFactory> buildCustomFSMs() {
+        return null;
     }
 
     public static synchronized void save(PeerEngineClient peerEngineClient) throws IOException, XMLStreamException {
