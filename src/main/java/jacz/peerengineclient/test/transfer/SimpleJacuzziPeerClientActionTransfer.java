@@ -23,7 +23,7 @@ public class SimpleJacuzziPeerClientActionTransfer extends SimpleJacuzziPeerClie
         super.newPeerConnected(peerID, status);
 
         //client.getPeerClient().getResourceStreamingManager().getVisibleDownloadsManager().setTimer(5000);
-        //client.getPeerClient().getResourceStreamingManager().downloadResource("files", "aaa", new BasicFileWriter("aaa_transfer.txt"), true, new DownloadProgressNotificationHandlerImpl(peerID), 0.1f);
+        //client.getPeerClient().getResourceStreamingManager().downloadResource("files", "aaa", new BasicFileWriter("aaa_transfer.txt"), true, new DownloadProgressNotificationHandlerBridge(peerID), 0.1f);
 
     }
 

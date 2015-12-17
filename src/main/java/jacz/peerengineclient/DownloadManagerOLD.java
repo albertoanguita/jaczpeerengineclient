@@ -11,8 +11,9 @@ import java.util.Map;
  * This class allows controlling one resource download. One object of this class is returned when issuing a
  * resource download so the user can control it. It allows pausing, resuming, stopping and cancelling the download,
  * or even modifying its streaming need level.
+ * todo remove
  */
-public class DownloadManager  {
+public class DownloadManagerOLD {
 
     private final jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager;
 
@@ -31,7 +32,7 @@ public class DownloadManager  {
      */
     private Map<String, Serializable> userGenericData;
 
-    DownloadManager(jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager, DownloadEvents downloadEvents, ResourceWriter resourceWriter, String currentPath, String finalPath, Map<String, Serializable> userGenericData) {
+    DownloadManagerOLD(jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager, DownloadEvents downloadEvents, ResourceWriter resourceWriter, String currentPath, String finalPath, Map<String, Serializable> userGenericData) {
         this.peerEngineDownloadManager = peerEngineDownloadManager;
         this.downloadEvents = downloadEvents;
         this.resourceWriter = resourceWriter;

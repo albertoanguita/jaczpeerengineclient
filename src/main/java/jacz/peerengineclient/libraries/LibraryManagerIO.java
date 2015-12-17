@@ -1,10 +1,9 @@
 package jacz.peerengineclient.libraries;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.libraries.integration.IntegrationEvents;
-import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
-import jacz.peerengineclient.libraries.library_images.LocalDatabase;
-import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
+import jacz.peerengineclient.libraries.library_images.*;
 import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
 import jacz.peerengineservice.PeerID;
 import jacz.store.database.DatabaseMediator;
@@ -14,10 +13,8 @@ import jacz.util.io.object_serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,18 +30,6 @@ import java.util.Set;
  */
 public class LibraryManagerIO {
 
-    private static final String INTEGRATED_FILENAME = "integrated";
-
-    private static final String LOCAL_FILENAME = "local";
-
-    private static final String REMOTE_DIRECTORY = "remote";
-
-    private static final String DATABASE_EXTENSION = "db";
-
-    private static final String ANNOTATED_DATABASE_EXTENSION = "lbr";
-
-    private static final String BACKUP_EXTENSION = "bak";
-
     private static final int CRCBytes = 4;
 
     private static final int ID_LENGTH = 12;
@@ -55,24 +40,30 @@ public class LibraryManagerIO {
             IntegrationEvents integrationEvents,
             PeerEngineClient peerEngineClient
     ) throws IOException, VersionedSerializationException {
-        IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath));
-        VersionedObjectSerializer.deserialize(integratedDatabase, generateAnnotatedIntegratedDatabasePath(basePath), generateBackupIntegratedDatabasePath(basePath));
+        IntegratedDatabase integratedDatabase = new IntegratedDatabase(Paths.getIntegratedDatabasePath(basePath));
+        VersionedObjectSerializer.deserialize(integratedDatabase, Paths.getAnnotatedIntegratedDatabasePath(basePath), Paths.getBackupIntegratedDatabasePath(basePath));
 
-        LocalDatabase localDatabase = new LocalDatabase(generateLocalDatabasePath(basePath));
-        VersionedObjectSerializer.deserialize(localDatabase, generateAnnotatedLocalDatabasePath(basePath), generateBackupLocalDatabasePath(basePath));
+        LocalDatabase localDatabase = new LocalDatabase(Paths.getLocalDatabasePath(basePath));
+        VersionedObjectSerializer.deserialize(localDatabase, Paths.getAnnotatedLocalDatabasePath(basePath), Paths.getBackupLocalDatabasePath(basePath));
 
-        Set<String> remoteDatabasePeers = listRemoteDatabasePeers(basePath);
+        Set<String> remoteDatabasePeers = Paths.listRemoteDatabasePeers(basePath);
         Map<PeerID, RemoteDatabase> remoteDatabases = new HashMap<>();
         for (String peerIDStr : remoteDatabasePeers) {
             PeerID peerID = new PeerID(peerIDStr);
-            RemoteDatabase remoteDatabase = new RemoteDatabase(generateRemoteDatabasePath(basePath, peerIDStr), peerID);
-            VersionedObjectSerializer.deserialize(remoteDatabase, generateAnnotatedRemoteDatabasePath(basePath, peerIDStr), generateBackupRemoteDatabasePath(basePath, peerIDStr));
+            RemoteDatabase remoteDatabase = new RemoteDatabase(Paths.getRemoteDatabasePath(basePath, peerIDStr), peerID);
+            VersionedObjectSerializer.deserialize(remoteDatabase, Paths.getAnnotatedRemoteDatabasePath(basePath, peerIDStr), Paths.getBackupRemoteDatabasePath(basePath, peerIDStr));
             remoteDatabases.put(peerID, remoteDatabase);
         }
+
+        SharedLibrary sharedLibrary = new SharedLibrary(Paths.getSharedDatabasePath(basePath));
+        DeletedRemoteItemsLibrary deletedRemoteItemsLibrary = new DeletedRemoteItemsLibrary(Paths.getDeletedDatabasePath(basePath));
+
         return new LibraryManager(
                 integratedDatabase,
                 localDatabase,
                 remoteDatabases,
+                sharedLibrary,
+                deletedRemoteItemsLibrary,
                 librarySynchEvents,
                 integrationEvents,
                 peerEngineClient);
@@ -85,99 +76,54 @@ public class LibraryManagerIO {
     }
 
     private static void saveIntegratedDatabase(String basePath, IntegratedDatabase integratedDatabase) throws IOException {
-        VersionedObjectSerializer.serialize(integratedDatabase, CRCBytes, generateAnnotatedIntegratedDatabasePath(basePath), generateBackupIntegratedDatabasePath(basePath));
+        VersionedObjectSerializer.serialize(integratedDatabase, CRCBytes, Paths.getAnnotatedIntegratedDatabasePath(basePath), Paths.getBackupIntegratedDatabasePath(basePath));
     }
 
     private static void saveLocalDatabase(String basePath, LocalDatabase localDatabase) throws IOException {
-        VersionedObjectSerializer.serialize(localDatabase, CRCBytes, generateAnnotatedLocalDatabasePath(basePath), generateBackupLocalDatabasePath(basePath));
+        VersionedObjectSerializer.serialize(localDatabase, CRCBytes, Paths.getAnnotatedLocalDatabasePath(basePath), Paths.getBackupLocalDatabasePath(basePath));
     }
 
     private static void saveRemoteDatabases(String basePath, Map<PeerID, RemoteDatabase> remoteDatabases) throws IOException {
         for (Map.Entry<PeerID, RemoteDatabase> remoteDatabase : remoteDatabases.entrySet()) {
             String peerIDStr = remoteDatabase.getKey().toString();
-            VersionedObjectSerializer.serialize(remoteDatabase.getValue(), CRCBytes, generateAnnotatedRemoteDatabasePath(basePath, peerIDStr), generateBackupRemoteDatabasePath(basePath, peerIDStr));
+            VersionedObjectSerializer.serialize(remoteDatabase.getValue(), CRCBytes, Paths.getAnnotatedRemoteDatabasePath(basePath, peerIDStr), Paths.getBackupRemoteDatabasePath(basePath, peerIDStr));
         }
     }
 
     private static void saveRemoteDatabase(String basePath, String peerIDStr, RemoteDatabase remoteDatabase) throws IOException {
-        VersionedObjectSerializer.serialize(remoteDatabase, CRCBytes, generateAnnotatedRemoteDatabasePath(basePath, peerIDStr), generateBackupRemoteDatabasePath(basePath, peerIDStr));
+        VersionedObjectSerializer.serialize(remoteDatabase, CRCBytes, Paths.getAnnotatedRemoteDatabasePath(basePath, peerIDStr), Paths.getBackupRemoteDatabasePath(basePath, peerIDStr));
     }
 
 
-    private static String generateIntegratedDatabasePath(String basePath) {
-        return generateFilePath(basePath, INTEGRATED_FILENAME, DATABASE_EXTENSION);
-    }
-
-    private static String generateAnnotatedIntegratedDatabasePath(String basePath) {
-        return generateFilePath(basePath, INTEGRATED_FILENAME, ANNOTATED_DATABASE_EXTENSION);
-    }
-
-    private static String generateBackupIntegratedDatabasePath(String basePath) {
-        return generateFilePath(basePath, INTEGRATED_FILENAME, BACKUP_EXTENSION);
-    }
-
-    private static String generateLocalDatabasePath(String basePath) {
-        return generateFilePath(basePath, LOCAL_FILENAME, DATABASE_EXTENSION);
-    }
-
-    private static String generateAnnotatedLocalDatabasePath(String basePath) {
-        return generateFilePath(basePath, LOCAL_FILENAME, ANNOTATED_DATABASE_EXTENSION);
-    }
-
-    private static String generateBackupLocalDatabasePath(String basePath) {
-        return generateFilePath(basePath, LOCAL_FILENAME, BACKUP_EXTENSION);
-    }
-
-    private static String generateRemoteDatabasePath(String basePath, String peerID) {
-        return FileUtil.joinPaths(basePath, REMOTE_DIRECTORY, peerID) + "." + DATABASE_EXTENSION;
-    }
-
-    private static String generateAnnotatedRemoteDatabasePath(String basePath, String peerID) {
-        return FileUtil.joinPaths(basePath, REMOTE_DIRECTORY, peerID) + "." + ANNOTATED_DATABASE_EXTENSION;
-    }
-
-    private static String generateBackupRemoteDatabasePath(String basePath, String peerID) {
-        return FileUtil.joinPaths(basePath, REMOTE_DIRECTORY, peerID) + "." + BACKUP_EXTENSION;
-    }
-
-    private static String generateFilePath(String basePath, String filePath, String extension) {
-        return FileUtil.joinPaths(basePath, filePath) + "." + extension;
-    }
-
-    private static Set<String> listRemoteDatabasePeers(String basePath) throws FileNotFoundException {
-        String[] filesInRemoteDir = FileUtil.getDirectoryContents(FileUtil.joinPaths(basePath, REMOTE_DIRECTORY));
-        Set<String> remoteDatabasePeers = new HashSet<>();
-        for (String file : filesInRemoteDir) {
-            remoteDatabasePeers.add(FileUtil.getFileNameWithoutExtension(file));
-        }
-        return remoteDatabasePeers;
-    }
-
-    public static void createNewDatabaseFileStructure(String basePath, String version) throws IOException {
-        // create local and integrated database. Create directories. Generate random identifiers
-        DatabaseMediator.dropAndCreate(generateIntegratedDatabasePath(basePath), version, RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        IntegratedDatabase integratedDatabase = new IntegratedDatabase(generateIntegratedDatabasePath(basePath), new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+    public static void createNewDatabaseFileStructure(String basePath) throws IOException {
+        // create local and integrated database. Create directories. get random identifiers
+        DatabaseMediator.dropAndCreate(Paths.getIntegratedDatabasePath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        IntegratedDatabase integratedDatabase = new IntegratedDatabase(Paths.getIntegratedDatabasePath(basePath), new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         saveIntegratedDatabase(basePath, integratedDatabase);
 
-        DatabaseMediator.dropAndCreate(generateLocalDatabasePath(basePath), version, RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        LocalDatabase localDatabase = new LocalDatabase(generateLocalDatabasePath(basePath), new HashMap<>());
+        DatabaseMediator.dropAndCreate(Paths.getLocalDatabasePath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        LocalDatabase localDatabase = new LocalDatabase(Paths.getLocalDatabasePath(basePath), new HashMap<>());
         saveLocalDatabase(basePath, localDatabase);
 
         FileUtil.createDirectory(FileUtil.joinPaths(basePath, REMOTE_DIRECTORY));
+
+        DatabaseMediator.dropAndCreate(Paths.getSharedDatabasePath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+
+        DatabaseMediator.dropAndCreate(Paths.getDeletedDatabasePath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
     }
 
-    static RemoteDatabase createNewRemoteDatabase(String basePath, PeerID peerID, String version) throws IOException {
-        DatabaseMediator.dropAndCreate(generateRemoteDatabasePath(basePath, peerID.toString()), version, RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        RemoteDatabase remoteDatabase = new RemoteDatabase(generateAnnotatedRemoteDatabasePath(basePath, peerID.toString()), new HashMap<>(), peerID);
+    static RemoteDatabase createNewRemoteDatabase(String basePath, PeerID peerID) throws IOException {
+        DatabaseMediator.dropAndCreate(Paths.getRemoteDatabasePath(basePath, peerID.toString()), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        RemoteDatabase remoteDatabase = new RemoteDatabase(Paths.getAnnotatedRemoteDatabasePath(basePath, peerID.toString()), new HashMap<>(), peerID);
         saveRemoteDatabase(basePath, peerID.toString(), remoteDatabase);
         return remoteDatabase;
     }
 
     public static void removeRemoteDatabase(String basePath, PeerID peerID) {
         //noinspection ResultOfMethodCallIgnored
-        new File(generateAnnotatedRemoteDatabasePath(basePath, peerID.toString())).delete();
+        new File(Paths.getAnnotatedRemoteDatabasePath(basePath, peerID.toString())).delete();
         //noinspection ResultOfMethodCallIgnored
-        new File(generateBackupRemoteDatabasePath(basePath, peerID.toString())).delete();
+        new File(Paths.getBackupRemoteDatabasePath(basePath, peerID.toString())).delete();
     }
 
 }

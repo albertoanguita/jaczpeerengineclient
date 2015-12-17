@@ -15,7 +15,7 @@ public class DownloadsManager {
 
     private PeerClient peerClient;
 
-    private final Map<UniqueIdentifier, DownloadManager> activeDownloads;
+    private final Map<UniqueIdentifier, DownloadManagerOLD> activeDownloads;
 
     public DownloadsManager() {
         this.peerClient = null;
@@ -26,7 +26,7 @@ public class DownloadsManager {
         this.peerClient = peerClient;
     }
 
-    synchronized void addDownload(UniqueIdentifier uniqueIdentifier, DownloadManager downloadManager) {
+    synchronized void addDownload(UniqueIdentifier uniqueIdentifier, DownloadManagerOLD downloadManager) {
         activeDownloads.put(uniqueIdentifier, downloadManager);
     }
 
@@ -34,8 +34,8 @@ public class DownloadsManager {
         activeDownloads.remove(uniqueIdentifier);
     }
 
-    public synchronized List<DownloadManager> getDownloads(String store) {
-        List<DownloadManager> downloads = new ArrayList<>();
+    public synchronized List<DownloadManagerOLD> getDownloads(String store) {
+        List<DownloadManagerOLD> downloads = new ArrayList<>();
         for (jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadManager : peerClient.getVisibleDownloads(store)) {
             downloads.add(activeDownloads.get(downloadManager.getId()));
         }

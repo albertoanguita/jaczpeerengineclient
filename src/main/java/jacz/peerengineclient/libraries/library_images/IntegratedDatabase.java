@@ -166,8 +166,8 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
     }
 
     @Override
-    public String getCurrentVersion() {
-        return CURRENT_VERSION;
+    public VersionStack getCurrentVersion() {
+        return new VersionStack(CURRENT_VERSION);
     }
 
     @Override
@@ -181,27 +181,26 @@ public class IntegratedDatabase extends GenericDatabase implements VersionedObje
     }
 
     @Override
-    public void deserialize(Map<String, Object> attributes) {
-        deserializeLibraryIdMap(itemsToSharedItems, (byte[]) attributes.get("itemsToSharedItems"));
-        deserializeLibraryIdMap(itemsToLocalItems, (byte[]) attributes.get("itemsToLocalItems"));
-        deserializeLibraryIdMapList(itemsToRemoteItems, (byte[]) attributes.get("itemsToRemoteItems"));
-        deserializeLibraryIdMap(itemsToDeletedRemoteItems, (byte[]) attributes.get("itemsToDeletedRemoteItems"));
-    }
-
-    @Override
-    public void deserializeOldVersion(String version, Map<String, Object> attributes) throws UnrecognizedVersionException {
-        throw new UnrecognizedVersionException();
+    public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
+        if (version.equals(CURRENT_VERSION)) {
+            deserializeLibraryIdMap(itemsToSharedItems, (byte[]) attributes.get("itemsToSharedItems"));
+            deserializeLibraryIdMap(itemsToLocalItems, (byte[]) attributes.get("itemsToLocalItems"));
+            deserializeLibraryIdMapList(itemsToRemoteItems, (byte[]) attributes.get("itemsToRemoteItems"));
+            deserializeLibraryIdMap(itemsToDeletedRemoteItems, (byte[]) attributes.get("itemsToDeletedRemoteItems"));
+        } else {
+            throw new UnrecognizedVersionException();
+        }
     }
 
 
     static byte[] serializeLibraryIdMapList(Map<LibraryId, List<PeerAndLibraryId>> mapList) {
         FragmentedByteArray mapListBytes = new FragmentedByteArray(Serializer.serialize(mapList.size()));
         for (Map.Entry<LibraryId, List<PeerAndLibraryId>> itemToRemoteItem : mapList.entrySet()) {
-            mapListBytes.addArrays(
+            mapListBytes.add(
                     itemToRemoteItem.getKey().serialize(),
                     Serializer.serialize(itemToRemoteItem.getValue().size()));
             for (PeerAndLibraryId peerAndLibraryId : itemToRemoteItem.getValue()) {
-                mapListBytes.addArray(peerAndLibraryId.serialize());
+                mapListBytes.add(peerAndLibraryId.serialize());
             }
         }
         return mapListBytes.generateArray();

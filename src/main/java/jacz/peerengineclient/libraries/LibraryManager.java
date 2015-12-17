@@ -3,13 +3,13 @@ package jacz.peerengineclient.libraries;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.libraries.integration.IntegrationEvents;
 import jacz.peerengineclient.libraries.integration.ItemIntegrator;
-import jacz.peerengineclient.libraries.library_images.IntegratedDatabase;
-import jacz.peerengineclient.libraries.library_images.LocalDatabase;
-import jacz.peerengineclient.libraries.library_images.RemoteDatabase;
+import jacz.peerengineclient.libraries.library_images.*;
+import jacz.peerengineclient.libraries.synch.LibraryAccessor;
 import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
 import jacz.peerengineclient.libraries.synch.LibrarySynchManager;
 import jacz.peerengineservice.PeerID;
-import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
+import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
+import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.store.database.DatabaseMediator;
 
 import java.io.IOException;
@@ -21,24 +21,32 @@ import java.util.Map;
  */
 public class LibraryManager {
 
-    private static final String DATABASE_VERSION = "0.1";
-
     /**
      * The integrated database, composed by the local database and the remote databases. This is what the user visualizes
      * <p>
      * The items from the integrated database which have a related local item are the ones shared to other peers
      */
-    private IntegratedDatabase integratedDatabase;
+    private final IntegratedDatabase integratedDatabase;
 
     /**
      * The local database, with items created by the user
      */
-    private LocalDatabase localDatabase;
+    private final LocalDatabase localDatabase;
 
     /**
      * The remote databases, with libraries shared to us by friend peers
      */
-    private Map<PeerID, RemoteDatabase> remoteDatabases;
+    private final Map<PeerID, RemoteDatabase> remoteDatabases;
+
+    /**
+     * The library of items shared to other peers
+     */
+    private final SharedLibrary sharedLibrary;
+
+    /**
+     * The library of deleted remote items
+     */
+    private final DeletedRemoteItemsLibrary deletedRemoteItemsLibrary;
 
     /**
      * Management of synch processes
@@ -71,16 +79,17 @@ public class LibraryManager {
             IntegratedDatabase integratedDatabase,
             LocalDatabase localDatabase,
             Map<PeerID, RemoteDatabase> remoteDatabases,
+            SharedLibrary sharedLibrary,
+            DeletedRemoteItemsLibrary deletedRemoteItemsLibrary,
             LibrarySynchEvents librarySynchEvents,
             IntegrationEvents integrationEvents,
             PeerEngineClient peerEngineClient) {
         this.integratedDatabase = integratedDatabase;
         this.localDatabase = localDatabase;
         this.remoteDatabases = remoteDatabases;
-        this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient);
-//        remoteModifiedItems = new RemoteDatabasesIntegrator.RemoteModifiedItems();
-//        concurrencyController = new LibraryManagerConcurrencyController();
-//        remoteDatabasesIntegrator = new RemoteDatabasesIntegrator(concurrencyController, this, remoteModifiedItems, integratedDatabase, localDatabase, remoteDatabases, null);
+        this.sharedLibrary = sharedLibrary;
+        this.deletedRemoteItemsLibrary = deletedRemoteItemsLibrary;
+        this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient, sharedLibrary.getDatabase());
         itemIntegrator = new ItemIntegrator(integrationEvents);
         alive = true;
     }
@@ -179,7 +188,7 @@ public class LibraryManager {
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
      */
-    public synchronized ServerSynchRequestAnswer requestForSharedLibrarySynchFromRemotePeer(PeerID peerID) {
+    public synchronized LibraryAccessor requestForSharedLibrarySynchFromRemotePeer(PeerID peerID) throws AccessorNotFoundException, ServerBusyException {
         return librarySynchManager.requestForSharedLibrarySynch(peerID);
     }
 
@@ -191,7 +200,7 @@ public class LibraryManager {
      */
     public synchronized void addPeer(String path, PeerID peerID) throws IOException {
         if (!remoteDatabases.containsKey(peerID)) {
-            RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID, DATABASE_VERSION);
+            RemoteDatabase remoteDatabase = LibraryManagerIO.createNewRemoteDatabase(path, peerID);
             remoteDatabases.put(peerID, remoteDatabase);
         }
     }

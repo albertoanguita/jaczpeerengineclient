@@ -1,32 +1,32 @@
 package jacz.peerengineclient;
 
 import jacz.peerengineclient.file_system.FileIO;
+import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.file_system.PathsOld;
 import jacz.peerengineclient.file_system.PeerIDInfo;
 import jacz.peerengineclient.libraries.LibraryManager;
 import jacz.peerengineclient.libraries.LibraryManagerIO;
-import jacz.peerengineclient.libraries.integration.IntegrationEvents;
-import jacz.peerengineclient.libraries.synch.LibrarySynchEvents;
+import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.*;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.util.ForeignStoreShare;
-import jacz.peerengineservice.util.data_synchronization.DataAccessorContainer;
-import jacz.peerengineservice.util.data_synchronization.DataSynchronizer;
-import jacz.peerengineservice.util.data_synchronization.ListAccessor;
+import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.peerengineservice.util.data_synchronization.premade_lists.old.SimplePersonalData;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
+import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.resource_accession.BasicFileWriter;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWriter;
+import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
-import jacz.store.db_mediator.CorruptDataException;
-import jacz.store.db_mediator.DBException;
+import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
+import jacz.store.database.DatabaseMediator;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedSerializationException;
 import jacz.util.lists.Duple;
@@ -35,111 +35,27 @@ import jacz.util.notification.ProgressNotificationWithError;
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * PeerEngine client adapted for Jacuzzi
- * <p/>
+ * <p>
  * todo check synch
- * <p/>
+ * <p>
  * todo recover temp files in constructor and put them in paused mode
- * <p/>
+ * <p>
  * todo si no tiene conexion, tarda mucho en dar un unable to connect to server (unos 25 segs)
  */
 public class PeerEngineClient {
 
-//    private static class LibraryManagerNotificationsImpl implements LibraryManagerNotifications {
-//
-//        private final PeerEngineClient peerEngineClient;
-//
-//        private final JacuzziPeerClientAction jacuzziPeerClientAction;
-//
-//        private LibraryManagerNotificationsImpl(PeerEngineClient peerEngineClient, JacuzziPeerClientAction jacuzziPeerClientAction) {
-//            this.peerEngineClient = peerEngineClient;
-//            this.jacuzziPeerClientAction = jacuzziPeerClientAction;
-//        }
-//
-//        @Override
-//        public void integratedItemModified(String library, String id) {
-//            jacuzziPeerClientAction.integratedItemModified(library, id);
-//        }
-//
-//        @Override
-//        public boolean requestSynchList(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
-//
-//            // todo decide accessor name
-//            return peerEngineClient.synchronizeList(peerID, "STORE_", 15000, progress);
-//        }
-//
-//        @Override
-//        public void reportSharedLibraryModified(Map<String, List<Integer>> modifiedSharedLibraries) {
-//            peerEngineClient.reportModifiedSharedLibraries(modifiedSharedLibraries);
-//        }
-//
-//        @Override
-//        public void reportErrorAccessingDatabases() {
-//            // todo
-//        }
-//
-//        @Override
-//        public void remoteSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList) {
-//            jacuzziPeerClientAction.remoteSynchStarted(id, remotePeerID, library, levelList);
-//        }
-//
-//        @Override
-//        public void remoteSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int progress, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.remoteSynchProgress(id, remotePeerID, library, levelList, progress, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void remoteSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.remoteSynchError(id, remotePeerID, library, levelList, error, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void remoteSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.remoteSynchTimeout(id, remotePeerID, library, levelList, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void remoteSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, List<Integer> levelList, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.remoteSynchCompleted(id, remotePeerID, library, levelList, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void sharedSynchStarted(UniqueIdentifier id, PeerID remotePeerID, String library, int level) {
-//            jacuzziPeerClientAction.sharedSynchStarted(id, remotePeerID, library, level);
-//        }
-//
-//        @Override
-//        public void sharedSynchProgress(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int progress, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.sharedSynchProgress(id, remotePeerID, library, level, progress, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void sharedSynchError(UniqueIdentifier id, PeerID remotePeerID, String library, int level, SynchronizeError error, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.sharedSynchError(id, remotePeerID, library, level, error, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void sharedSynchTimeout(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.sharedSynchTimeout(id, remotePeerID, library, level, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void sharedSynchCompleted(UniqueIdentifier id, PeerID remotePeerID, String library, int level, int peerActiveSynchTasks, int peerAverageProgress) {
-//            jacuzziPeerClientAction.sharedSynchCompleted(id, remotePeerID, library, level, peerActiveSynchTasks, peerAverageProgress);
-//        }
-//
-//        @Override
-//        public void fatalErrorInSynch(SynchronizeError error) {
-//            // todo
-//        }
-//    }
-
     public static final String DEFAULT_STORE = "@J_PEER_ENGINE_CLIENT_DEFAULT_RESOURCE_STORE";
+
+    public static final String MEDIA_STORE = "@PEER_ENGINE_CLIENT_MEDIA_RESOURCE_STORE";
+
+    public static final String IMAGE_STORE = "@PEER_ENGINE_CLIENT_IMAGE_RESOURCE_STORE";
 
     private static final String DEFAULT_TEMPORARY_FILE_NAME = "downloadedFile";
 
@@ -156,7 +72,6 @@ public class PeerEngineClient {
     private final DownloadsManager downloadsManager;
 
 //    private final PeerClient peerClient;
-
 
 
 //    /**
@@ -249,40 +164,38 @@ public class PeerEngineClient {
             PeerID ownPeerID,
             PeerEncryption peerEncryption,
             NetworkConfiguration networkConfiguration,
-            GeneralEvents generalEvents,
-            ConnectionEvents connectionEvents,
-            ResourceTransferEvents resourceTransferEvents,
             PeersPersonalData peersPersonalData,
             TransferStatistics transferStatistics,
             PeerRelations peerRelations,
-            Map<String, PeerFSMFactory> customFSMs,
-            DataAccessorContainer dataAccessorContainer,
-            String libraryManagerBasePath) throws IOException {
-
+            String libraryManagerBasePath,
+            String tempDownloadsPath,
+            String baseDataPath,
+            GeneralEvents generalEvents,
+            ConnectionEvents connectionEvents,
+            ResourceTransferEvents resourceTransferEvents,
+            TempFileManagerEvents tempFileManagerEvents) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
         this.peersPersonalData = peersPersonalData;
-
+        this.libraryManagerBasePath = libraryManagerBasePath;
+        libraryManager = LibraryManagerIO.load(libraryManagerBasePath, librarySynchEvents, integrationEvents, this);
+        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(libraryManager);
         peerClient = new PeerClient(
-                peerClientData,
-                new GeneralEventsBridge(generalEvents),
+                ownPeerID,
+                peerEncryption,
+                networkConfiguration,
+                new GeneralEventsBridge(this, generalEvents),
                 connectionEvents,
                 resourceTransferEvents,
                 peersPersonalData,
                 transferStatistics,
                 peerRelations,
-                customFSMs,
+                new HashMap<>(),
                 dataAccessorContainer);
 
-        this.libraryManagerBasePath = libraryManagerBasePath;
-        try {
-            libraryManager = LibraryManagerIO.load(libraryManagerBasePath, librarySynchEvents, integrationEvents, this);
-        } catch (IOException e) {
-            peerClient.stop();
-            throw e;
-        } catch (VersionedSerializationException e) {
-            // todo fatal error
-            e.printStackTrace();
-        }
+        fileHashDatabase = new FileHashDatabase(Paths.getHashPath(basePath), Paths.getHashBackupPath(basePath));
+        tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
+
+        peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(fileHashDatabase, tempFileManager));
     }
 
     public void connect() {
@@ -294,9 +207,13 @@ public class PeerEngineClient {
     }
 
     public void stop() throws IOException {
-        libraryManager.stop();
-        LibraryManagerIO.save(libraryManagerBasePath, libraryManager);
-        peerClient.stop();
+        if (libraryManager != null) {
+            libraryManager.stop();
+            LibraryManagerIO.save(libraryManagerBasePath, libraryManager);
+        }
+        if (peerClient != null) {
+            peerClient.stop();
+        }
         // todo save all data
     }
 
@@ -326,14 +243,6 @@ public class PeerEngineClient {
 
     public void setListeningPort(int port) {
         peerClient.setListeningPort(port);
-    }
-
-    public PeerServerData getPeerServerData() {
-        return peerClient.getPeerServerData();
-    }
-
-    public void setPeerServerData(PeerServerData peerServerData) {
-        peerClient.setPeerServerData(peerServerData);
     }
 
     public boolean isFriendPeer(PeerID peerID) {
@@ -366,9 +275,7 @@ public class PeerEngineClient {
     }
 
     public void addBlockedPeer(PeerID peerID) {
-        // add personal data so its data can be saved todo this will never be used because it is blocked
         peerClient.addBlockedPeer(peerID);
-        libraryManager.removePeer(configPath, peerID);
     }
 
     public void removeBlockedPeer(PeerID peerID) {
@@ -377,47 +284,48 @@ public class PeerEngineClient {
 
     synchronized void peerIsNowFriend(PeerID peerID) {
         try {
-            libraryManager.addPeer(PathsOld.getDatabasesPath(configPath), peerID);
+            libraryManager.addPeer(Paths.getLibrariesPath(basePath), peerID);
         } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            // todo handle
+            e.printStackTrace();
         }
     }
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
-        libraryManager.removePeer(PathsOld.getDatabasesPath(configPath), peerID);
+        libraryManager.removePeer(Paths.getLibrariesPath(basePath), peerID);
     }
 
     synchronized void newPeerConnected(PeerID peerID) {
-        synchPersonalData(peerID);
-        synchAllPeerLibraries(peerID);
+//        synchPersonalData(peerID);
+//        synchAllPeerLibraries(peerID);
     }
 
-    synchronized void synchPersonalData(PeerID peerID) {
-        // todo check these values, are they good?
-        synchronizeList(peerID, SimplePersonalData.getListName(), 0, 10000);
-    }
+//    synchronized void synchPersonalData(PeerID peerID) {
+//        // todo check these values, are they good?
+//        synchronizeList(peerID, SimplePersonalData.getListName(), 0, 10000);
+//    }
 
     public synchronized void setNick(String nick) {
         peerClient.setNick(nick);
     }
 
-    void reportModifiedSharedLibraries(Map<String, List<Integer>> modifiedLibraries) {
-        broadcastObjectMessage(new ModifiedSharedLibrariesMessage(modifiedLibraries));
-    }
+//    void reportModifiedSharedLibraries(Map<String, List<Integer>> modifiedLibraries) {
+//        broadcastObjectMessage(new ModifiedSharedLibrariesMessage(modifiedLibraries));
+//    }
 
-    synchronized void remoteLibrariesNeedSynchronizing(PeerID peerID, Map<String, List<Integer>> remoteLibrariesModified) {
-        for (String library : remoteLibrariesModified.keySet()) {
-            libraryManager.remoteLibrariesMustBeSynched(peerID, library, remoteLibrariesModified.get(library));
-        }
-    }
+//    synchronized void remoteLibrariesNeedSynchronizing(PeerID peerID, Map<String, List<Integer>> remoteLibrariesModified) {
+//        for (String library : remoteLibrariesModified.keySet()) {
+//            libraryManager.remoteLibrariesMustBeSynched(peerID, library, remoteLibrariesModified.get(library));
+//        }
+//    }
 
-    public synchronized void synchAllPeerLibraries(PeerID peerID) {
-        remoteLibrariesNeedSynchronizing(peerID, ListAccessorManager.getLibrariesAndLevels());
-    }
+//    public synchronized void synchAllPeerLibraries(PeerID peerID) {
+//        remoteLibrariesNeedSynchronizing(peerID, ListAccessorManager.getLibrariesAndLevels());
+//    }
 
-    public PeerIDInfo getPeerIDInfo() {
-        return peerIDInfo;
-    }
+//    public PeerIDInfo getPeerIDInfo() {
+//        return peerIDInfo;
+//    }
 
     public String getOwnNick() {
         return peersPersonalData.getOwnNick();
@@ -425,14 +333,6 @@ public class PeerEngineClient {
 
     public String getNick(PeerID peerID) {
         return peersPersonalData.getPeerNick(peerID);
-    }
-
-    public synchronized SimplePersonalData getSimplePersonalData(PeerID peerID) {
-        return peersSimplePersonalData.get(peerID);
-    }
-
-    public synchronized Map<PeerID, SimplePersonalData> getAllPeersPersonalData() {
-        return peersSimplePersonalData;
     }
 
     /**
@@ -445,44 +345,107 @@ public class PeerEngineClient {
         peerClient.searchFriends();
     }
 
-    /**
-     * Sends an object message to a connected peer. If the given peer is not among the list of connected peers, the
-     * message will be ignored
-     *
-     * @param peerID  ID of the peer to which the message is to be sent
-     * @param message string message to send
-     */
-    public void sendObjectMessage(PeerID peerID, Serializable message) {
-        peerClient.sendObjectMessage(peerID, message);
+//    /**
+//     * Sends an object message to a connected peer. If the given peer is not among the list of connected peers, the
+//     * message will be ignored
+//     *
+//     * @param peerID  ID of the peer to which the message is to be sent
+//     * @param message string message to send
+//     */
+//    public void sendObjectMessage(PeerID peerID, Serializable message) {
+//        peerClient.sendObjectMessage(peerID, message);
+//    }
+//
+//    /**
+//     * Sends an object message to all connected peers
+//     *
+//     * @param message string message to send to all connected peers
+//     */
+//    public void broadcastObjectMessage(Serializable message) {
+//        peerClient.broadcastObjectMessage(message);
+//    }
+
+//    /**
+//     * Adds a store of resources shared to us by other peers. It it used to handle downloads from other peers
+//     *
+//     * @param resourceStore    name of the resource store
+//     * @param foreignPeerShare peers share for letting us know the share of resources of each peer
+//     */
+//    public synchronized void addForeignResourceStore(String resourceStore, ForeignStoreShare foreignPeerShare) {
+//        peerClient.addForeignResourceStore(resourceStore, foreignPeerShare);
+//    }
+//
+//    /**
+//     * Removes an already defined foreign store
+//     *
+//     * @param resourceStore name of the store to remove
+//     */
+//    public synchronized void removeForeignResourceStore(String resourceStore) {
+//        peerClient.removeForeignResourceStore(resourceStore);
+//    }
+
+    public synchronized DownloadManager downloadMediaFile(
+            DatabaseMediator.ItemType containerType,
+            Integer containedId,
+            DatabaseMediator.ItemType itemType,
+            String itemHash,
+            String itemName,
+            DownloadEvents downloadEvents) {
+
     }
 
-    /**
-     * Sends an object message to all connected peers
-     *
-     * @param message string message to send to all connected peers
-     */
-    public void broadcastObjectMessage(Serializable message) {
-        peerClient.broadcastObjectMessage(message);
+    public synchronized DownloadManager downloadImage(
+            DatabaseMediator.ItemType type,
+            Integer id) {
+
     }
 
-    /**
-     * Adds a store of resources shared to us by other peers. It it used to handle downloads from other peers
-     *
-     * @param resourceStore    name of the resource store
-     * @param foreignPeerShare peers share for letting us know the share of resources of each peer
-     */
-    public synchronized void addForeignResourceStore(String resourceStore, ForeignStoreShare foreignPeerShare) {
-        peerClient.addForeignResourceStore(resourceStore, foreignPeerShare);
+    private ResourceWriter generateTempFileWriter(
+            DatabaseMediator.ItemType containerType,
+            Integer containedId,
+            DatabaseMediator.ItemType itemType,
+            String itemHash,
+            String itemName) throws IOException {
+        return new TempFileWriter(tempFileManager, buildUserDictionary(containerType, containedId, itemType, itemHash, itemName));
     }
 
-    /**
-     * Removes an already defined foreign store
-     *
-     * @param resourceStore name of the store to remove
-     */
-    public synchronized void removeForeignResourceStore(String resourceStore) {
-        peerClient.removeForeignResourceStore(resourceStore);
+    private ResourceWriter generateBasicFileWriter(
+            String downloadDir,
+            String expectedFileName,
+            DatabaseMediator.ItemType containerType,
+            Integer containedId,
+            DatabaseMediator.ItemType itemType,
+            String itemHash,
+            String itemName) throws IOException {
+        return new BasicFileWriter(downloadDir, expectedFileName, buildUserDictionary(containerType, containedId, itemType, itemHash, itemName));
     }
+
+    static HashMap<String, Serializable> buildUserDictionary(
+            DatabaseMediator.ItemType containerType,
+            Integer containedId,
+            DatabaseMediator.ItemType itemType,
+            String itemHash,
+            String itemName) {
+        HashMap<String, Serializable> userDictionary = new HashMap<>();
+        userDictionary.put("containerType", containerType);
+        userDictionary.put("containedId", containedId);
+        userDictionary.put("itemType", itemType);
+        userDictionary.put("itemHash", itemHash);
+        userDictionary.put("itemName", itemName);
+        return userDictionary;
+    }
+
+
+    private DownloadManager downloadFile(
+            String resourceStore,
+            String fileHash,
+            ResourceWriter resourceWriter,
+            DownloadEvents downloadEvents,
+            double streamingNeed) throws IOException, NotAliveException {
+        DownloadProgressNotificationHandlerBridge downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerBridge(downloadEvents);
+        return peerClient.downloadResource(resourceStore, fileHash, resourceWriter, downloadProgressNotificationHandler, streamingNeed, fileHash, "MD5");
+    }
+
 
     /**
      * Initiates the process for downloading a file (group download). No store is specified so the default store is used. Providers of the file
@@ -500,7 +463,7 @@ public class PeerEngineClient {
      * @return a DownloadManager object for controlling this download
      * @throws IOException the download could not be initiated due to problems generating the target file
      */
-    public synchronized DownloadManager downloadFile(
+    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
             String resourceID,
             String finalPath,
             boolean visible,
@@ -509,9 +472,8 @@ public class PeerEngineClient {
             double streamingNeed,
             Map<String, Serializable> userGenericData,
             String totalHash,
-            String totalHashAlgorithm,
-            Long preferredSizeForIntermediateHashes) throws IOException {
-        return downloadFile(resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            String totalHashAlgorithm) throws IOException {
+        return downloadFile(resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
     }
 
     /**
@@ -531,7 +493,7 @@ public class PeerEngineClient {
      * @return a DownloadManager object for controlling this download
      * @throws IOException the download could not be initiated due to problems generating the target file
      */
-    public synchronized DownloadManager downloadFile(
+    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
             String resourceID,
             String finalPath,
             boolean visible,
@@ -541,9 +503,8 @@ public class PeerEngineClient {
             Map<String, Serializable> userGenericData,
             String resourceStore,
             String totalHash,
-            String totalHashAlgorithm,
-            Long preferredSizeForIntermediateHashes) throws IOException {
-        return downloadResource(null, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            String totalHashAlgorithm) throws IOException {
+        return downloadResource(null, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
     }
 
     /**
@@ -563,7 +524,7 @@ public class PeerEngineClient {
      * @return a DownloadManager object for controlling this download
      * @throws IOException the download could not be initiated due to problems generating the target file
      */
-    public synchronized DownloadManager downloadFile(
+    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
             PeerID serverPeerID,
             String resourceID,
             String finalPath,
@@ -573,9 +534,8 @@ public class PeerEngineClient {
             double streamingNeed,
             Map<String, Serializable> userGenericData,
             String totalHash,
-            String totalHashAlgorithm,
-            Long preferredSizeForIntermediateHashes) throws IOException {
-        return downloadFile(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            String totalHashAlgorithm) throws IOException {
+        return downloadFile(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
     }
 
     /**
@@ -596,7 +556,7 @@ public class PeerEngineClient {
      * @return a DownloadManager object for controlling this download
      * @throws IOException the download could not be initiated due to problems generating the target file
      */
-    public synchronized DownloadManager downloadFile(
+    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
             PeerID serverPeerID,
             String resourceID,
             String finalPath,
@@ -607,12 +567,11 @@ public class PeerEngineClient {
             Map<String, Serializable> userGenericData,
             String resourceStore,
             String totalHash,
-            String totalHashAlgorithm,
-            Long preferredSizeForIntermediateHashes) throws IOException {
-        return downloadResource(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            String totalHashAlgorithm) throws IOException {
+        return downloadResource(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
     }
 
-    private DownloadManager downloadResource(
+    private jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadResource(
             PeerID serverPeerID,
             String resourceID,
             String finalPath,
@@ -623,23 +582,22 @@ public class PeerEngineClient {
             Map<String, Serializable> userGenericData,
             String resourceStore,
             String totalHash,
-            String totalHashAlgorithm,
-            Long preferredSizeForIntermediateHashes) throws IOException {
+            String totalHashAlgorithm) throws IOException {
         Duple<ResourceWriter, String> resourceWriterAndCurrentPath = generateResourceWriter(finalPath, stoppable, tempDownloadsDirectory, userGenericData);
         ResourceWriter resourceWriter = resourceWriterAndCurrentPath.element1;
         String currentPath = resourceWriterAndCurrentPath.element2;
-        DownloadProgressNotificationHandlerImpl downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerImpl(downloadEvents);
+        DownloadProgressNotificationHandlerBridge downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerBridge(downloadEvents);
         jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager;
         if (serverPeerID != null) {
-            peerEngineDownloadManager = peerClient.downloadResource(serverPeerID, resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            peerEngineDownloadManager = peerClient.downloadResource(serverPeerID, resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
         } else {
-            peerEngineDownloadManager = peerClient.downloadResource(resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm, preferredSizeForIntermediateHashes);
+            peerEngineDownloadManager = peerClient.downloadResource(resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
         }
-        DownloadManager downloadManager = new DownloadManager(peerEngineDownloadManager, downloadEvents, resourceWriter, currentPath, finalPath, userGenericData);
+        DownloadManagerOLD downloadManager = new DownloadManagerOLD(peerEngineDownloadManager, downloadEvents, resourceWriter, currentPath, finalPath, userGenericData);
         downloadProgressNotificationHandler.setDownloadManager(downloadManager);
-        if (visible) {
-            bridgePeerClientActionOLD.addVisibleDownload(downloadManager);
-        }
+//        if (visible) {
+//            bridgePeerClientActionOLD.addVisibleDownload(downloadManager);
+//        }
         return downloadManager;
     }
 
@@ -648,6 +606,8 @@ public class PeerEngineClient {
         String currentFilePath;
         if (stoppable) {
             // a temp resource writer is needed
+            HashMap<String, Serializable> userDictionary = new HashMap<>();
+            // todo store download info
             TempFileWriter tempFileWriter = new TempFileWriter(tempFileManager);
             currentFilePath = tempFileWriter.getTempDataFilePath();
             resourceWriter = tempFileWriter;
@@ -696,7 +656,7 @@ public class PeerEngineClient {
      */
     public synchronized Integer getMaxDesiredDownloadSpeed() {
         Float speed = peerClient.getMaxDesiredDownloadSpeed();
-        return speed == null ? null : (int) (speed / 1024f);
+        return speed == null ? null : (int) (Math.ceil(speed / 1024f));
     }
 
     /**
@@ -717,7 +677,7 @@ public class PeerEngineClient {
      */
     public synchronized Integer getMaxDesiredUploadSpeed() {
         Float speed = peerClient.getMaxDesiredUploadSpeed();
-        return speed == null ? null : (int) (speed / 1024f);
+        return speed == null ? null : (int) (Math.ceil(speed / 1024f));
     }
 
     /**
@@ -731,20 +691,12 @@ public class PeerEngineClient {
         peerClient.setMaxDesiredUploadSpeed(speed);
     }
 
-    public synchronized double getDownloadPartSelectionAccuracy() {
-        return peerClient.getDownloadPartSelectionAccuracy();
-    }
-
-    public synchronized void setDownloadPartSelectionAccuracy(double accuracy) {
-        peerClient.setDownloadPartSelectionAccuracy(accuracy);
-    }
-
     /**
      * Retrieves a shallow copy of the active downloads (only visible ones)
      *
      * @return a shallow copy of the active downloads
      */
-    public List<jacz.peerengineservice.util.datatransfer.master.DownloadManager> getVisibleDownloads(String resourceStore) {
+    public List<DownloadManager> getVisibleDownloads(String resourceStore) {
         return peerClient.getVisibleDownloads(resourceStore);
     }
 
@@ -762,7 +714,7 @@ public class PeerEngineClient {
      *
      * @return a shallow copy of the active downloads
      */
-    public List<jacz.peerengineservice.util.datatransfer.slave.UploadManager> getVisibleUploads(String resourceStore) {
+    public List<UploadManager> getVisibleUploads(String resourceStore) {
         return peerClient.getVisibleUploads(resourceStore);
     }
 
@@ -776,32 +728,12 @@ public class PeerEngineClient {
     }
 
     public synchronized String getTempDownloadsDirectory() {
-        return tempDownloadsDirectory;
+        return tempFileManager.;
     }
 
-    // todo remove
-//    public boolean synchronizeList(PeerID peerID, String list, long timeout) {
-//        return peerClient.getDataSynchronizer().synchronizeData(peerID, list, timeout);
-//    }
-
-//    public void synchronizeList(PeerID peerID, String list, int level, long timeout, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
-//        peerClient.getListSynchronizer().synchronizeList(peerID, list, level, timeout, progress);
-//    }
-//
-//    public void synchronizeList(PeerID peerID, String list, int fromLevel, int toLevel, long timeout) {
-//        peerClient.getListSynchronizer().synchronizeList(peerID, list, fromLevel, toLevel, timeout);
-//    }
-//
-//    public void synchronizeList(PeerID peerID, String list, int fromLevel, int toLevel, long timeout, ProgressNotificationWithError<Integer, SynchronizeError> progress) {
-//        peerClient.getListSynchronizer().synchronizeList(peerID, list, fromLevel, toLevel, timeout, progress);
-//    }
-//
-//    public void synchronizeList(PeerID peerID, String list, List<Integer> levelList, long timeout) {
-//        peerClient.getListSynchronizer().synchronizeList(peerID, list, levelList, timeout);
-//    }
 
     // todo remove?
-    public DataSynchronizer.SynchRequestResult synchronizeList(PeerID peerID, String dataAccessorName, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) {
+    public boolean synchronizeList(PeerID peerID, String dataAccessorName, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws AccessorNotFoundException, UnavailablePeerException {
         return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessorName, timeout, progress);
     }
 
@@ -810,19 +742,15 @@ public class PeerEngineClient {
         libraryManager.localItemModified(library, elementIndex);
     }
 
-    ListAccessor getOwnSimplePersonalDataListAccessor() {
-        return ownSimplePersonalDataListAccessor;
-    }
-
     FileHashDatabase getFileHashDatabase() {
         return fileHashDatabase;
     }
 
     public synchronized String getBaseDataDir() {
-        return baseDataDir;
+        return baseDataPath;
     }
 
-    public synchronized void setBaseDataDir(String baseDataDir) {
-        this.baseDataDir = baseDataDir;
+    public synchronized void setBaseDataDir(String baseDataPath) {
+        this.baseDataPath = baseDataPath;
     }
 }

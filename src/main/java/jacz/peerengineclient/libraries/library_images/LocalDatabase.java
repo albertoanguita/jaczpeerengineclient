@@ -31,8 +31,8 @@ public class LocalDatabase extends GenericDatabase implements VersionedObject {
     }
 
     @Override
-    public String getCurrentVersion() {
-        return CURRENT_VERSION;
+    public VersionStack getCurrentVersion() {
+        return new VersionStack(CURRENT_VERSION);
     }
 
     @Override
@@ -43,12 +43,11 @@ public class LocalDatabase extends GenericDatabase implements VersionedObject {
     }
 
     @Override
-    public void deserialize(Map<String, Object> attributes) {
-        deserializeLibraryIdMap(itemsToIntegratedItems, (byte[]) attributes.get("itemsToIntegratedItems"));
-    }
-
-    @Override
-    public void deserializeOldVersion(String version, Map<String, Object> attributes) throws UnrecognizedVersionException {
-        throw new UnrecognizedVersionException();
+    public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
+        if (version.equals(CURRENT_VERSION)) {
+            deserializeLibraryIdMap(itemsToIntegratedItems, (byte[]) attributes.get("itemsToIntegratedItems"));
+        } else {
+            throw new UnrecognizedVersionException();
+        }
     }
 }

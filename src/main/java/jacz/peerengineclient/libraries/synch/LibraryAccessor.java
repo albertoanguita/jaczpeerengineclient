@@ -3,9 +3,11 @@ package jacz.peerengineclient.libraries.synch;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
-import jacz.peerengineservice.util.data_synchronization.ServerSynchRequestAnswer;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.store.*;
 import jacz.store.database.DatabaseMediator;
+import jacz.store.old2.files.ImageFile;
+import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.Serializable;
 import java.util.List;
@@ -15,6 +17,8 @@ import java.util.List;
  */
 public class LibraryAccessor implements DataAccessor {
 
+    public static final String NAME = "LIBRARY_ACCESSOR";
+
     private static final int ELEMENTS_PER_MESSAGE = 5;
 
     private static final int CRC_BYTES = 4;
@@ -23,9 +27,12 @@ public class LibraryAccessor implements DataAccessor {
 
     private final String dbPath;
 
-    public LibraryAccessor(LibrarySynchManager librarySynchManager, String dbPath) {
+    private final LibrarySynchProgress librarySynchProgress;
+
+    public LibraryAccessor(LibrarySynchManager librarySynchManager, String dbPath, LibrarySynchProgress librarySynchProgress) {
         this.librarySynchManager = librarySynchManager;
         this.dbPath = dbPath;
+        this.librarySynchProgress = librarySynchProgress;
     }
 
     @Override
@@ -144,8 +151,6 @@ public class LibraryAccessor implements DataAccessor {
                     break;
                 case SUBTITLE_FILE:
                     break;
-                case IMAGE_FILE:
-                    break;
             }
         }
         // todo write item to db
@@ -157,7 +162,7 @@ public class LibraryAccessor implements DataAccessor {
     }
 
     @Override
-    public ServerSynchRequestAnswer initiateListSynchronizationAsServer(PeerID clientPeerID) {
-        return librarySynchManager.requestForSharedLibrarySynch(clientPeerID);
+    public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
+        return librarySynchProgress;
     }
 }

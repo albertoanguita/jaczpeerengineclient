@@ -4,54 +4,50 @@ import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.GeneralResourceStore;
 import jacz.peerengineservice.util.datatransfer.ResourceStoreResponse;
 import jacz.peerengineservice.util.datatransfer.resource_accession.BasicFileReader;
+import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileReader;
+import jacz.peerengineservice.util.tempfile_api.TempFileManager;
+import jacz.util.hash.hashdb.FileHashDatabase;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
 
 /**
- * Class description
- * <p/>
- * User: Alberto<br>
- * Date: 20/07/12<br>
- * Last Modified: 20/07/12
+ * The general resource store that serves all resources
  */
 public class GeneralResourceStoreImpl implements GeneralResourceStore {
 
-    private final JacuzziPeerClientAction jacuzziPeerClientAction;
+    private final FileHashDatabase fileHashDatabase;
 
-    public GeneralResourceStoreImpl(JacuzziPeerClientAction jacuzziPeerClientAction) {
-        this.jacuzziPeerClientAction = jacuzziPeerClientAction;
+    private final TempFileManager tempFileManager;
+
+    public GeneralResourceStoreImpl(FileHashDatabase fileHashDatabase, TempFileManager tempFileManager) {
+        this.fileHashDatabase = fileHashDatabase;
+        this.tempFileManager = tempFileManager;
     }
 
     @Override
     public ResourceStoreResponse requestResource(String resourceStore, PeerID peerID, String resourceID) {
-        ResourceRequestResult resourceRequestResult;
-        if (resourceStore.equals(PeerEngineClient.DEFAULT_STORE)) {
-            resourceRequestResult = jacuzziPeerClientAction.requestResourceDefaultStore(peerID, resourceID);
-        } else {
-            resourceRequestResult = jacuzziPeerClientAction.requestResource(peerID, resourceID, resourceStore);
-        }
-        switch (resourceRequestResult.getResponse()) {
-
-            case RESOURCE_NOT_FOUND:
-                return ResourceStoreResponse.resourceNotFound();
-            case REQUEST_DENIED:
-                return ResourceStoreResponse.requestDenied();
-            case REQUEST_APPROVED:
+        try {
+            // first check in the file hash database
+            return ResourceStoreResponse.resourceApproved(new BasicFileReader(fileHashDatabase.getFilePath(resourceID)));
+        } catch (FileNotFoundException e) {
+            // now check with the temp file manager
+            for (String tempFile : tempFileManager.getExistingTempFiles()) {
                 try {
-                    // todo check if its normal file or temp file!!!!!!
-                    return ResourceStoreResponse.resourceApproved(new BasicFileReader(resourceRequestResult.getResourcePath()));
-                    /*
-                    if (resourceRequestResult.isCompletedFile()) {
-                        return new ResourceStoreResponse(new BasicFileReader(resourceRequestResult.getResourcePath()));
-                    } else {
-                        // todo the file path given by the user is not the ini, but the data file. Change the manager so it expects this
-                        return new ResourceStoreResponse(new TempFileReader(resourceRequestResult.getResourcePath()));
-                    }*/
-                } catch (FileNotFoundException e) {
-                    return ResourceStoreResponse.resourceNotFound();
+                    HashMap<String, Serializable> userDictionary = tempFileManager.getUserDictionary(tempFile);
+                    DownloadInfo downloadInfo = DownloadProgressNotificationHandlerBridge.buildDownloadInfo(userDictionary);
+                    if (resourceID.equals(downloadInfo.itemHash)) {
+                        // resource found!
+                        return ResourceStoreResponse.resourceApproved(new TempFileReader(tempFileManager, tempFile));
+                    }
+                } catch (IOException e1) {
+                    // ignore, check rest of files
                 }
-            default:
-                return null;
+            }
+            // resource not found
+            return ResourceStoreResponse.resourceNotFound();
         }
     }
 }

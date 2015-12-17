@@ -11,20 +11,23 @@ import jacz.peerengineservice.util.ConnectionStatus;
  */
 public class GeneralEventsBridge implements GeneralEvents {
 
+    private final PeerEngineClient peerEngineClient;
+
     private final GeneralEvents generalEvents;
 
-    public GeneralEventsBridge(GeneralEvents generalEvents) {
+    public GeneralEventsBridge(PeerEngineClient peerEngineClient, GeneralEvents generalEvents) {
+        this.peerEngineClient = peerEngineClient;
         this.generalEvents = generalEvents;
     }
 
     @Override
     public void peerAddedAsFriend(PeerID peerID, PeerRelations peerRelations) {
-        // todo notify library manager
+        peerEngineClient.peerIsNowFriend(peerID);
     }
 
     @Override
     public void peerRemovedAsFriend(PeerID peerID, PeerRelations peerRelations) {
-        // todo notify library manager
+        peerEngineClient.peerIsNoLongerFriend(peerID);
     }
 
     @Override
@@ -39,7 +42,7 @@ public class GeneralEventsBridge implements GeneralEvents {
 
     @Override
     public void newPeerConnected(PeerID peerID, ConnectionStatus status) {
-
+        peerEngineClient.newPeerConnected(peerID);
     }
 
     @Override

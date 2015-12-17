@@ -14,14 +14,14 @@ public class FileHashDatabaseSynchRemote extends FileHashDatabaseSynch {
 
     private PeerID remotePeerID;
 
-    private Integer maxStoredTimestamp;
+    private Long maxStoredTimestamp;
 
     public FileHashDatabaseSynchRemote(DoubleMap<Integer, String> activeHashes, String id) {
         super(activeHashes, id);
     }
 
     @Override
-    public Integer getLastTimestamp() throws DataAccessException {
+    public Long getLastTimestamp() throws DataAccessException {
         return maxStoredTimestamp;
     }
 

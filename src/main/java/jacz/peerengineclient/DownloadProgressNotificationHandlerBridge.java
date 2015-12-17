@@ -1,125 +1,102 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.DownloadProgressNotificationHandler;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
-import jacz.util.concurrency.execution_control.PausableElement;
 import jacz.util.files.FileUtil;
 import jacz.util.numeric.range.LongRange;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * todo
  */
-public class DownloadProgressNotificationHandlerImpl implements DownloadProgressNotificationHandler {
+public class DownloadProgressNotificationHandlerBridge implements DownloadProgressNotificationHandler {
 
     private DownloadEvents downloadEvents;
 
-    private jacz.peerengineclient.DownloadManager downloadManager = null;
-
-    /**
-     * This pausable elements allows ensuring that the started method is not executed before the download manager has been set
-     */
-    private PausableElement pausableElement;
-
-    public DownloadProgressNotificationHandlerImpl(DownloadEvents downloadEvents) {
+    public DownloadProgressNotificationHandlerBridge(DownloadEvents downloadEvents) {
         this.downloadEvents = downloadEvents;
-        pausableElement = new PausableElement();
-        pausableElement.pause();
     }
 
-    public void setDownloadManager(jacz.peerengineclient.DownloadManager downloadManager) {
-        this.downloadManager = downloadManager;
-        pausableElement.resume();
+    static DownloadInfo buildDownloadInfo(HashMap<String, Serializable> userDictionary) {
+        // todo
+        return null;
     }
 
     @Override
     public void started(String resourceID, String storeName, DownloadManager downloadManager) {
-        pausableElement.access();
-        downloadEvents.started(resourceID, handleStore(storeName), this.downloadManager, this.downloadManager.getUserGenericData());
+        downloadEvents.started(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void resourceSize(String resourceID, String storeName, DownloadManager downloadManager, long resourceSize) {
-        downloadEvents.resourceSize(resourceID, handleStore(storeName), this.downloadManager, resourceSize);
+        downloadEvents.resourceSize(resourceID, handleStore(storeName), downloadManager, resourceSize, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
-    public void providerAdded(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, String providerId) {
-        downloadEvents.providerAdded(resourceID, handleStore(storeName), providerStatistics, this.downloadManager, providerId);
+    public void providerAdded(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
+        downloadEvents.providerAdded(resourceID, handleStore(storeName), providerStatistics, downloadManager, provider, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
-    public void providerRemoved(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, String providerId) {
-        downloadEvents.providerRemoved(resourceID, handleStore(storeName), providerStatistics, this.downloadManager, providerId);
+    public void providerRemoved(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
+        downloadEvents.providerRemoved(resourceID, handleStore(storeName), providerStatistics, downloadManager, provider, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void providerReportedSharedPart(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, ResourcePart sharedPart) {
-        downloadEvents.providerReportedSharedPart(resourceID, handleStore(storeName), providerStatistics, this.downloadManager, sharedPart);
+        downloadEvents.providerReportedSharedPart(resourceID, handleStore(storeName), providerStatistics, downloadManager, sharedPart, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void providerWasAssignedSegment(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, LongRange assignedSegment) {
-        downloadEvents.providerWasAssignedSegment(resourceID, handleStore(storeName), providerStatistics, this.downloadManager, assignedSegment);
+        downloadEvents.providerWasAssignedSegment(resourceID, handleStore(storeName), providerStatistics, downloadManager, assignedSegment, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void providerWasClearedAssignation(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager) {
-        downloadEvents.providerWasClearedAssignation(resourceID, handleStore(storeName), providerStatistics, this.downloadManager);
+        downloadEvents.providerWasClearedAssignation(resourceID, handleStore(storeName), providerStatistics, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void paused(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.paused(resourceID, handleStore(storeName), this.downloadManager);
+        downloadEvents.paused(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void resumed(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.resumed(resourceID, handleStore(storeName), this.downloadManager);
+        downloadEvents.resumed(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void downloadedSegment(String resourceID, String storeName, LongRange segment, DownloadManager downloadManager) {
-        downloadEvents.downloadedSegment(resourceID, storeName, segment, downloadManager);
-    }
-
-    @Override
-    public void successIntermediateHash(String resourceID, String storeName, LongRange range, DownloadManager downloadManager) {
-        downloadEvents.successIntermediateHash(resourceID, storeName, range, downloadManager);
-    }
-
-    @Override
-    public void failedIntermediateHash(String resourceID, String storeName, LongRange range, DownloadManager downloadManager) {
-        downloadEvents.failedIntermediateHash(resourceID, storeName, range, downloadManager);
-    }
-
-    @Override
-    public void invalidIntermediateHashAlgorithm(String resourceID, String storeName, LongRange range, String hashAlgorithm, DownloadManager downloadManager) {
-        downloadEvents.invalidIntermediateHashAlgorithm(resourceID, storeName, range, hashAlgorithm, downloadManager);
+        downloadEvents.downloadedSegment(resourceID, storeName, segment, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void checkingTotalHash(String resourceID, String storeName, int percentage, DownloadManager downloadManager) {
-        downloadEvents.checkingTotalHash(resourceID, storeName, percentage, downloadManager);
+        downloadEvents.checkingTotalHash(resourceID, storeName, percentage, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void successTotalHash(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.successTotalHash(resourceID, storeName, downloadManager);
+        downloadEvents.successTotalHash(resourceID, storeName, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void failedTotalHash(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.failedTotalHash(resourceID, storeName, downloadManager);
+        downloadEvents.failedTotalHash(resourceID, storeName, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void invalidTotalHashAlgorithm(String resourceID, String storeName, String hashAlgorithm, DownloadManager downloadManager) {
-        downloadEvents.invalidTotalHashAlgorithm(resourceID, storeName, hashAlgorithm, downloadManager);
+        downloadEvents.invalidTotalHashAlgorithm(resourceID, storeName, hashAlgorithm, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
@@ -156,21 +133,17 @@ public class DownloadProgressNotificationHandlerImpl implements DownloadProgress
         } else {
             finalPath = this.downloadManager.getCurrentPath();
         }
-        downloadEvents.completed(resourceID, handleStore(storeName), finalPath, this.downloadManager, this.downloadManager.getUserGenericData());
+        downloadEvents.completed(resourceID, handleStore(storeName), finalPath, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void cancelled(String resourceID, String storeName, CancellationReason reason, DownloadManager downloadManager) {
-        if (this.downloadManager.isErrorFlag()) {
-            // the cancel was actually provoked by an IO failure, but the PeerEngine did not know it
-            reason = CancellationReason.IO_FAILURE;
-        }
-        downloadEvents.cancelled(resourceID, handleStore(storeName), DownloadEvents.CancellationReason.generateCancellationReason(reason), this.downloadManager, this.downloadManager.getUserGenericData());
+        downloadEvents.cancelled(resourceID, handleStore(storeName), reason, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     @Override
     public void stopped(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.stopped(resourceID, handleStore(storeName), this.downloadManager, this.downloadManager.getUserGenericData());
+        downloadEvents.stopped(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
     private String handleStore(String storeName) {

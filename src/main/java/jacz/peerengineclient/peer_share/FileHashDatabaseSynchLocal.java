@@ -1,11 +1,12 @@
 package jacz.peerengineclient.peer_share;
 
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
-import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.maps.DoubleMap;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**

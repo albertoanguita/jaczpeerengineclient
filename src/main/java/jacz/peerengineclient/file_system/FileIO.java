@@ -1,5 +1,6 @@
 package jacz.peerengineclient.file_system;
 
+import jacz.peerengineclient.SessionManager;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.PeerClientData;
@@ -8,12 +9,13 @@ import jacz.peerengineservice.client.PeerServerData;
 import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.util.files.FileReaderWriter;
+import jacz.util.hash.CRCMismatchException;
 import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.object_serialization.StrCast;
-import jacz.util.io.object_serialization.XMLReader;
+import jacz.util.io.object_serialization.*;
 import jacz.util.io.xml.Element;
 import jacz.util.io.xml.XMLDom;
 import jacz.util.lists.Four_Tuple;
+import jacz.util.lists.tuple.EightTuple;
 import jacz.util.lists.tuple.SixTuple;
 import jacz.util.network.IP4Port;
 
@@ -30,10 +32,10 @@ import java.util.*;
  */
 public class FileIO {
 
-    public static SixTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer> readConfig(
+    public static EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> readConfig(
             String basePath,
-            String defaultNick) throws FileNotFoundException, XMLStreamException, IllegalArgumentException {
-        XMLReader xmlReader = new XMLReader(Paths.getConfigPath(basePath), Paths.getConfigBackupPath(basePath));
+            String defaultNick) throws FileNotFoundException, XMLStreamException, IllegalArgumentException, CRCMismatchException {
+        XMLReader xmlReader = new XMLReader(Paths.getConfigPath(basePath), true, Paths.getConfigBackupPath(basePath));
 
         PeerID ownPeerID = new PeerID(xmlReader.getFieldValue("peer-id"));
         NetworkConfiguration networkConfiguration = new NetworkConfiguration(
@@ -64,7 +66,60 @@ public class FileIO {
         Integer maxDownloadSpeed = StrCast.asInteger(xmlReader.getFieldValue("max-download-speed"));
         Integer maxUploadSpeed = StrCast.asInteger(xmlReader.getFieldValue("max-upload-speed"));
 
-        return new SixTuple<>(ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed);
+        String tempDownloadsPath = xmlReader.getFieldValue("temp-downloads-path");
+        String basedDataPath = xmlReader.getFieldValue("base-data-path");
+
+        return new EightTuple<>(
+                ownPeerID,
+                networkConfiguration,
+                peersPersonalData,
+                peerRelations,
+                maxDownloadSpeed,
+                maxUploadSpeed,
+                tempDownloadsPath,
+                basedDataPath);
+    }
+
+    public static void writeConfig(
+            String basePath,
+            PeerID peerID,
+            NetworkConfiguration networkConfiguration,
+            PeersPersonalData peersPersonalData,
+            PeerRelations peerRelations,
+            Integer maxDownloadSpeed,
+            Integer maxUploadSpeed,
+            String tempDownloadsPath,
+            String basedDataPath) throws IOException, XMLStreamException {
+        XMLWriter xmlWriter = new XMLWriter("config");
+        xmlWriter.addField("peer-id", peerID.toString());
+        xmlWriter.addField("port", networkConfiguration.getLocalPort());
+        xmlWriter.addField("external-port", networkConfiguration.getExternalPort());
+        xmlWriter.addField("nick", peersPersonalData.getOwnNick());
+
+        xmlWriter.beginStruct("friend-peers");
+        for (PeerID friendPeerID : peerRelations.getFriendPeers()) {
+            xmlWriter.beginStruct();
+            xmlWriter.addField("peer-id", friendPeerID.toString());
+            xmlWriter.addField("nick", peersPersonalData.getPeerNick(friendPeerID));
+            xmlWriter.endStruct();
+        }
+        xmlWriter.endStruct();
+        xmlWriter.beginStruct("blocked-peers");
+        for (PeerID blockedPeerID : peerRelations.getFriendPeers()) {
+            xmlWriter.beginStruct();
+            xmlWriter.addField("peer-id", blockedPeerID.toString());
+            xmlWriter.addField("nick", peersPersonalData.getPeerNick(blockedPeerID));
+            xmlWriter.endStruct();
+        }
+        xmlWriter.endStruct();
+
+        xmlWriter.addField("max-download-speed", maxDownloadSpeed);
+        xmlWriter.addField("max-upload-speed", maxUploadSpeed);
+
+        xmlWriter.addField("temp-downloads-path", tempDownloadsPath);
+        xmlWriter.addField("base-data-path", basedDataPath);
+
+        xmlWriter.write(Paths.getConfigPath(basePath), SessionManager.CRC_LENGTH, Paths.getConfigBackupPath(basePath));
     }
 
 
@@ -321,9 +376,10 @@ public class FileIO {
 
     public static FileHashDatabase readFileHashDatabase(String userPath) throws IOException {
         try {
-            return (FileHashDatabase) FileReaderWriter.readObject(PathsOld.getFileHashDatabaseFile(userPath));
-        } catch (ClassNotFoundException e) {
-            throw new IOException();
+//            return (FileHashDatabase) FileReaderWriter.readObject(PathsOld.getFileHashDatabaseFile(userPath));
+            VersionedObjectSerializer.deserialize();
+        } catch (Exception e) {
+            throw new IOException(e.getMessage());
         }
     }
 

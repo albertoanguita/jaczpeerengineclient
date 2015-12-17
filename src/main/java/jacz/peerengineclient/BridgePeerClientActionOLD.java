@@ -24,7 +24,7 @@ public class BridgePeerClientActionOLD implements PeerClientAction {
 
     private final JacuzziPeerClientAction jacuzziPeerClientAction;
 
-    private final Map<UniqueIdentifier, DownloadManager> visibleDownloads;
+    private final Map<UniqueIdentifier, DownloadManagerOLD> visibleDownloads;
 
     private final DownloadsManager downloadsManager;
 
@@ -35,7 +35,7 @@ public class BridgePeerClientActionOLD implements PeerClientAction {
         visibleDownloads = new HashMap<>();
     }
 
-    public synchronized void addVisibleDownload(DownloadManager downloadManager) {
+    public synchronized void addVisibleDownload(DownloadManagerOLD downloadManager) {
         visibleDownloads.put(downloadManager.getId(), downloadManager);
     }
 

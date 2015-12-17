@@ -5,6 +5,7 @@ import jacz.util.io.object_serialization.FragmentedByteArray;
 import jacz.util.io.object_serialization.MutableOffset;
 import jacz.util.io.object_serialization.Serializer;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -54,14 +55,14 @@ public abstract class GenericDatabase {
     /**
      * Path to the integrated data library
      */
-    private final String databasePath;
+    private final String libraryPath;
 
-    public GenericDatabase(String databasePath) {
-        this.databasePath = databasePath;
+    public GenericDatabase(String libraryPath) {
+        this.libraryPath = libraryPath;
     }
 
     public String getDatabase() {
-        return databasePath;
+        return libraryPath;
     }
 
     static byte[] serializeLibraryIdMap(Map<LibraryId, LibraryId> map) {
