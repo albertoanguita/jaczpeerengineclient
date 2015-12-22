@@ -1,7 +1,7 @@
 package jacz.peerengineclient;
 
-import jacz.peerengineclient.libraries.LibraryManager;
-import jacz.peerengineclient.libraries.synch.LibraryAccessor;
+import jacz.peerengineclient.databases.DatabaseManager;
+import jacz.peerengineclient.databases.synch.LibraryAccessor;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
@@ -9,14 +9,14 @@ import jacz.peerengineservice.util.data_synchronization.DataAccessorContainer;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 
 /**
- * Created by Alberto on 12/12/2015.
+ * todo complete
  */
 public class DataAccessorContainerImpl implements DataAccessorContainer {
 
-    private final LibraryManager libraryManager;
+    private final DatabaseManager databaseManager;
 
-    public DataAccessorContainerImpl(LibraryManager libraryManager) {
-        this.libraryManager = libraryManager;
+    public DataAccessorContainerImpl(DatabaseManager databaseManager) {
+        this.databaseManager = databaseManager;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
     public DataAccessor getAccessorForTransmitting(PeerID peerID, String dataAccessorName) throws AccessorNotFoundException, ServerBusyException {
         switch (dataAccessorName) {
             case LibraryAccessor.NAME:
-                return libraryManager.requestForSharedLibrarySynchFromRemotePeer(peerID);
+                return databaseManager.requestForSharedLibrarySynchFromRemotePeer(peerID);
 
 //            case "qwer":
 //                return null;

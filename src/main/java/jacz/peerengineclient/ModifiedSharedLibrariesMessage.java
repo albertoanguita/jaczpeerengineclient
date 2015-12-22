@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A message indicating that one or more shared libraries have been modified
+ * A message indicating that one or more shared databases have been modified
  */
 class ModifiedSharedLibrariesMessage implements Serializable {
 

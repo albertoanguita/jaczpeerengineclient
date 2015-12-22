@@ -76,7 +76,7 @@ public class BridgePeerClientActionOLD implements PeerClientAction {
         if (message instanceof ModifiedPersonalDataNotification) {
             peerEngineClient.synchPersonalData(peerID);
         } else if (message instanceof ModifiedSharedLibrariesMessage) {
-            // remote libraries were modified -> report client
+            // remote databases were modified -> report client
             ModifiedSharedLibrariesMessage modifiedSharedLibrariesMessage = (ModifiedSharedLibrariesMessage) message;
             peerEngineClient.remoteLibrariesNeedSynchronizing(peerID, modifiedSharedLibrariesMessage.modifiedLibraries);
         } else {

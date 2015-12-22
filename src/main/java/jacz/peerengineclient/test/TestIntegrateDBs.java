@@ -25,7 +25,7 @@ public class TestIntegrateDBs {
 //        peerIDRemoteDatabaseMap.put(peerID3, remoteDatabase3);
 //
 //
-//        LibraryManager libraryManager = new LibraryManager(integratedDatabase, localDatabase, peerIDRemoteDatabaseMap, new LibraryManagerNotificationsImpl());
+//        DatabaseManager libraryManager = new DatabaseManager(integratedDatabase, localDatabase, peerIDRemoteDatabaseMap, new LibraryManagerNotificationsImpl());
 ////        ConcurrencyController cc = libraryManager.concurrencyController;
 //        ConcurrencyController cc = new ConcurrencyControllerReadWriteBasic();
 //

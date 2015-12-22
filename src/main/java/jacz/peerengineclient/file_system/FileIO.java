@@ -14,9 +14,7 @@ import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.*;
 import jacz.util.io.xml.Element;
 import jacz.util.io.xml.XMLDom;
-import jacz.util.lists.Four_Tuple;
 import jacz.util.lists.tuple.EightTuple;
-import jacz.util.lists.tuple.SixTuple;
 import jacz.util.network.IP4Port;
 
 import javax.xml.stream.XMLStreamException;
@@ -35,7 +33,7 @@ public class FileIO {
     public static EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> readConfig(
             String basePath,
             String defaultNick) throws FileNotFoundException, XMLStreamException, IllegalArgumentException, CRCMismatchException {
-        XMLReader xmlReader = new XMLReader(Paths.getConfigPath(basePath), true, Paths.getConfigBackupPath(basePath));
+        XMLReader xmlReader = new XMLReader(Paths.configPath(basePath), true, Paths.configBackupPath(basePath));
 
         PeerID ownPeerID = new PeerID(xmlReader.getFieldValue("peer-id"));
         NetworkConfiguration networkConfiguration = new NetworkConfiguration(
@@ -119,7 +117,7 @@ public class FileIO {
         xmlWriter.addField("temp-downloads-path", tempDownloadsPath);
         xmlWriter.addField("base-data-path", basedDataPath);
 
-        xmlWriter.write(Paths.getConfigPath(basePath), SessionManager.CRC_LENGTH, Paths.getConfigBackupPath(basePath));
+        xmlWriter.write(Paths.configPath(basePath), SessionManager.CRC_LENGTH, Paths.configBackupPath(basePath));
     }
 
 
@@ -389,19 +387,19 @@ public class FileIO {
 
 //    public static Triple<IntegratedDatabase, LocalDatabase, Map<PeerID, RemoteDatabase>> readDatabases(String userPath) throws IOException {
 //        try {
-//            String integratedDatabasePath = PathsOld.getIntegratedDatabasePath(userPath);
-//            Database databaseForIntegrated = new Database(new CSVDBMediator(integratedDatabasePath), true);
-//            Date dateOfLastIntegration = (Date) FileReaderWriter.readObject(integratedDatabasePath + "dateOfLastIntegration.bin");
+//            String integratedDBPath = PathsOld.integratedDBPath(userPath);
+//            Database databaseForIntegrated = new Database(new CSVDBMediator(integratedDBPath), true);
+//            Date dateOfLastIntegration = (Date) FileReaderWriter.readObject(integratedDBPath + "dateOfLastIntegration.bin");
 //            //noinspection unchecked
-//            HashMap<String, String> itemsToLocalItems = (HashMap<String, String>) FileReaderWriter.readObject(integratedDatabasePath + "itemsToLocalItems.bin");
+//            HashMap<String, String> itemsToLocalItems = (HashMap<String, String>) FileReaderWriter.readObject(integratedDBPath + "itemsToLocalItems.bin");
 //            //noinspection unchecked
-//            HashMap<String, List<IntegratedDatabase.PeerAndId>> itemsToRemoteItems = (HashMap<String, List<IntegratedDatabase.PeerAndId>>) FileReaderWriter.readObject(integratedDatabasePath + "itemsToRemoteItems.bin");
+//            HashMap<String, List<IntegratedDatabase.PeerAndId>> itemsToRemoteItems = (HashMap<String, List<IntegratedDatabase.PeerAndId>>) FileReaderWriter.readObject(integratedDBPath + "itemsToRemoteItems.bin");
 //            IntegratedDatabase integratedDatabase = new IntegratedDatabase(databaseForIntegrated, dateOfLastIntegration, itemsToLocalItems, itemsToRemoteItems);
 //
-//            String localDatabasePath = PathsOld.getLocalDatabasePath(userPath);
+//            String localDatabasePath = PathsOld.localDBPath(userPath);
 //            Database databaseForLocal = new Database(new CSVDBMediator(localDatabasePath), true);
 //            //noinspection unchecked
-//            HashMap<String, String> itemsToIntegratedItems = (HashMap<String, String>) FileReaderWriter.readObject(integratedDatabasePath + "itemsToIntegratedItems.bin");
+//            HashMap<String, String> itemsToIntegratedItems = (HashMap<String, String>) FileReaderWriter.readObject(integratedDBPath + "itemsToIntegratedItems.bin");
 //            LocalDatabase localDatabase = new LocalDatabase(databaseForLocal, itemsToIntegratedItems);
 //
 //

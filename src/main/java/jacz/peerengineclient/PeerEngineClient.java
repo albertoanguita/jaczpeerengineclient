@@ -1,11 +1,9 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineclient.databases.DatabaseIO;
+import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineclient.file_system.PathsOld;
-import jacz.peerengineclient.file_system.PeerIDInfo;
-import jacz.peerengineclient.libraries.LibraryManager;
-import jacz.peerengineclient.libraries.LibraryManagerIO;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
@@ -14,7 +12,6 @@ import jacz.peerengineservice.client.*;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
-import jacz.peerengineservice.util.ForeignStoreShare;
 import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
@@ -102,7 +99,7 @@ public class PeerEngineClient {
 //
 //    private final TempFileManager tempFileManager;
 //
-//    private final LibraryManager libraryManager;
+//    private final DatabaseManager databaseManager;
 //
 //    private final FileHashDatabase fileHashDatabase;
 //
@@ -126,11 +123,11 @@ public class PeerEngineClient {
 //        this.baseDataDir = baseDataDir;
 //
 //        try {
-//            libraryManager = LibraryManagerIO.load(PathsOld.getDatabasesPath(configPath), new LibraryManagerNotificationsImpl(this, jacuzziPeerClientAction));
+//            databaseManager = DatabaseIO.load(PathsOld.getDatabasesPath(configPath), new LibraryManagerNotificationsImpl(this, jacuzziPeerClientAction));
 //        } catch (DBException | CorruptDataException e) {
 //            throw new IOException("Could not access databases");
 //        }
-//        ListContainer listContainer = new ListContainerImpl(this, libraryManager);
+//        ListContainer listContainer = new ListContainerImpl(this, databaseManager);
 //
 ////        Map<String, ListAccessor > basicReadingLists = new HashMap<>();
 ////        basicReadingLists.put(SimplePersonalData.getListName(), new NonIndexedListAccessorBridge(ownData));
@@ -153,7 +150,7 @@ public class PeerEngineClient {
 
     private final String libraryManagerBasePath;
 
-    private LibraryManager libraryManager;
+    private DatabaseManager databaseManager;
 
     private final TempFileManager tempFileManager;
 
@@ -177,8 +174,8 @@ public class PeerEngineClient {
         this.basePath = basePath;
         this.peersPersonalData = peersPersonalData;
         this.libraryManagerBasePath = libraryManagerBasePath;
-        libraryManager = LibraryManagerIO.load(libraryManagerBasePath, librarySynchEvents, integrationEvents, this);
-        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(libraryManager);
+        databaseManager = DatabaseIO.load(libraryManagerBasePath, librarySynchEvents, integrationEvents, this);
+        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager);
         peerClient = new PeerClient(
                 ownPeerID,
                 peerEncryption,
@@ -192,10 +189,14 @@ public class PeerEngineClient {
                 new HashMap<>(),
                 dataAccessorContainer);
 
-        fileHashDatabase = new FileHashDatabase(Paths.getHashPath(basePath), Paths.getHashBackupPath(basePath));
+        fileHashDatabase = new FileHashDatabase(Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
         tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
 
         peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(fileHashDatabase, tempFileManager));
+    }
+
+    public PeerClient getPeerClient() {
+        return peerClient;
     }
 
     public void connect() {
@@ -207,9 +208,9 @@ public class PeerEngineClient {
     }
 
     public void stop() throws IOException {
-        if (libraryManager != null) {
-            libraryManager.stop();
-            LibraryManagerIO.save(libraryManagerBasePath, libraryManager);
+        if (databaseManager != null) {
+            databaseManager.stop();
+            DatabaseIO.save(libraryManagerBasePath, databaseManager);
         }
         if (peerClient != null) {
             peerClient.stop();
@@ -284,7 +285,7 @@ public class PeerEngineClient {
 
     synchronized void peerIsNowFriend(PeerID peerID) {
         try {
-            libraryManager.addPeer(Paths.getLibrariesPath(basePath), peerID);
+            databaseManager.addPeer(Paths.librariesPath(basePath), peerID);
         } catch (IOException e) {
             // todo handle
             e.printStackTrace();
@@ -292,7 +293,7 @@ public class PeerEngineClient {
     }
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
-        libraryManager.removePeer(Paths.getLibrariesPath(basePath), peerID);
+        databaseManager.removePeer(Paths.librariesPath(basePath), peerID);
     }
 
     synchronized void newPeerConnected(PeerID peerID) {
@@ -315,7 +316,7 @@ public class PeerEngineClient {
 
 //    synchronized void remoteLibrariesNeedSynchronizing(PeerID peerID, Map<String, List<Integer>> remoteLibrariesModified) {
 //        for (String library : remoteLibrariesModified.keySet()) {
-//            libraryManager.remoteLibrariesMustBeSynched(peerID, library, remoteLibrariesModified.get(library));
+//            databaseManager.remoteLibrariesMustBeSynched(peerID, library, remoteLibrariesModified.get(library));
 //        }
 //    }
 
@@ -739,7 +740,7 @@ public class PeerEngineClient {
 
 
     public synchronized void localItemModified(String library, String elementIndex) {
-        libraryManager.localItemModified(library, elementIndex);
+        databaseManager.localItemModified(library, elementIndex);
     }
 
     FileHashDatabase getFileHashDatabase() {

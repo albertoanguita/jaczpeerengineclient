@@ -2,7 +2,7 @@ package jacz.peerengineclient;
 
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineclient.libraries.LibraryManagerIO;
+import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.GeneralEvents;
@@ -16,7 +16,7 @@ import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileUtil;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedObjectSerializer;
-import jacz.util.lists.Duple;
+import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.EightTuple;
 
 import javax.xml.stream.XMLStreamException;
@@ -38,6 +38,7 @@ public class SessionManager {
 
     public static final int CRC_LENGTH = 8;
 
+    // todo allow changing these
     private static final String DEFAULT_TEMP_DIR = "temp";
 
     private static final String DEFAULT_DATA_DIR = "downloads";
@@ -56,10 +57,13 @@ public class SessionManager {
             String tempPath = FileUtil.joinPaths(userPath, DEFAULT_TEMP_DIR);
             String dataPath = FileUtil.joinPaths(userPath, DEFAULT_DATA_DIR);
 
+            // create sub-directories
+            for (String dir : Paths.getOrderedDirectories(userPath)) {
+                FileUtil.createDirectory(dir);
+            }
 
-            String databasesPath = Paths.getLibrariesPath(userPath);
-            FileUtil.createDirectory(databasesPath);
-            LibraryManagerIO.createNewDatabaseFileStructure(Paths.getLibrariesPath(userPath));
+            // database files
+            DatabaseIO.createNewDatabaseFileStructure(userPath);
 
             Duple<PeerID, PeerEncryption> peerIDAndEncryption = PeerID.generateIdAndEncryptionKeys(randomBytes);
             save(
@@ -115,9 +119,9 @@ public class SessionManager {
             Integer maxUploadSpeed = config.element6;
             String tempDownloadsPath = config.element7;
             String baseDataPath = config.element8;
-            PeerEncryption peerEncryption = new PeerEncryption(Paths.getEncryptionPath(userPath), Paths.getEncryptionBackupPath(userPath));
-            TransferStatistics transferStatistics = new TransferStatistics(Paths.getStatisticsPath(userPath), Paths.getStatisticsBackupPath(userPath));
-            String libraryManagerBasePath = Paths.getLibrariesPath(userPath);
+            PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
+            TransferStatistics transferStatistics = new TransferStatistics(Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
+            String libraryManagerBasePath = Paths.getDatabasesDir(userPath);
 
             PeerEngineClient peerEngineClient = new PeerEngineClient(
                     userPath,
@@ -156,8 +160,8 @@ public class SessionManager {
             TransferStatistics transferStatistics,
             FileHashDatabase fileHashDatabase) throws IOException, XMLStreamException {
         FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, basedDataPath);
-        VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.getEncryptionPath(userPath), Paths.getEncryptionBackupPath(userPath));
-        VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.getStatisticsPath(userPath), Paths.getStatisticsBackupPath(userPath));
-        VersionedObjectSerializer.serialize(fileHashDatabase, CRC_LENGTH, Paths.getHashPath(userPath), Paths.getHashBackupPath(userPath));
+        VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
+        VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
+        VersionedObjectSerializer.serialize(fileHashDatabase, CRC_LENGTH, Paths.fileHashPath(userPath), Paths.fileHashBackupPath(userPath));
     }
 }
