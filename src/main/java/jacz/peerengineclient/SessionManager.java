@@ -1,5 +1,7 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineclient.databases.integration.IntegrationEvents;
+import jacz.peerengineclient.databases.synch.LibrarySynchEvents;
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.databases.DatabaseIO;
@@ -106,7 +108,9 @@ public class SessionManager {
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
             ResourceTransferEvents resourceTransferEvents,
-            TempFileManagerEvents tempFileManagerEvents) throws IOException {
+            TempFileManagerEvents tempFileManagerEvents,
+            LibrarySynchEvents librarySynchEvents,
+            IntegrationEvents integrationEvents) throws IOException {
 
         try {
             EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> config =
@@ -137,7 +141,9 @@ public class SessionManager {
                     generalEvents,
                     connectionEvents,
                     resourceTransferEvents,
-                    tempFileManagerEvents);
+                    tempFileManagerEvents,
+                    librarySynchEvents,
+                    integrationEvents);
             peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);
             peerEngineClient.setMaxDesiredUploadSpeed(maxUploadSpeed);
             return peerEngineClient;

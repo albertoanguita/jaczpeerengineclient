@@ -47,7 +47,7 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
         this.peerEngineClient = peerEngineClient;
         this.remoteSynchTask = remoteSynchTask;
         peersToSynch = new ConcurrentLinkedDeque<>();
-        lastSynchedPeerID = PeerID.generateRandomPeerId(new byte[0]);
+        lastSynchedPeerID = null;
         timer = new Timer(synchDelay, this);
         daemon = new Daemon(this);
         remoteSynchConcurrencyController = new ConcurrencyController(new ConcurrencyControllerAction() {
@@ -81,8 +81,10 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
     @Override
     public Long wakeUp(Timer timer) {
         lastSynchedPeerID = peerEngineClient.getNextConnectedPeer(lastSynchedPeerID);
-        peersToSynch.add(lastSynchedPeerID);
-        daemon.stateChange();
+        if (lastSynchedPeerID != null) {
+            peersToSynch.add(lastSynchedPeerID);
+            daemon.stateChange();
+        }
         return null;
     }
 

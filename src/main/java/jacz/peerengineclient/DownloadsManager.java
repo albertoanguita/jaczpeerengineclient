@@ -17,8 +17,8 @@ public class DownloadsManager {
 
     private final Map<UniqueIdentifier, DownloadManagerOLD> activeDownloads;
 
-    public DownloadsManager() {
-        this.peerClient = null;
+    public DownloadsManager(PeerClient peerClient) {
+        this.peerClient = peerClient;
         activeDownloads = new HashMap<>();
     }
 

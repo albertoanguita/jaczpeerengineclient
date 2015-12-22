@@ -1,6 +1,7 @@
 package jacz.peerengineclient;
 
-import jacz.store.database.DatabaseMediator;
+
+import jacz.database.DatabaseMediator;
 
 /**
  * Created by Alberto on 13/12/2015.

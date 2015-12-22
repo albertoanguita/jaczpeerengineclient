@@ -1,14 +1,20 @@
 package jacz.peerengineclient;
 
+import jacz.database.DatabaseMediator;
+import jacz.peerengineclient.data.PeerShareIO;
+import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.DatabaseManager;
-import jacz.peerengineclient.file_system.FileIO;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.databases.integration.IntegrationEvents;
+import jacz.peerengineclient.databases.synch.LibrarySynchEvents;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
-import jacz.peerengineservice.client.*;
+import jacz.peerengineservice.client.GeneralEvents;
+import jacz.peerengineservice.client.PeerClient;
+import jacz.peerengineservice.client.PeerRelations;
+import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
@@ -23,18 +29,14 @@ import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWrite
 import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
-import jacz.store.database.DatabaseMediator;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedSerializationException;
-import jacz.util.lists.Duple;
 import jacz.util.notification.ProgressNotificationWithError;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -64,11 +66,6 @@ public class PeerEngineClient {
 
     static final String FINAL_PATH_GENERIC_DATA_FIELD = "@FINAL_PATH_GENERIC_DATA_FIELD";
 
-//    private final BridgePeerClientActionOLD bridgePeerClientActionOLD;
-
-    private final DownloadsManager downloadsManager;
-
-//    private final PeerClient peerClient;
 
 
 //    /**
@@ -150,11 +147,20 @@ public class PeerEngineClient {
 
     private final String libraryManagerBasePath;
 
-    private DatabaseManager databaseManager;
+    private final DatabaseManager databaseManager;
+
+    private final PeerShareManager peerShareManager;
 
     private final TempFileManager tempFileManager;
 
-    private final FileHashDatabase fileHashDatabase;
+    // todo use??
+    private final DownloadsManager downloadsManager;
+
+    private final String tempDownloadsPath;
+
+    private final String downloadsPath;
+
+
 
     public PeerEngineClient(
             String basePath,
@@ -166,15 +172,18 @@ public class PeerEngineClient {
             PeerRelations peerRelations,
             String libraryManagerBasePath,
             String tempDownloadsPath,
-            String baseDataPath,
+            String downloadsPath,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
             ResourceTransferEvents resourceTransferEvents,
-            TempFileManagerEvents tempFileManagerEvents) throws IOException, VersionedSerializationException {
+            TempFileManagerEvents tempFileManagerEvents,
+            LibrarySynchEvents librarySynchEvents,
+            IntegrationEvents integrationEvents) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
         this.peersPersonalData = peersPersonalData;
         this.libraryManagerBasePath = libraryManagerBasePath;
         databaseManager = DatabaseIO.load(libraryManagerBasePath, librarySynchEvents, integrationEvents, this);
+        peerShareManager = PeerShareIO.load(basePath, this);
         DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager);
         peerClient = new PeerClient(
                 ownPeerID,
@@ -189,10 +198,12 @@ public class PeerEngineClient {
                 new HashMap<>(),
                 dataAccessorContainer);
 
-        fileHashDatabase = new FileHashDatabase(Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
         tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
+        downloadsManager = new DownloadsManager(peerClient);
+        this.tempDownloadsPath = tempDownloadsPath;
+        this.downloadsPath = downloadsPath;
 
-        peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(fileHashDatabase, tempFileManager));
+        peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(peerShareManager.getFileHash(), tempFileManager));
     }
 
     public PeerClient getPeerClient() {
@@ -216,21 +227,6 @@ public class PeerEngineClient {
             peerClient.stop();
         }
         // todo save all data
-    }
-
-    public String getConfigPath() {
-        return configPath;
-    }
-
-
-    synchronized void savePeerRelations(PeerRelations peerRelations) {
-        try {
-            FileIO.writePeerRelations(configPath, peerRelations);
-        } catch (IOException e) {
-            // todo
-        } catch (XMLStreamException e) {
-            // todo
-        }
     }
 
 
@@ -285,7 +281,7 @@ public class PeerEngineClient {
 
     synchronized void peerIsNowFriend(PeerID peerID) {
         try {
-            databaseManager.addPeer(Paths.librariesPath(basePath), peerID);
+            databaseManager.addPeer(basePath, peerID);
         } catch (IOException e) {
             // todo handle
             e.printStackTrace();
@@ -293,18 +289,13 @@ public class PeerEngineClient {
     }
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
-        databaseManager.removePeer(Paths.librariesPath(basePath), peerID);
+        databaseManager.removePeer(basePath, peerID);
     }
 
     synchronized void newPeerConnected(PeerID peerID) {
 //        synchPersonalData(peerID);
 //        synchAllPeerLibraries(peerID);
     }
-
-//    synchronized void synchPersonalData(PeerID peerID) {
-//        // todo check these values, are they good?
-//        synchronizeList(peerID, SimplePersonalData.getListName(), 0, 10000);
-//    }
 
     public synchronized void setNick(String nick) {
         peerClient.setNick(nick);
@@ -391,14 +382,18 @@ public class PeerEngineClient {
             DatabaseMediator.ItemType itemType,
             String itemHash,
             String itemName,
-            DownloadEvents downloadEvents) {
-
+            DownloadEvents downloadEvents) throws IOException, NotAliveException {
+        ResourceWriter resourceWriter = generateTempFileWriter(containerType, containedId, itemType, itemHash, itemName);
+        return downloadFile(MEDIA_STORE, itemHash, resourceWriter, downloadEvents, 0d);
     }
 
     public synchronized DownloadManager downloadImage(
-            DatabaseMediator.ItemType type,
-            Integer id) {
-
+            DatabaseMediator.ItemType containerType,
+            Integer containedId,
+            String itemHash,
+            DownloadEvents downloadEvents) throws IOException, NotAliveException {
+        ResourceWriter resourceWriter = generateBasicFileWriter("", "", containerType, containedId, null, itemHash, "");
+        return downloadFile(IMAGE_STORE, itemHash, resourceWriter, downloadEvents, 0d);
     }
 
     private ResourceWriter generateTempFileWriter(
@@ -448,186 +443,186 @@ public class PeerEngineClient {
     }
 
 
-    /**
-     * Initiates the process for downloading a file (group download). No store is specified so the default store is used. Providers of the file
-     * will be obtained from the defaultForeignPeerShare.
-     *
-     * @param resourceID      ID of the resource
-     * @param finalPath       path were the file will be stored
-     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
-     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
-     * @param downloadEvents  handler for receiving notifications concerning this download
-     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
-     *                        the greater efforts that the scheduler will do for downloading the first parts
-     *                        of the resource before the last parts. Can hamper total download efficiency
-     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
-     * @return a DownloadManager object for controlling this download
-     * @throws IOException the download could not be initiated due to problems generating the target file
-     */
-    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
-            String resourceID,
-            String finalPath,
-            boolean visible,
-            boolean stoppable,
-            DownloadEvents downloadEvents,
-            double streamingNeed,
-            Map<String, Serializable> userGenericData,
-            String totalHash,
-            String totalHashAlgorithm) throws IOException {
-        return downloadFile(resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
-    }
-
-    /**
-     * Initiates the process for downloading a file (group download). The store is specified by the user. Providers of the file
-     * will be obtained from the peers share associated to the specified store.
-     *
-     * @param resourceID      ID of the resource
-     * @param finalPath       path were the file will be stored
-     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
-     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
-     * @param downloadEvents  handler for receiving notifications concerning this download
-     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
-     *                        the greater efforts that the scheduler will do for downloading the first parts
-     *                        of the resource before the last parts. Can hamper total download efficiency
-     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
-     * @param resourceStore   name of the store allocating the resource
-     * @return a DownloadManager object for controlling this download
-     * @throws IOException the download could not be initiated due to problems generating the target file
-     */
-    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
-            String resourceID,
-            String finalPath,
-            boolean visible,
-            boolean stoppable,
-            DownloadEvents downloadEvents,
-            double streamingNeed,
-            Map<String, Serializable> userGenericData,
-            String resourceStore,
-            String totalHash,
-            String totalHashAlgorithm) throws IOException {
-        return downloadResource(null, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
-    }
-
-    /**
-     * Initiates the process for downloading a file (specific download). No store is specified so the default store is used. Providers of the file
-     * will be obtained from the defaultForeignPeerShare.
-     *
-     * @param serverPeerID    only peer from which we will download the file
-     * @param resourceID      ID of the resource
-     * @param finalPath       path were the file will be stored
-     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
-     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
-     * @param downloadEvents  handler for receiving notifications concerning this download
-     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
-     *                        the greater efforts that the scheduler will do for downloading the first parts
-     *                        of the resource before the last parts. Can hamper total download efficiency
-     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
-     * @return a DownloadManager object for controlling this download
-     * @throws IOException the download could not be initiated due to problems generating the target file
-     */
-    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
-            PeerID serverPeerID,
-            String resourceID,
-            String finalPath,
-            boolean visible,
-            boolean stoppable,
-            DownloadEvents downloadEvents,
-            double streamingNeed,
-            Map<String, Serializable> userGenericData,
-            String totalHash,
-            String totalHashAlgorithm) throws IOException {
-        return downloadFile(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
-    }
-
-    /**
-     * Initiates the process for downloading a file (specific download). The store is specified by the user. Providers of the file
-     * will be obtained from the peers share associated to the specified store.
-     *
-     * @param serverPeerID    only peer from which we will download the file
-     * @param resourceID      ID of the resource
-     * @param finalPath       path were the file will be stored
-     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
-     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
-     * @param downloadEvents  handler for receiving notifications concerning this download
-     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
-     *                        the greater efforts that the scheduler will do for downloading the first parts
-     *                        of the resource before the last parts. Can hamper total download efficiency
-     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
-     * @param resourceStore   name of the store allocating the resource
-     * @return a DownloadManager object for controlling this download
-     * @throws IOException the download could not be initiated due to problems generating the target file
-     */
-    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
-            PeerID serverPeerID,
-            String resourceID,
-            String finalPath,
-            boolean visible,
-            boolean stoppable,
-            DownloadEvents downloadEvents,
-            double streamingNeed,
-            Map<String, Serializable> userGenericData,
-            String resourceStore,
-            String totalHash,
-            String totalHashAlgorithm) throws IOException {
-        return downloadResource(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
-    }
-
-    private jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadResource(
-            PeerID serverPeerID,
-            String resourceID,
-            String finalPath,
-            boolean visible,
-            boolean stoppable,
-            DownloadEvents downloadEvents,
-            double streamingNeed,
-            Map<String, Serializable> userGenericData,
-            String resourceStore,
-            String totalHash,
-            String totalHashAlgorithm) throws IOException {
-        Duple<ResourceWriter, String> resourceWriterAndCurrentPath = generateResourceWriter(finalPath, stoppable, tempDownloadsDirectory, userGenericData);
-        ResourceWriter resourceWriter = resourceWriterAndCurrentPath.element1;
-        String currentPath = resourceWriterAndCurrentPath.element2;
-        DownloadProgressNotificationHandlerBridge downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerBridge(downloadEvents);
-        jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager;
-        if (serverPeerID != null) {
-            peerEngineDownloadManager = peerClient.downloadResource(serverPeerID, resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
-        } else {
-            peerEngineDownloadManager = peerClient.downloadResource(resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
-        }
-        DownloadManagerOLD downloadManager = new DownloadManagerOLD(peerEngineDownloadManager, downloadEvents, resourceWriter, currentPath, finalPath, userGenericData);
-        downloadProgressNotificationHandler.setDownloadManager(downloadManager);
-//        if (visible) {
-//            bridgePeerClientActionOLD.addVisibleDownload(downloadManager);
+//    /**
+//     * Initiates the process for downloading a file (group download). No store is specified so the default store is used. Providers of the file
+//     * will be obtained from the defaultForeignPeerShare.
+//     *
+//     * @param resourceID      ID of the resource
+//     * @param finalPath       path were the file will be stored
+//     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
+//     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
+//     * @param downloadEvents  handler for receiving notifications concerning this download
+//     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
+//     *                        the greater efforts that the scheduler will do for downloading the first parts
+//     *                        of the resource before the last parts. Can hamper total download efficiency
+//     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
+//     * @return a DownloadManager object for controlling this download
+//     * @throws IOException the download could not be initiated due to problems generating the target file
+//     */
+//    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
+//            String resourceID,
+//            String finalPath,
+//            boolean visible,
+//            boolean stoppable,
+//            DownloadEvents downloadEvents,
+//            double streamingNeed,
+//            Map<String, Serializable> userGenericData,
+//            String totalHash,
+//            String totalHashAlgorithm) throws IOException {
+//        return downloadFile(resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
+//    }
+//
+//    /**
+//     * Initiates the process for downloading a file (group download). The store is specified by the user. Providers of the file
+//     * will be obtained from the peers share associated to the specified store.
+//     *
+//     * @param resourceID      ID of the resource
+//     * @param finalPath       path were the file will be stored
+//     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
+//     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
+//     * @param downloadEvents  handler for receiving notifications concerning this download
+//     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
+//     *                        the greater efforts that the scheduler will do for downloading the first parts
+//     *                        of the resource before the last parts. Can hamper total download efficiency
+//     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
+//     * @param resourceStore   name of the store allocating the resource
+//     * @return a DownloadManager object for controlling this download
+//     * @throws IOException the download could not be initiated due to problems generating the target file
+//     */
+//    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
+//            String resourceID,
+//            String finalPath,
+//            boolean visible,
+//            boolean stoppable,
+//            DownloadEvents downloadEvents,
+//            double streamingNeed,
+//            Map<String, Serializable> userGenericData,
+//            String resourceStore,
+//            String totalHash,
+//            String totalHashAlgorithm) throws IOException {
+//        return downloadResource(null, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
+//    }
+//
+//    /**
+//     * Initiates the process for downloading a file (specific download). No store is specified so the default store is used. Providers of the file
+//     * will be obtained from the defaultForeignPeerShare.
+//     *
+//     * @param serverPeerID    only peer from which we will download the file
+//     * @param resourceID      ID of the resource
+//     * @param finalPath       path were the file will be stored
+//     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
+//     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
+//     * @param downloadEvents  handler for receiving notifications concerning this download
+//     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
+//     *                        the greater efforts that the scheduler will do for downloading the first parts
+//     *                        of the resource before the last parts. Can hamper total download efficiency
+//     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
+//     * @return a DownloadManager object for controlling this download
+//     * @throws IOException the download could not be initiated due to problems generating the target file
+//     */
+//    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
+//            PeerID serverPeerID,
+//            String resourceID,
+//            String finalPath,
+//            boolean visible,
+//            boolean stoppable,
+//            DownloadEvents downloadEvents,
+//            double streamingNeed,
+//            Map<String, Serializable> userGenericData,
+//            String totalHash,
+//            String totalHashAlgorithm) throws IOException {
+//        return downloadFile(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, DEFAULT_STORE, totalHash, totalHashAlgorithm);
+//    }
+//
+//    /**
+//     * Initiates the process for downloading a file (specific download). The store is specified by the user. Providers of the file
+//     * will be obtained from the peers share associated to the specified store.
+//     *
+//     * @param serverPeerID    only peer from which we will download the file
+//     * @param resourceID      ID of the resource
+//     * @param finalPath       path were the file will be stored
+//     * @param visible         whether this download should appear in the VisibleDownloadsManager (true) or not (false)
+//     * @param stoppable       whether this download must be persistent (can be resumed after stop or program exit)
+//     * @param downloadEvents  handler for receiving notifications concerning this download
+//     * @param streamingNeed   the need for streaming this file (0: no need, 1: max need). The higher the need,
+//     *                        the greater efforts that the scheduler will do for downloading the first parts
+//     *                        of the resource before the last parts. Can hamper total download efficiency
+//     * @param userGenericData a map of generic data which will be stored in this download and reported back to the user when the download is complete
+//     * @param resourceStore   name of the store allocating the resource
+//     * @return a DownloadManager object for controlling this download
+//     * @throws IOException the download could not be initiated due to problems generating the target file
+//     */
+//    public synchronized jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadFile(
+//            PeerID serverPeerID,
+//            String resourceID,
+//            String finalPath,
+//            boolean visible,
+//            boolean stoppable,
+//            DownloadEvents downloadEvents,
+//            double streamingNeed,
+//            Map<String, Serializable> userGenericData,
+//            String resourceStore,
+//            String totalHash,
+//            String totalHashAlgorithm) throws IOException {
+//        return downloadResource(serverPeerID, resourceID, finalPath, visible, stoppable, downloadEvents, streamingNeed, userGenericData, resourceStore, totalHash, totalHashAlgorithm);
+//    }
+//
+//    private jacz.peerengineservice.util.datatransfer.master.DownloadManager downloadResource(
+//            PeerID serverPeerID,
+//            String resourceID,
+//            String finalPath,
+//            boolean visible,
+//            boolean stoppable,
+//            DownloadEvents downloadEvents,
+//            double streamingNeed,
+//            Map<String, Serializable> userGenericData,
+//            String resourceStore,
+//            String totalHash,
+//            String totalHashAlgorithm) throws IOException {
+//        Duple<ResourceWriter, String> resourceWriterAndCurrentPath = generateResourceWriter(finalPath, stoppable, tempDownloadsDirectory, userGenericData);
+//        ResourceWriter resourceWriter = resourceWriterAndCurrentPath.element1;
+//        String currentPath = resourceWriterAndCurrentPath.element2;
+//        DownloadProgressNotificationHandlerBridge downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerBridge(downloadEvents);
+//        jacz.peerengineservice.util.datatransfer.master.DownloadManager peerEngineDownloadManager;
+//        if (serverPeerID != null) {
+//            peerEngineDownloadManager = peerClient.downloadResource(serverPeerID, resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
+//        } else {
+//            peerEngineDownloadManager = peerClient.downloadResource(resourceStore, resourceID, resourceWriter, downloadProgressNotificationHandler, streamingNeed, totalHash, totalHashAlgorithm);
 //        }
-        return downloadManager;
-    }
-
-    private Duple<ResourceWriter, String> generateResourceWriter(String finalPath, boolean stoppable, String tempFileDir, Map<String, Serializable> userGenericData) throws IOException {
-        ResourceWriter resourceWriter;
-        String currentFilePath;
-        if (stoppable) {
-            // a temp resource writer is needed
-            HashMap<String, Serializable> userDictionary = new HashMap<>();
-            // todo store download info
-            TempFileWriter tempFileWriter = new TempFileWriter(tempFileManager);
-            currentFilePath = tempFileWriter.getTempDataFilePath();
-            resourceWriter = tempFileWriter;
-        } else {
-            // a basic resource writer is enough. If no finalPath is specified, we must select one (use the same approach than the temp file manager)
-            BasicFileWriter basicFileWriter;
-            if (finalPath == null) {
-                finalPath = DEFAULT_TEMPORARY_FILE_NAME;
-                basicFileWriter = new BasicFileWriter(tempFileDir, finalPath);
-            } else {
-                basicFileWriter = new BasicFileWriter(finalPath);
-            }
-            currentFilePath = basicFileWriter.getPath();
-            resourceWriter = basicFileWriter;
-        }
-        resourceWriter.setUserGenericData(USER_GENERIC_DATA_FIELD_GROUP, userGenericData);
-        resourceWriter.setUserGenericDataField(OWN_GENERIC_DATA_FIELD_GROUP, FINAL_PATH_GENERIC_DATA_FIELD, finalPath);
-        return new Duple<>(resourceWriter, currentFilePath);
-    }
+//        DownloadManagerOLD downloadManager = new DownloadManagerOLD(peerEngineDownloadManager, downloadEvents, resourceWriter, currentPath, finalPath, userGenericData);
+//        downloadProgressNotificationHandler.setDownloadManager(downloadManager);
+////        if (visible) {
+////            bridgePeerClientActionOLD.addVisibleDownload(downloadManager);
+////        }
+//        return downloadManager;
+//    }
+//
+//    private Duple<ResourceWriter, String> generateResourceWriter(String finalPath, boolean stoppable, String tempFileDir, Map<String, Serializable> userGenericData) throws IOException {
+//        ResourceWriter resourceWriter;
+//        String currentFilePath;
+//        if (stoppable) {
+//            // a temp resource writer is needed
+//            HashMap<String, Serializable> userDictionary = new HashMap<>();
+//            // todo store download info
+//            TempFileWriter tempFileWriter = new TempFileWriter(tempFileManager);
+//            currentFilePath = tempFileWriter.getTempDataFilePath();
+//            resourceWriter = tempFileWriter;
+//        } else {
+//            // a basic resource writer is enough. If no finalPath is specified, we must select one (use the same approach than the temp file manager)
+//            BasicFileWriter basicFileWriter;
+//            if (finalPath == null) {
+//                finalPath = DEFAULT_TEMPORARY_FILE_NAME;
+//                basicFileWriter = new BasicFileWriter(tempFileDir, finalPath);
+//            } else {
+//                basicFileWriter = new BasicFileWriter(finalPath);
+//            }
+//            currentFilePath = basicFileWriter.getPath();
+//            resourceWriter = basicFileWriter;
+//        }
+//        resourceWriter.setUserGenericData(USER_GENERIC_DATA_FIELD_GROUP, userGenericData);
+//        resourceWriter.setUserGenericDataField(OWN_GENERIC_DATA_FIELD_GROUP, FINAL_PATH_GENERIC_DATA_FIELD, finalPath);
+//        return new Duple<>(resourceWriter, currentFilePath);
+//    }
 
     /**
      * Initiates the process for downloading a resource from a specific peer. In this case it is also necessary to
@@ -719,6 +714,9 @@ public class PeerEngineClient {
         return peerClient.getVisibleUploads(resourceStore);
     }
 
+    public PeerID getNextConnectedPeer(PeerID peerID) {
+        return peerClient.getNextConnectedPeer(peerID);
+    }
 
     public synchronized void setVisibleUploadsManagerTimer(long millis) {
         peerClient.setVisibleUploadsTimer(millis);
@@ -728,30 +726,28 @@ public class PeerEngineClient {
         peerClient.stopVisibleUploadsTimer();
     }
 
-    public synchronized String getTempDownloadsDirectory() {
-        return tempFileManager.;
-    }
 
-
-    // todo remove?
     public boolean synchronizeList(PeerID peerID, String dataAccessorName, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws AccessorNotFoundException, UnavailablePeerException {
         return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessorName, timeout, progress);
     }
-
 
     public synchronized void localItemModified(String library, String elementIndex) {
         databaseManager.localItemModified(library, elementIndex);
     }
 
     FileHashDatabase getFileHashDatabase() {
-        return fileHashDatabase;
+        return peerShareManager.getFileHash();
     }
 
     public synchronized String getBaseDataDir() {
-        return baseDataPath;
+        return basePath;
     }
 
-    public synchronized void setBaseDataDir(String baseDataPath) {
-        this.baseDataPath = baseDataPath;
+    public String getTempDownloadsPath() {
+        return tempDownloadsPath;
+    }
+
+    public String getDownloadsPath() {
+        return downloadsPath;
     }
 }
