@@ -102,37 +102,37 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
     @Override
     public synchronized void completed(String resourceID, String storeName, ResourceWriter resourceWriter, DownloadManager downloadManager) {
         String finalPath = null;
-        if (this.downloadManager.getFinalPath() != null && !this.downloadManager.getCurrentPath().equals(this.downloadManager.getFinalPath())) {
-            try {
-                String finalDir = FileUtil.getFileDirectory(this.downloadManager.getFinalPath());
-                String finalFile = FileUtil.getFileName(this.downloadManager.getFinalPath());
-
-
-                if (finalFile.length() == 0) {
-                    finalFile = "downloadedFile";
-                }
-                // divide file name of extension
-                int indexOfPoint = finalFile.lastIndexOf(FileUtil.FILE_EXTENSION_SEPARATOR_CHAR);
-                String baseFileName;
-                String extension;
-                if (indexOfPoint > -1) {
-                    baseFileName = finalFile.substring(0, indexOfPoint);
-                    extension = finalFile.substring(indexOfPoint + 1);
-                } else {
-                    baseFileName = finalFile;
-                    extension = "";
-                }
-                finalPath = FileUtil.createNonExistingFileNameWithIndex(finalDir, baseFileName, extension, " (", ")", true);
-                FileUtil.move(this.downloadManager.getCurrentPath(), finalPath, true);
-            } catch (IOException e) {
-                // any error in the operation -> leave the file where it is
-                System.out.println("ERROR AL TRANSFERIR EL FICHERO!!! finalPath=" + this.downloadManager.getFinalPath() + ", currentPath=" + this.downloadManager.getCurrentPath() + ", localFinalPath=" + finalPath);
-                e.printStackTrace();
-                finalPath = this.downloadManager.getCurrentPath();
-            }
-        } else {
-            finalPath = this.downloadManager.getCurrentPath();
-        }
+//        if (this.downloadManager.getFinalPath() != null && !this.downloadManager.getCurrentPath().equals(this.downloadManager.getFinalPath())) {
+//            try {
+//                String finalDir = FileUtil.getFileDirectory(this.downloadManager.getFinalPath());
+//                String finalFile = FileUtil.getFileName(this.downloadManager.getFinalPath());
+//
+//
+//                if (finalFile.length() == 0) {
+//                    finalFile = "downloadedFile";
+//                }
+//                // divide file name of extension
+//                int indexOfPoint = finalFile.lastIndexOf(FileUtil.FILE_EXTENSION_SEPARATOR_CHAR);
+//                String baseFileName;
+//                String extension;
+//                if (indexOfPoint > -1) {
+//                    baseFileName = finalFile.substring(0, indexOfPoint);
+//                    extension = finalFile.substring(indexOfPoint + 1);
+//                } else {
+//                    baseFileName = finalFile;
+//                    extension = "";
+//                }
+//                finalPath = FileUtil.createNonExistingFileNameWithIndex(finalDir, baseFileName, extension, " (", ")", true);
+//                FileUtil.move(this.downloadManager.getCurrentPath(), finalPath, true);
+//            } catch (IOException e) {
+//                // any error in the operation -> leave the file where it is
+//                System.out.println("ERROR AL TRANSFERIR EL FICHERO!!! finalPath=" + this.downloadManager.getFinalPath() + ", currentPath=" + this.downloadManager.getCurrentPath() + ", localFinalPath=" + finalPath);
+//                e.printStackTrace();
+//                finalPath = this.downloadManager.getCurrentPath();
+//            }
+//        } else {
+//            finalPath = this.downloadManager.getCurrentPath();
+//        }
         downloadEvents.completed(resourceID, handleStore(storeName), finalPath, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
     }
 
