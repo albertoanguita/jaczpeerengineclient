@@ -68,7 +68,7 @@ public class SessionManager {
             DatabaseIO.createNewDatabaseFileStructure(userPath);
 
             Duple<PeerID, PeerEncryption> peerIDAndEncryption = PeerID.generateIdAndEncryptionKeys(randomBytes);
-            save(
+            stopAndsave(
                     userPath,
                     peerIDAndEncryption.element1,
                     new NetworkConfiguration(0, DEFAULT_EXTERNAL_PORT),
@@ -152,7 +152,7 @@ public class SessionManager {
         }
     }
 
-    public static synchronized void save(
+    public static synchronized void stopAndsave(
             String userPath,
             PeerID ownPeerID,
             NetworkConfiguration networkConfiguration,
@@ -165,6 +165,7 @@ public class SessionManager {
             PeerEncryption peerEncryption,
             TransferStatistics transferStatistics,
             FileHashDatabase fileHashDatabase) throws IOException, XMLStreamException {
+        transferStatistics.stop();
         FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, basedDataPath);
         VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
         VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));

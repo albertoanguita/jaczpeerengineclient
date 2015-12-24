@@ -32,7 +32,7 @@ public class Paths {
 
     private static final String REMOTE_DATABASES_DIR = FileUtil.joinPaths(DATABASES_DIR, "remote");
 
-    private static final String REMOTE_SHARES_DIR = FileUtil.joinPaths(DATABASES_DIR, "remote-shares");
+    private static final String REMOTE_SHARES_DIR = FileUtil.joinPaths(DATA_DIR, "remote-shares");
 
 
     /**********************
