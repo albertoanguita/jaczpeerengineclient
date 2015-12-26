@@ -7,8 +7,8 @@ import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.util.hash.CRCMismatchException;
 import jacz.util.io.object_serialization.StrCast;
-import jacz.util.io.object_serialization.XMLReader;
-import jacz.util.io.object_serialization.XMLWriter;
+import jacz.util.io.xml.XMLReader;
+import jacz.util.io.xml.XMLWriter;
 import jacz.util.lists.tuple.EightTuple;
 
 import javax.xml.stream.XMLStreamException;

@@ -2,6 +2,7 @@ package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
+import jacz.peerengineclient.data.synch.RemotePeerShareAccessor;
 import jacz.peerengineclient.data.synch.SynchProgress;
 import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineclient.util.synch.SynchMode;
@@ -70,6 +71,10 @@ public class PeerShareManager {
         remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
     }
 
+    public void start() {
+        remoteSynchReminder.start();
+    }
+
     public FileHashDatabaseWithTimestamp getFileHash() {
         return fileHash;
     }
@@ -101,9 +106,10 @@ public class PeerShareManager {
             if (!activeRemoteShareSynchs.contains(peerID) &&
                     !remoteSynchRecord.lastSynchIsRecent(peerID)) {
                 try {
+                    RemotePeerShareAccessor remotePeerShareAccessor = new RemotePeerShareAccessor(remotePeerShares.get(peerID));
                     boolean success = peerEngineClient.synchronizeList(
                             peerID,
-                            ACCESSOR_NAME,
+                            remotePeerShareAccessor,
                             SYNCH_TIMEOUT,
                             new SynchProgress(this, SynchMode.REMOTE, peerID));
 

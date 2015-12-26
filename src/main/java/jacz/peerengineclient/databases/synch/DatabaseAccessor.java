@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Accessor implementation for databases
  */
-public class LibraryAccessor implements DataAccessor {
+public class DatabaseAccessor implements DataAccessor {
 
     public static final String NAME = "LIBRARY_ACCESSOR";
 
@@ -21,16 +21,21 @@ public class LibraryAccessor implements DataAccessor {
 
     private static final int CRC_BYTES = 4;
 
-    private final LibrarySynchManager librarySynchManager;
+    private final DatabaseSynchManager databaseSynchManager;
 
     private final String dbPath;
 
-    private final LibrarySynchProgress librarySynchProgress;
+    private final DatabaseSynchProgress databaseSynchProgress;
 
-    public LibraryAccessor(LibrarySynchManager librarySynchManager, String dbPath, LibrarySynchProgress librarySynchProgress) {
-        this.librarySynchManager = librarySynchManager;
+    public DatabaseAccessor(DatabaseSynchManager databaseSynchManager, String dbPath, DatabaseSynchProgress databaseSynchProgress) {
+        this.databaseSynchManager = databaseSynchManager;
         this.dbPath = dbPath;
-        this.librarySynchProgress = librarySynchProgress;
+        this.databaseSynchProgress = databaseSynchProgress;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override
@@ -155,6 +160,6 @@ public class LibraryAccessor implements DataAccessor {
 
     @Override
     public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
-        return librarySynchProgress;
+        return databaseSynchProgress;
     }
 }

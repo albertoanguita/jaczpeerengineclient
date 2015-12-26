@@ -24,7 +24,7 @@ public class Paths {
 
     private static final String STATISTICS_DIR = "stats";
 
-    private static final String LOG_DIR = "log";
+//    private static final String LOG_DIR = "log";
 
     private static final String DATA_DIR = "data";
 
@@ -45,7 +45,7 @@ public class Paths {
 
     private static final String STATISTICS_FILE = "statistics";
 
-    private static final String LOG_FILE = "log";
+//    private static final String LOG_FILE = "log";
 
     private static final String INTEGRATED_DB_FILE = "integrated";
 
@@ -94,9 +94,9 @@ public class Paths {
         return FileUtil.joinPaths(basePath, STATISTICS_DIR);
     }
 
-    public static String getLogDir(String basePath) {
-        return FileUtil.joinPaths(basePath, LOG_DIR);
-    }
+//    public static String getLogDir(String basePath) {
+//        return FileUtil.joinPaths(basePath, LOG_DIR);
+//    }
 
     public static String getDataDir(String basePath) {
         return FileUtil.joinPaths(basePath, DATA_DIR);
@@ -119,7 +119,7 @@ public class Paths {
         directories.add(getConfigDir(basePath));
         directories.add(getEncryptionDir(basePath));
         directories.add(getStatisticsDir(basePath));
-        directories.add(getLogDir(basePath));
+//        directories.add(getLogDir(basePath));
         directories.add(getDataDir(basePath));
         directories.add(getDatabasesDir(basePath));
         directories.add(getRemoteDatabasesDir(basePath));
@@ -170,9 +170,9 @@ public class Paths {
      * logs
      ***********************/
 
-    public static String logPath(String basePath) {
-        return getFilePath(basePath, LOG_DIR, LOG_FILE, EXT_LOG);
-    }
+//    public static String logPath(String basePath) {
+//        return getFilePath(basePath, LOG_DIR, LOG_FILE, EXT_LOG);
+//    }
 
     /************************
      * databases
@@ -196,7 +196,7 @@ public class Paths {
     }
 
     public static String remoteDBPath(String basePath, PeerID peerID) {
-        return FileUtil.joinPaths(basePath, DATABASES_DIR, REMOTE_DATABASES_DIR, peerID.toString(), EXT_DB);
+        return getFilePath(basePath, REMOTE_DATABASES_DIR, peerID.toString(), EXT_DB);
     }
 
     public static String sharedDBPath(String basePath) {

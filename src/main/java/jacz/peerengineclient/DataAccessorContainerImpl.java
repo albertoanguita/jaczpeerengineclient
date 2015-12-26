@@ -1,7 +1,7 @@
 package jacz.peerengineclient;
 
 import jacz.peerengineclient.databases.DatabaseManager;
-import jacz.peerengineclient.databases.synch.LibraryAccessor;
+import jacz.peerengineclient.databases.synch.DatabaseAccessor;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
@@ -32,8 +32,8 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
     @Override
     public DataAccessor getAccessorForTransmitting(PeerID peerID, String dataAccessorName) throws AccessorNotFoundException, ServerBusyException {
         switch (dataAccessorName) {
-            case LibraryAccessor.NAME:
-                return databaseManager.requestForSharedLibrarySynchFromRemotePeer(peerID);
+            case DatabaseAccessor.NAME:
+                return databaseManager.requestForSharedDatabaseSynchFromRemotePeer(peerID);
 
 //            case "qwer":
 //                return null;
@@ -41,10 +41,5 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
             default:
                 throw new AccessorNotFoundException();
         }
-    }
-
-    @Override
-    public DataAccessor getAccessorForReceiving(PeerID peerID, String dataAccessorName) throws AccessorNotFoundException {
-        return null;
     }
 }

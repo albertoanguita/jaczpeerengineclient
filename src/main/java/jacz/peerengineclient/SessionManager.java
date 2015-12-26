@@ -1,7 +1,8 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
-import jacz.peerengineclient.databases.synch.LibrarySynchEvents;
+import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.databases.DatabaseIO;
@@ -20,6 +21,7 @@ import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.EightTuple;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -31,6 +33,8 @@ import java.util.List;
  * Handles IO access and opens/closes sessions
  */
 public class SessionManager {
+
+    private static final int ID_LENGTH = 12;
 
     private static final String USER_BASE_PATH = "user_";
 
@@ -68,7 +72,7 @@ public class SessionManager {
             DatabaseIO.createNewDatabaseFileStructure(userPath);
 
             Duple<PeerID, PeerEncryption> peerIDAndEncryption = PeerID.generateIdAndEncryptionKeys(randomBytes);
-            stopAndsave(
+            stopAndSave(
                     userPath,
                     peerIDAndEncryption.element1,
                     new NetworkConfiguration(0, DEFAULT_EXTERNAL_PORT),
@@ -80,7 +84,7 @@ public class SessionManager {
                     dataPath,
                     peerIDAndEncryption.element2,
                     new TransferStatistics(),
-                    new FileHashDatabase());
+                    new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
 
             return userPath;
         } catch (XMLStreamException e) {
@@ -109,7 +113,7 @@ public class SessionManager {
             ConnectionEvents connectionEvents,
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
-            LibrarySynchEvents librarySynchEvents,
+            DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents) throws IOException {
 
         try {
@@ -125,7 +129,6 @@ public class SessionManager {
             String baseDataPath = config.element8;
             PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
             TransferStatistics transferStatistics = new TransferStatistics(Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
-            String libraryManagerBasePath = Paths.getDatabasesDir(userPath);
 
             PeerEngineClient peerEngineClient = new PeerEngineClient(
                     userPath,
@@ -135,14 +138,13 @@ public class SessionManager {
                     peersPersonalData,
                     transferStatistics,
                     peerRelations,
-                    libraryManagerBasePath,
                     tempDownloadsPath,
                     baseDataPath,
                     generalEvents,
                     connectionEvents,
                     resourceTransferEvents,
                     tempFileManagerEvents,
-                    librarySynchEvents,
+                    databaseSynchEvents,
                     integrationEvents);
             peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);
             peerEngineClient.setMaxDesiredUploadSpeed(maxUploadSpeed);
@@ -152,7 +154,7 @@ public class SessionManager {
         }
     }
 
-    public static synchronized void stopAndsave(
+    public static synchronized void stopAndSave(
             String userPath,
             PeerID ownPeerID,
             NetworkConfiguration networkConfiguration,

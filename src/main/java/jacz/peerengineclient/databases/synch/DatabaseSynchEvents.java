@@ -7,7 +7,7 @@ import jacz.peerengineservice.util.data_synchronization.SynchError;
  * Events related to the synchronization of databases are reported here. A separate, unique thread is in charge
  * of invoking these methods
  */
-public interface LibrarySynchEvents {
+public interface DatabaseSynchEvents {
 
     /**
      * The synch of a remote library begins

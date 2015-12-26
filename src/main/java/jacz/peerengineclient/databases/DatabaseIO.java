@@ -4,7 +4,7 @@ import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
-import jacz.peerengineclient.databases.synch.LibrarySynchEvents;
+import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineservice.PeerID;
 import jacz.util.io.object_serialization.VersionedObjectSerializer;
 import jacz.util.io.object_serialization.VersionedSerializationException;
@@ -12,6 +12,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * This class handles saving and restoring the data of the library manager. For all handled peers,
@@ -31,15 +32,18 @@ public class DatabaseIO {
 
     public static DatabaseManager load(
             String basePath,
-            LibrarySynchEvents librarySynchEvents,
+            DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            PeerEngineClient peerEngineClient
+            PeerEngineClient peerEngineClient,
+            Set<PeerID> friendPeers
     ) throws IOException, VersionedSerializationException {
         return new DatabaseManager(
                 new Databases(basePath),
-                librarySynchEvents,
+                databaseSynchEvents,
                 integrationEvents,
-                peerEngineClient);
+                peerEngineClient,
+                basePath,
+                friendPeers);
     }
 
     public static void save(String basePath, DatabaseManager databaseManager) throws IOException {

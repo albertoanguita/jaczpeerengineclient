@@ -8,7 +8,7 @@ import java.io.IOException;
 /**
  * Created by Alberto on 24/12/2015.
  */
-public class Test {
+public class TestNewConfig {
 
     public static void main(String[] args) throws IOException {
 

@@ -4,14 +4,14 @@ import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
-import jacz.peerengineclient.databases.synch.LibraryAccessor;
-import jacz.peerengineclient.databases.synch.LibrarySynchEvents;
-import jacz.peerengineclient.databases.synch.LibrarySynchManager;
+import jacz.peerengineclient.databases.synch.DatabaseAccessor;
+import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
+import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineservice.PeerID;
-import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * This class manages data databases and their proper synchronization and integration
@@ -24,7 +24,7 @@ public class DatabaseManager {
     /**
      * Management of synch processes
      */
-    private final LibrarySynchManager librarySynchManager;
+    private final DatabaseSynchManager databaseSynchManager;
 
     /**
      * Relation of remote items that have been modified since the last library integration, and thus need to be re-integrated. We collect all these
@@ -50,13 +50,23 @@ public class DatabaseManager {
 
     public DatabaseManager(
             Databases databases,
-            LibrarySynchEvents librarySynchEvents,
+            DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            PeerEngineClient peerEngineClient) {
+            PeerEngineClient peerEngineClient,
+            String basePath,
+            Set<PeerID> friendPeers) throws IOException {
         this.databases = databases;
-        this.librarySynchManager = new LibrarySynchManager(librarySynchEvents, peerEngineClient, databases.getSharedDB());
+        this.databaseSynchManager = new DatabaseSynchManager(databaseSynchEvents, peerEngineClient, databases);
         itemIntegrator = new ItemIntegrator(integrationEvents);
         alive = true;
+        // just in case, try to add databases for all registered friend peers
+        for (PeerID friendPeer : friendPeers) {
+            addPeer(basePath, friendPeer);
+        }
+    }
+
+    public synchronized void start() {
+        databaseSynchManager.start();
     }
 
     Databases getDatabases() {
@@ -157,8 +167,8 @@ public class DatabaseManager {
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
      */
-    public synchronized LibraryAccessor requestForSharedLibrarySynchFromRemotePeer(PeerID peerID) throws ServerBusyException {
-        return librarySynchManager.requestForSharedLibrarySynch(peerID);
+    public synchronized DatabaseAccessor requestForSharedDatabaseSynchFromRemotePeer(PeerID peerID) throws ServerBusyException {
+        return databaseSynchManager.requestForSharedDatabaseSynch(peerID);
     }
 
     /**
@@ -199,7 +209,7 @@ public class DatabaseManager {
         synchronized (this) {
             alive = false;
         }
-        librarySynchManager.stop();
+        databaseSynchManager.stop();
         itemIntegrator.stop();
     }
 }

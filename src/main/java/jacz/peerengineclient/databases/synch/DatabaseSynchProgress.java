@@ -8,7 +8,7 @@ import jacz.util.notification.ProgressNotificationWithError;
 /**
  * Progress notifications for library synch processes
  */
-public class LibrarySynchProgress implements ProgressNotificationWithError<Integer, SynchError> {
+public class DatabaseSynchProgress implements ProgressNotificationWithError<Integer, SynchError> {
 
 //    enum Mode {
 //        SHARED,
@@ -23,14 +23,14 @@ public class LibrarySynchProgress implements ProgressNotificationWithError<Integ
 //        }
 //    }
 
-    private final LibrarySynchManager librarySynchManager;
+    private final DatabaseSynchManager databaseSynchManager;
 
     private final SynchMode mode;
 
     private final PeerID otherPeerID;
 
-    public LibrarySynchProgress(LibrarySynchManager librarySynchManager, SynchMode mode, PeerID otherPeerID) {
-        this.librarySynchManager = librarySynchManager;
+    public DatabaseSynchProgress(DatabaseSynchManager databaseSynchManager, SynchMode mode, PeerID otherPeerID) {
+        this.databaseSynchManager = databaseSynchManager;
         this.mode = mode;
         this.otherPeerID = otherPeerID;
     }
@@ -38,45 +38,45 @@ public class LibrarySynchProgress implements ProgressNotificationWithError<Integ
     @Override
     public void beginTask() {
         if (mode.isShared()) {
-            librarySynchManager.sharedLibrarySynchBegins(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchBegins(otherPeerID);
         } else {
-            librarySynchManager.remoteLibrarySynchBegins(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchBegins(otherPeerID);
         }
     }
 
     @Override
     public void addNotification(Integer message) {
         if (mode.isShared()) {
-            librarySynchManager.sharedLibrarySynchProgress(otherPeerID, message);
+            databaseSynchManager.sharedDatabaseSynchProgress(otherPeerID, message);
         } else {
-            librarySynchManager.remoteLibrarySynchProgress(otherPeerID, message);
+            databaseSynchManager.remoteDatabaseSynchProgress(otherPeerID, message);
         }
     }
 
     @Override
     public void completeTask() {
         if (mode.isShared()) {
-            librarySynchManager.sharedLibrarySynchComplete(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchComplete(otherPeerID);
         } else {
-            librarySynchManager.remoteLibrarySynchComplete(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchComplete(otherPeerID);
         }
     }
 
     @Override
     public void error(SynchError error) {
         if (mode.isShared()) {
-            librarySynchManager.sharedLibrarySynchFailed(otherPeerID, error);
+            databaseSynchManager.sharedDatabaseSynchFailed(otherPeerID, error);
         } else {
-            librarySynchManager.remoteLibrarySynchFailed(otherPeerID, error);
+            databaseSynchManager.remoteDatabaseSynchFailed(otherPeerID, error);
         }
     }
 
     @Override
     public void timeout() {
         if (mode.isShared()) {
-            librarySynchManager.sharedLibrarySynchTimedOut(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchTimedOut(otherPeerID);
         } else {
-            librarySynchManager.remoteLibrarySynchTimedOut(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchTimedOut(otherPeerID);
         }
     }
 }

@@ -16,6 +16,8 @@ import java.util.List;
  */
 public class RemotePeerShareAccessor implements DataAccessor {
 
+    public static final String NAME = "REMOTE_PEER_SHARE_ACCESSOR";
+
     private static final int ELEMENTS_PER_MESSAGE = 20;
 
     private static final int CRC_BYTES = 2;
@@ -24,6 +26,11 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     public RemotePeerShareAccessor(RemotePeerShare remotePeerShare) {
         this.remotePeerShare = remotePeerShare;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override

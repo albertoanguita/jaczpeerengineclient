@@ -1,6 +1,7 @@
 package jacz.peerengineclient.databases.synch;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineclient.util.synch.SynchMode;
 import jacz.peerengineclient.util.synch.SynchRecord;
@@ -18,7 +19,7 @@ import java.util.Set;
  * <p>
  * Finally, this class is in charge of reporting the progress of the active synch processes
  */
-public class LibrarySynchManager {
+public class DatabaseSynchManager {
 
     private static final long REMOTE_SYNCH_DELAY = 2000;
 
@@ -32,15 +33,13 @@ public class LibrarySynchManager {
 
     private static final int VERY_LARGE_SHARED_SYNCH_COUNT = 10;
 
-    private static final String LIBRARY_ACCESSOR_NAME = "PEER_LIBRARY_DATA_ACCESSOR";
+    private static final long DATABASE_SYNCH_TIMEOUT = 15000L;
 
-    private static final long LIBRARY_SYNCH_TIMEOUT = 15000L;
-
-    private final LibrarySynchEvents librarySynchEvents;
+    private final DatabaseSynchEvents databaseSynchEvents;
 
     private final PeerEngineClient peerEngineClient;
 
-    private final String sharedLibraryPath;
+    private final Databases databases;
 
     private final Set<PeerID> activeSharedSynchs;
 
@@ -52,32 +51,36 @@ public class LibrarySynchManager {
 
     private final SynchRecord remoteSynchRecord;
 
-    public LibrarySynchManager(LibrarySynchEvents librarySynchEvents, PeerEngineClient peerEngineClient, String sharedLibraryPath) {
-        this.librarySynchEvents = librarySynchEvents;
+    public DatabaseSynchManager(DatabaseSynchEvents databaseSynchEvents, PeerEngineClient peerEngineClient, Databases databases) {
+        this.databaseSynchEvents = databaseSynchEvents;
         this.peerEngineClient = peerEngineClient;
-        this.sharedLibraryPath = sharedLibraryPath;
+        this.databases = databases;
         activeSharedSynchs = new HashSet<>();
         activeRemoteSynchs = new HashSet<>();
         remoteSynchReminder = new RemoteSynchReminder(
                 peerEngineClient,
-                this::synchRemoteLibrary,
+                this::synchRemoteDatabase,
                 REMOTE_SYNCH_DELAY,
                 MAX_CONCURRENT__REMOTE_SYNCHS);
         sharedSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
         remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
     }
 
+    public void start() {
+        remoteSynchReminder.start();
+    }
+
     /**
-     * A remote peer is requesting to get access to the shared library for synchronizing it with us
+     * A remote peer is requesting to get access to the shared database for synchronizing it with us
      * <p>
      * This process can happen along with any other process*. We just must take care that the retrieval of index and hash lists is properly
      * synchronized with other operations. A local or remote item integration might of course break the synchronization, but that is a risk that
      * we must assume, and the other peer will be notified of this.
      * <p>
-     * The library manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
+     * The database manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
      * and we would be waisting bandwidth
      */
-    public LibraryAccessor requestForSharedLibrarySynch(PeerID peerID) throws ServerBusyException {
+    public DatabaseAccessor requestForSharedDatabaseSynch(PeerID peerID) throws ServerBusyException {
         synchronized (activeSharedSynchs) {
             if (activeSharedSynchs.contains(peerID) ||
                     activeSharedSynchs.size() > VERY_LARGE_SHARED_SYNCH_COUNT ||
@@ -88,22 +91,22 @@ public class LibrarySynchManager {
                 // synch process can proceed
                 activeSharedSynchs.add(peerID);
                 sharedSynchRecord.newSynchWithPeer(peerID);
-                return new LibraryAccessor(this, sharedLibraryPath, new LibrarySynchProgress(this, SynchMode.SHARED, peerID));
+                return new DatabaseAccessor(this, databases.getSharedDB(), new DatabaseSynchProgress(this, SynchMode.SHARED, peerID));
             }
         }
     }
 
     //    /**
-//     * A remote peer is requesting to get access to the shared library for synchronizing it with us
+//     * A remote peer is requesting to get access to the shared database for synchronizing it with us
 //     * <p>
 //     * This process can happen along with any other process*. We just must take care that the retrieval of index and hash lists is properly
 //     * synchronized with other operations. A local or remote item integration might of course break the synchronization, but that is a risk that
 //     * we must assume, and the other peer will be notified of this.
 //     * <p>
-//     * The library manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
+//     * The database manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
 //     * and we would be waisting bandwidth
 //     */
-//    public ServerSynchRequestAnswer requestForSharedLibrarySynch(PeerID peerID) {
+//    public ServerSynchRequestAnswer requestForSharedDatabaseSynch(PeerID peerID) {
 //        synchronized (activeSharedSynchs) {
 //            if (activeSharedSynchs.contains(peerID) ||
 //                    activeSharedSynchs.size() > VERY_LARGE_SHARED_SYNCH_COUNT ||
@@ -116,23 +119,24 @@ public class LibrarySynchManager {
 //                sharedSynchRecord.newSynchWithPeer(peerID);
 //                return new ServerSynchRequestAnswer(
 //                        ServerSynchRequestAnswer.Type.OK,
-//                        new LibrarySynchProgress(this, LibrarySynchProgress.Mode.SHARED, peerID));
+//                        new DatabaseSynchProgress(this, DatabaseSynchProgress.Mode.SHARED, peerID));
 //            }
 //        }
 //    }
 //
-    public void synchRemoteLibrary(PeerID peerID) {
+    public void synchRemoteDatabase(PeerID peerID) {
         synchronized (activeRemoteSynchs) {
             // we only consider this request if we are not currently synching with this peer and
             // we did not recently synched with this peer
             if (!activeRemoteSynchs.contains(peerID) &&
                     !remoteSynchRecord.lastSynchIsRecent(peerID)) {
                 try {
+                    DatabaseAccessor databaseAccessor = new DatabaseAccessor(this, databases.getRemoteDBs().get(peerID), new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
                     boolean success = peerEngineClient.synchronizeList(
                             peerID,
-                            LIBRARY_ACCESSOR_NAME,
-                            LIBRARY_SYNCH_TIMEOUT,
-                            new LibrarySynchProgress(this, SynchMode.REMOTE, peerID));
+                            databaseAccessor,
+                            DATABASE_SYNCH_TIMEOUT,
+                            new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
 
                     if (success) {
                         // synch process has been successfully registered
@@ -149,64 +153,64 @@ public class LibrarySynchManager {
         }
     }
 
-    void sharedLibrarySynchBegins(PeerID remotePeerID) {
-        librarySynchEvents.sharedSynchStarted(remotePeerID);
+    void sharedDatabaseSynchBegins(PeerID remotePeerID) {
+        databaseSynchEvents.sharedSynchStarted(remotePeerID);
     }
 
-    void sharedLibrarySynchProgress(PeerID remotePeerID, Integer progress) {
-        librarySynchEvents.sharedSynchProgress(remotePeerID, progress);
+    void sharedDatabaseSynchProgress(PeerID remotePeerID, Integer progress) {
+        databaseSynchEvents.sharedSynchProgress(remotePeerID, progress);
     }
 
-    void sharedLibrarySynchComplete(PeerID remotePeerID) {
+    void sharedDatabaseSynchComplete(PeerID remotePeerID) {
         synchronized (activeSharedSynchs) {
             activeSharedSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.sharedSynchCompleted(remotePeerID);
+        databaseSynchEvents.sharedSynchCompleted(remotePeerID);
     }
 
-    void sharedLibrarySynchFailed(PeerID remotePeerID, SynchError error) {
+    void sharedDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
         synchronized (activeSharedSynchs) {
             activeSharedSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.sharedSynchError(remotePeerID, error);
+        databaseSynchEvents.sharedSynchError(remotePeerID, error);
     }
 
-    void sharedLibrarySynchTimedOut(PeerID remotePeerID) {
+    void sharedDatabaseSynchTimedOut(PeerID remotePeerID) {
         synchronized (activeSharedSynchs) {
             activeSharedSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.sharedSynchTimeout(remotePeerID);
+        databaseSynchEvents.sharedSynchTimeout(remotePeerID);
     }
 
-    void remoteLibrarySynchBegins(PeerID remotePeerID) {
-        librarySynchEvents.remoteSynchStarted(remotePeerID);
+    void remoteDatabaseSynchBegins(PeerID remotePeerID) {
+        databaseSynchEvents.remoteSynchStarted(remotePeerID);
     }
 
-    void remoteLibrarySynchProgress(PeerID remotePeerID, Integer progress) {
-        librarySynchEvents.remoteSynchProgress(remotePeerID, progress);
+    void remoteDatabaseSynchProgress(PeerID remotePeerID, Integer progress) {
+        databaseSynchEvents.remoteSynchProgress(remotePeerID, progress);
     }
 
-    void remoteLibrarySynchComplete(PeerID remotePeerID) {
+    void remoteDatabaseSynchComplete(PeerID remotePeerID) {
         synchronized (activeRemoteSynchs) {
             activeRemoteSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.remoteSynchCompleted(remotePeerID);
+        databaseSynchEvents.remoteSynchCompleted(remotePeerID);
     }
 
-    void remoteLibrarySynchFailed(PeerID remotePeerID, SynchError error) {
+    void remoteDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
         synchronized (activeRemoteSynchs) {
             activeRemoteSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.remoteSynchError(remotePeerID, error);
+        databaseSynchEvents.remoteSynchError(remotePeerID, error);
     }
 
-    void remoteLibrarySynchTimedOut(PeerID remotePeerID) {
+    void remoteDatabaseSynchTimedOut(PeerID remotePeerID) {
         synchronized (activeRemoteSynchs) {
             activeRemoteSynchs.remove(remotePeerID);
         }
-        librarySynchEvents.remoteSynchTimeout(remotePeerID);
+        databaseSynchEvents.remoteSynchTimeout(remotePeerID);
     }
 
     public void stop() {
