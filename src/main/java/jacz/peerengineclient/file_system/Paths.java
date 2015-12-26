@@ -45,8 +45,6 @@ public class Paths {
 
     private static final String STATISTICS_FILE = "statistics";
 
-//    private static final String LOG_FILE = "log";
-
     private static final String INTEGRATED_DB_FILE = "integrated";
 
     private static final String LOCAL_DB_FILE = "local";
@@ -68,8 +66,6 @@ public class Paths {
     private static final String EXT_XML = ".xml";
 
     private static final String EXT_DB = ".db";
-
-    private static final String EXT_LOG = ".log";
 
     private static final String EXT_BACKUP = ".bak";
 
@@ -94,10 +90,6 @@ public class Paths {
         return FileUtil.joinPaths(basePath, STATISTICS_DIR);
     }
 
-//    public static String getLogDir(String basePath) {
-//        return FileUtil.joinPaths(basePath, LOG_DIR);
-//    }
-
     public static String getDataDir(String basePath) {
         return FileUtil.joinPaths(basePath, DATA_DIR);
     }
@@ -119,7 +111,6 @@ public class Paths {
         directories.add(getConfigDir(basePath));
         directories.add(getEncryptionDir(basePath));
         directories.add(getStatisticsDir(basePath));
-//        directories.add(getLogDir(basePath));
         directories.add(getDataDir(basePath));
         directories.add(getDatabasesDir(basePath));
         directories.add(getRemoteDatabasesDir(basePath));
@@ -165,14 +156,6 @@ public class Paths {
     public static String statisticsBackupPath(String basePath) {
         return getFilePath(basePath, STATISTICS_DIR, STATISTICS_FILE, EXT_BACKUP);
     }
-
-    /************************
-     * logs
-     ***********************/
-
-//    public static String logPath(String basePath) {
-//        return getFilePath(basePath, LOG_DIR, LOG_FILE, EXT_LOG);
-//    }
 
     /************************
      * databases
