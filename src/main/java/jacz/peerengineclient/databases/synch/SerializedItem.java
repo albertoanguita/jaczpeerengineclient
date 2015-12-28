@@ -177,4 +177,23 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
             return 0;
         }
     }
+
+    @Override
+    public String toString() {
+        return "SerializedItem{" +
+                "type=" + type +
+                ", id=" + id +
+                ", timestamp=" + timestamp +
+                ", alive=" + alive +
+                ", stringFields=" + stringFields +
+                ", integerFields=" + integerFields +
+                ", longFields=" + longFields +
+                ", dateFields=" + dateFields +
+                ", qualityFields=" + qualityFields +
+                ", stringListFields=" + stringListFields +
+                ", countryListFields=" + countryListFields +
+                ", genreListFields=" + genreListFields +
+                ", languageListFields=" + languageListFields +
+                '}';
+    }
 }

@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class FileHashDatabaseAccessor implements DataAccessor {
 
+    private static final String NAME = "FILE_HASH_DATA_ACCESSOR";
+
     private static final int ELEMENTS_PER_MESSAGE = 20;
 
     private static final int CRC_BYTES = 2;
@@ -26,6 +28,11 @@ public class FileHashDatabaseAccessor implements DataAccessor {
     public FileHashDatabaseAccessor(FileHashDatabaseWithTimestamp fileHash, ProgressNotificationWithError<Integer, SynchError> progress) {
         this.fileHash = fileHash;
         this.progress = progress;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override

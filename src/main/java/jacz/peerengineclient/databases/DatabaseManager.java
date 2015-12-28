@@ -56,7 +56,7 @@ public class DatabaseManager {
             String basePath,
             Set<PeerID> friendPeers) throws IOException {
         this.databases = databases;
-        this.databaseSynchManager = new DatabaseSynchManager(databaseSynchEvents, peerEngineClient, databases);
+        this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
         itemIntegrator = new ItemIntegrator(integrationEvents);
         alive = true;
         // just in case, try to add databases for all registered friend peers
@@ -69,7 +69,7 @@ public class DatabaseManager {
         databaseSynchManager.start();
     }
 
-    Databases getDatabases() {
+    public Databases getDatabases() {
         return databases;
     }
 
@@ -133,13 +133,27 @@ public class DatabaseManager {
      * @param peerID peer whose library must be synched
      * @param type   type (class) of the item
      * @param itemId id of the element to integrate
-     * @param alive  if this item is alive (true) or has been deleted (false)
      */
-    public synchronized void remoteItemModified(PeerID peerID, DatabaseMediator.ItemType type, String itemId, boolean alive) {
+    public synchronized void remoteItemModified(PeerID peerID, DatabaseMediator.ItemType type, int itemId) {
         // todo integrate this single item
 //        remoteModifiedItems.addItem(peerID, library, elementIndex);
 //        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
     }
+
+    /**
+     * A remote item is about to be removed
+     *
+     * @param peerID
+     * @param type
+     * @param itemId
+     */
+    public synchronized void remoteItemWillBeRemoved(PeerID peerID, DatabaseMediator.ItemType type, int itemId) {
+        // todo integrate this single item
+//        remoteModifiedItems.addItem(peerID, library, elementIndex);
+//        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
+    }
+
+
 //    public synchronized void remoteItemModified(PeerID peerID, String library, String elementIndex) {
 //        remoteModifiedItems.addItem(peerID, library, elementIndex);
 //        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();

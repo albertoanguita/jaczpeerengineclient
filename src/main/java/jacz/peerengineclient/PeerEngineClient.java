@@ -5,6 +5,7 @@ import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.DatabaseManager;
+import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineservice.NotAliveException;
@@ -243,6 +244,9 @@ public class PeerEngineClient {
         // todo save all data
     }
 
+    public Databases getDatabases() {
+        return databaseManager.getDatabases();
+    }
 
     public State getConnectionState() {
         return peerClient.getConnectionState();

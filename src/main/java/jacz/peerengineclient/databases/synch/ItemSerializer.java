@@ -60,7 +60,7 @@ public class ItemSerializer {
     }
 
     static SerializedItem serializeDeletedItem(DeletedItem deletedItem) {
-        return setupSerializeItem(deletedItem.getDeletedItemType(), deletedItem, false);
+        return setupSerializeItem(deletedItem.getDeletedItemType(), deletedItem.getDeletedItemId(), deletedItem, false);
     }
 
     static void serializeProducedCreationItem(SerializedItem item, ProducedCreationItem producedCreationItem) {
@@ -97,11 +97,11 @@ public class ItemSerializer {
     }
 
     private static SerializedItem setupSerializeItem(DatabaseItem databaseItem, boolean alive) {
-        return setupSerializeItem(databaseItem.getItemType(), databaseItem, alive);
+        return setupSerializeItem(databaseItem.getItemType(), databaseItem.getId(), databaseItem, alive);
     }
 
-    private static SerializedItem setupSerializeItem(DatabaseMediator.ItemType type, DatabaseItem databaseItem, boolean alive) {
-        return new SerializedItem(type, databaseItem.getId(), databaseItem.getTimestamp(), alive);
+    private static SerializedItem setupSerializeItem(DatabaseMediator.ItemType type, int id, DatabaseItem databaseItem, boolean alive) {
+        return new SerializedItem(type, id, databaseItem.getTimestamp(), alive);
     }
 
     static void deserializeMovie(SerializedItem item, Movie movie) {
@@ -157,6 +157,7 @@ public class ItemSerializer {
     }
 
     static void deserializeCreationItem(SerializedItem item, CreationItem creationItem) {
+        deserializeDatabaseItem(item, creationItem);
         creationItem.setTitlePostponed(item.getString(DatabaseMediator.Field.TITLE));
         creationItem.setOriginalTitlePostponed(item.getString(DatabaseMediator.Field.ORIGINAL_TITLE));
         creationItem.setYearPostponed(item.getInteger(DatabaseMediator.Field.YEAR));
@@ -167,6 +168,7 @@ public class ItemSerializer {
     }
 
     static void deserializeNamedItem(SerializedItem item, NamedItem namedItem) {
+        deserializeDatabaseItem(item, namedItem);
         namedItem.setNamePostponed(item.getString(DatabaseMediator.Field.NAME));
         namedItem.setAliasesPostponed(item.getStringList(DatabaseMediator.Field.ALIASES));
     }
@@ -177,9 +179,14 @@ public class ItemSerializer {
     }
 
     static void deserializeFile(SerializedItem item, File file) {
+        deserializeDatabaseItem(item, file);
         file.setHashPostponed(item.getString(DatabaseMediator.Field.HASH));
         file.setLengthPostponed(item.getLong(DatabaseMediator.Field.LENGTH));
         file.setNamePostponed(item.getString(DatabaseMediator.Field.NAME));
+    }
+
+    static void deserializeDatabaseItem(SerializedItem item, DatabaseItem databaseItem) {
+        databaseItem.setTimestamp(item.getTimestamp(), false);
     }
 
     private static void finishDeserialization(DatabaseItem item) {

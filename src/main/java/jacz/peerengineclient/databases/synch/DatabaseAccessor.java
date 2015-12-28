@@ -1,6 +1,7 @@
 package jacz.peerengineclient.databases.synch;
 
 import jacz.database.*;
+import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
@@ -20,18 +21,21 @@ public class DatabaseAccessor implements DataAccessor {
 
     public static final String NAME = "LIBRARY_ACCESSOR";
 
-    private static final int ELEMENTS_PER_MESSAGE = 5;
+    private static final int ELEMENTS_PER_MESSAGE = 1;
 
     private static final int CRC_BYTES = 4;
 
-    private final DatabaseSynchManager databaseSynchManager;
+    private final DatabaseManager databaseManager;
+
+    private final PeerID remotePeerID;
 
     private final String dbPath;
 
     private final DatabaseSynchProgress databaseSynchProgress;
 
-    public DatabaseAccessor(DatabaseSynchManager databaseSynchManager, String dbPath, DatabaseSynchProgress databaseSynchProgress) {
-        this.databaseSynchManager = databaseSynchManager;
+    public DatabaseAccessor(DatabaseManager databaseManager, PeerID remotePeerID, String dbPath, DatabaseSynchProgress databaseSynchProgress) {
+        this.databaseManager = databaseManager;
+        this.remotePeerID = remotePeerID;
         this.dbPath = dbPath;
         this.databaseSynchProgress = databaseSynchProgress;
     }
@@ -58,8 +62,7 @@ public class DatabaseAccessor implements DataAccessor {
 
     @Override
     public Long getLastTimestamp() throws DataAccessException {
-        // todo wrong
-        return DatabaseMediator.getLastTimestamp(dbPath);
+        return DatabaseMediator.getHighestManualTimestamp(dbPath);
     }
 
     @Override
@@ -101,12 +104,12 @@ public class DatabaseAccessor implements DataAccessor {
                 Movie movie = Movie.getMovieById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (movie == null) {
-                        movie = new Movie(dbPath);
+                        movie = new Movie(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeMovie(item, movie);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (movie != null) {
-                    // todo notify about to delete
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     movie.delete();
                 }
                 break;
@@ -115,11 +118,12 @@ public class DatabaseAccessor implements DataAccessor {
                 TVSeries tvSeries = TVSeries.getTVSeriesById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (tvSeries == null) {
-                        tvSeries = new TVSeries(dbPath);
+                        tvSeries = new TVSeries(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeTVSeries(item, tvSeries);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (tvSeries != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     tvSeries.delete();
                 }
                 break;
@@ -128,11 +132,12 @@ public class DatabaseAccessor implements DataAccessor {
                 Chapter chapter = Chapter.getChapterById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (chapter == null) {
-                        chapter = new Chapter(dbPath);
+                        chapter = new Chapter(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeChapter(item, chapter);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (chapter != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     chapter.delete();
                 }
                 break;
@@ -141,11 +146,12 @@ public class DatabaseAccessor implements DataAccessor {
                 Person person = Person.getPersonById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (person == null) {
-                        person = new Person(dbPath);
+                        person = new Person(dbPath, item.getId());
                     }
                     ItemSerializer.deserializePerson(item, person);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (person != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     person.delete();
                 }
                 break;
@@ -154,11 +160,12 @@ public class DatabaseAccessor implements DataAccessor {
                 Company company = Company.getCompanyById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (company == null) {
-                        company = new Company(dbPath);
+                        company = new Company(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeCompany(item, company);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (company != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     company.delete();
                 }
                 break;
@@ -167,11 +174,12 @@ public class DatabaseAccessor implements DataAccessor {
                 VideoFile videoFile = VideoFile.getVideoFileById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (videoFile == null) {
-                        videoFile = new VideoFile(dbPath);
+                        videoFile = new VideoFile(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeVideoFile(item, videoFile);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (videoFile != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     videoFile.delete();
                 }
                 break;
@@ -180,15 +188,17 @@ public class DatabaseAccessor implements DataAccessor {
                 SubtitleFile subtitleFile = SubtitleFile.getSubtitleFileById(dbPath, item.getId());
                 if (item.isAlive()) {
                     if (subtitleFile == null) {
-                        subtitleFile = new SubtitleFile(dbPath);
+                        subtitleFile = new SubtitleFile(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeSubtitleFile(item, subtitleFile);
-                    // todo notify change in this item
+                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
                 } else if (subtitleFile != null) {
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
                     subtitleFile.delete();
                 }
                 break;
         }
+        DatabaseMediator.updateHighestManualTimestamp(dbPath, item.getTimestamp());
     }
 
     @Override

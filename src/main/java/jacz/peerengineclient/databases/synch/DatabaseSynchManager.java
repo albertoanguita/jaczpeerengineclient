@@ -1,6 +1,7 @@
 package jacz.peerengineclient.databases.synch;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineclient.util.synch.SynchMode;
@@ -35,6 +36,8 @@ public class DatabaseSynchManager {
 
     private static final long DATABASE_SYNCH_TIMEOUT = 15000L;
 
+    private final DatabaseManager databaseManager;
+
     private final DatabaseSynchEvents databaseSynchEvents;
 
     private final PeerEngineClient peerEngineClient;
@@ -51,7 +54,12 @@ public class DatabaseSynchManager {
 
     private final SynchRecord remoteSynchRecord;
 
-    public DatabaseSynchManager(DatabaseSynchEvents databaseSynchEvents, PeerEngineClient peerEngineClient, Databases databases) {
+    public DatabaseSynchManager(
+            DatabaseManager databaseManager,
+            DatabaseSynchEvents databaseSynchEvents,
+            PeerEngineClient peerEngineClient,
+            Databases databases) {
+        this.databaseManager = databaseManager;
         this.databaseSynchEvents = databaseSynchEvents;
         this.peerEngineClient = peerEngineClient;
         this.databases = databases;
@@ -91,7 +99,11 @@ public class DatabaseSynchManager {
                 // synch process can proceed
                 activeSharedSynchs.add(peerID);
                 sharedSynchRecord.newSynchWithPeer(peerID);
-                return new DatabaseAccessor(this, databases.getSharedDB(), new DatabaseSynchProgress(this, SynchMode.SHARED, peerID));
+                return new DatabaseAccessor(
+                        databaseManager,
+                        peerID,
+                        databases.getSharedDB(),
+                        new DatabaseSynchProgress(this, SynchMode.SHARED, peerID));
             }
         }
     }
@@ -125,13 +137,21 @@ public class DatabaseSynchManager {
 //    }
 //
     public void synchRemoteDatabase(PeerID peerID) {
+        // todo tests
+        if (peerID.toString().equals("0000000000000000000000000000000000000000001")) {
+            return;
+        }
         synchronized (activeRemoteSynchs) {
             // we only consider this request if we are not currently synching with this peer and
             // we did not recently synched with this peer
             if (!activeRemoteSynchs.contains(peerID) &&
                     !remoteSynchRecord.lastSynchIsRecent(peerID)) {
                 try {
-                    DatabaseAccessor databaseAccessor = new DatabaseAccessor(this, databases.getRemoteDBs().get(peerID), new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
+                    DatabaseAccessor databaseAccessor = new DatabaseAccessor(
+                            databaseManager,
+                            peerID,
+                            databases.getRemoteDBs().get(peerID),
+                            new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
                     boolean success = peerEngineClient.synchronizeList(
                             peerID,
                             databaseAccessor,
