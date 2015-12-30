@@ -67,7 +67,7 @@ public class ItemSerializer {
         serializeCreationItem(item, producedCreationItem);
         item.addStringList(DatabaseMediator.Field.COMPANY_LIST, producedCreationItem.getProductionCompaniesIds());
         item.addGenreList(DatabaseMediator.Field.GENRES, producedCreationItem.getGenres());
-        item.addString(DatabaseMediator.Field.IMAGE_HASH, producedCreationItem.getImageHash());
+        item.addImageHash(DatabaseMediator.Field.IMAGE_HASH, producedCreationItem.getImageHash());
     }
 
     static void serializeCreationItem(SerializedItem item, CreationItem creationItem) {
@@ -94,6 +94,7 @@ public class ItemSerializer {
         item.addString(DatabaseMediator.Field.HASH, file.getHash());
         item.addLong(DatabaseMediator.Field.LENGTH, file.getLength());
         item.addString(DatabaseMediator.Field.NAME, file.getName());
+        item.addStringList(DatabaseMediator.Field.ADDITIONAL_SOURCES, file.getAdditionalSources());
     }
 
     private static SerializedItem setupSerializeItem(DatabaseItem databaseItem, boolean alive) {
@@ -153,7 +154,7 @@ public class ItemSerializer {
         deserializeCreationItem(item, producedCreationItem);
         producedCreationItem.setProductionCompaniesIdsPostponed(item.getStringList(DatabaseMediator.Field.COMPANY_LIST));
         producedCreationItem.setGenresPostponed(item.getGenreList(DatabaseMediator.Field.GENRES));
-        producedCreationItem.setImageHashPostponed(item.getString(DatabaseMediator.Field.IMAGE_HASH));
+        producedCreationItem.setImageHashPostponed(item.getImageHash(DatabaseMediator.Field.IMAGE_HASH));
     }
 
     static void deserializeCreationItem(SerializedItem item, CreationItem creationItem) {
@@ -183,6 +184,7 @@ public class ItemSerializer {
         file.setHashPostponed(item.getString(DatabaseMediator.Field.HASH));
         file.setLengthPostponed(item.getLong(DatabaseMediator.Field.LENGTH));
         file.setNamePostponed(item.getString(DatabaseMediator.Field.NAME));
+        file.setAdditionalSourcesPostponed(item.getStringList(DatabaseMediator.Field.ADDITIONAL_SOURCES));
     }
 
     static void deserializeDatabaseItem(SerializedItem item, DatabaseItem databaseItem) {

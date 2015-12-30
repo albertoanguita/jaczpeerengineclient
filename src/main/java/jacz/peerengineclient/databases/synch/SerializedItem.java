@@ -5,6 +5,7 @@ import com.neovisionaries.i18n.CountryCode;
 import com.neovisionaries.i18n.LanguageCode;
 import jacz.database.DatabaseMediator;
 import jacz.database.util.GenreCode;
+import jacz.database.util.ImageHash;
 import jacz.database.util.QualityCode;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,6 +36,7 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
     private HashMap<DatabaseMediator.Field, List<CountryCode>> countryListFields;
     private HashMap<DatabaseMediator.Field, List<GenreCode>> genreListFields;
     private HashMap<DatabaseMediator.Field, List<LanguageCode>> languageListFields;
+    private HashMap<DatabaseMediator.Field, ImageHash> imageHashFields;
 
     public SerializedItem(DatabaseMediator.ItemType type, Integer id, long timestamp, boolean alive) {
         this.type = type;
@@ -50,6 +52,7 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         countryListFields = null;
         genreListFields = null;
         languageListFields = null;
+        imageHashFields = null;
     }
 
     public DatabaseMediator.ItemType getType() {
@@ -131,6 +134,13 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         languageListFields.put(field, languageList);
     }
 
+    public void addImageHash(DatabaseMediator.Field field, ImageHash imageHash) {
+        if (imageHashFields == null) {
+            imageHashFields = new HashMap<>();
+        }
+        imageHashFields.put(field, imageHash);
+    }
+
     public String getString(DatabaseMediator.Field field) {
         return stringFields.get(field);
     }
@@ -166,6 +176,11 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
     public List<LanguageCode> getLanguageList(DatabaseMediator.Field field) {
         return languageListFields.get(field);
     }
+
+    public ImageHash getImageHash(DatabaseMediator.Field field) {
+        return imageHashFields.get(field);
+    }
+
 
     @Override
     public int compareTo(@NotNull SerializedItem o) {

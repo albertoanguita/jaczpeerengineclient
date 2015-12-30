@@ -44,7 +44,7 @@ public class TestSynch_2 {
 //        movie.setOriginalTitle("The goonies orig");
 //        movie.setYear(1996);
 
-        Movie movie = Movie.getMovieById(sharedDB, 20);
+        Movie movie = Movie.getMovieById(sharedDB, 2);
         if (movie != null) {
             movie.delete();
         }

@@ -21,7 +21,7 @@ public class DatabaseAccessor implements DataAccessor {
 
     public static final String NAME = "LIBRARY_ACCESSOR";
 
-    private static final int ELEMENTS_PER_MESSAGE = 1;
+    private static final int ELEMENTS_PER_MESSAGE = 5;
 
     private static final int CRC_BYTES = 4;
 
