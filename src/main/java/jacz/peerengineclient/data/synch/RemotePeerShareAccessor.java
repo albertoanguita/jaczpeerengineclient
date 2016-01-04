@@ -16,11 +16,9 @@ import java.util.List;
  */
 public class RemotePeerShareAccessor implements DataAccessor {
 
-    public static final String NAME = "REMOTE_PEER_SHARE_ACCESSOR";
-
-    private static final int ELEMENTS_PER_MESSAGE = 20;
-
-    private static final int CRC_BYTES = 2;
+//    private static final int ELEMENTS_PER_MESSAGE = 20;
+//
+//    private static final int CRC_BYTES = 2;
 
     private final RemotePeerShare remotePeerShare;
 
@@ -30,7 +28,7 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     @Override
     public String getName() {
-        return NAME;
+        return FileHashDatabaseAccessor.NAME;
     }
 
     @Override
@@ -61,18 +59,21 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     @Override
     public int elementsPerMessage() {
-        return ELEMENTS_PER_MESSAGE;
+        // ignore
+        return 0;
     }
 
     @Override
     public int CRCBytes() {
-        return CRC_BYTES;
+        // ignore
+        return 0;
     }
 
     @Override
     public void setElement(Object element) throws DataAccessException {
         SerializedHashItem item = (SerializedHashItem) element;
         if (item.alive) {
+            System.out.println("New item: " + item.hash);
             remotePeerShare.addHash(item.timestamp, item.hash);
         } else {
             remotePeerShare.removeHash(item.timestamp, item.hash);
@@ -86,7 +87,7 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     @Override
     public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
-        // todo
+        // ignore, cannot happen
         return null;
     }
 }

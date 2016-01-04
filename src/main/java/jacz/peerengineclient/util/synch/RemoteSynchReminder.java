@@ -1,6 +1,8 @@
 package jacz.peerengineclient.util.synch;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.data.PeerShareManager;
+import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineservice.PeerID;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyControllerAction;
@@ -16,18 +18,21 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
- * Created by Alberto on 03/12/2015.
+ * Reminder for remote synch processes
  */
 public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
 
-    public interface RemoteSynchTask {
+    private final int MAX_DATABASE_SYNCH_TASKS = 10;
 
-        void executeRemoteSynch(PeerID peerID);
-    }
+    private final int MAX_SHARE_SYNCH_TASKS = 20;
+
+    private static final long REMOTE_SYNCH_DELAY = 1000;
 
     private final PeerEngineClient peerEngineClient;
 
-    private final RemoteSynchTask remoteSynchTask;
+    private final DatabaseSynchManager databaseSynchManager;
+
+    private final PeerShareManager peerShareManager;
 
     private final Queue<PeerID> peersToSynch;
 
@@ -37,23 +42,51 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
 
     private final Daemon daemon;
 
-    private final ConcurrencyController remoteSynchConcurrencyController;
+    private final ConcurrencyController databaseSynchConcurrencyController;
+
+    private final ConcurrencyController shareSynchConcurrencyController;
 
     public RemoteSynchReminder(
             PeerEngineClient peerEngineClient,
-            RemoteSynchTask remoteSynchTask,
-            long synchDelay,
-            int maxConcurrentTasks) {
+            DatabaseSynchManager databaseSynchManager,
+            PeerShareManager peerShareManager) {
         this.peerEngineClient = peerEngineClient;
-        this.remoteSynchTask = remoteSynchTask;
+        this.databaseSynchManager = databaseSynchManager;
+        this.peerShareManager = peerShareManager;
         peersToSynch = new ConcurrentLinkedDeque<>();
         lastSynchedPeerID = null;
-        timer = new Timer(synchDelay, this, false, "RemoteSynchReminder");
+        timer = new Timer(REMOTE_SYNCH_DELAY, this, false, "RemoteSynchReminder");
         daemon = new Daemon(this);
-        remoteSynchConcurrencyController = new ConcurrencyController(new ConcurrencyControllerAction() {
+        databaseSynchConcurrencyController = new ConcurrencyController(new ConcurrencyControllerAction() {
             @Override
             public int maxNumberOfExecutionsAllowed() {
-                return maxConcurrentTasks;
+                return MAX_DATABASE_SYNCH_TASKS;
+            }
+
+            @Override
+            public int getActivityPriority(String activity) {
+                return 0;
+            }
+
+            @Override
+            public boolean activityCanExecute(String activity, ObjectCount<String> numberOfExecutionsOfActivities) {
+                return true;
+            }
+
+            @Override
+            public void activityIsGoingToBegin(String activity, ObjectCount<String> numberOfExecutionsOfActivities) {
+                // ignore
+            }
+
+            @Override
+            public void activityHasEnded(String activity, ObjectCount<String> numberOfExecutionsOfActivities) {
+                // ignore
+            }
+        });
+        shareSynchConcurrencyController = new ConcurrencyController(new ConcurrencyControllerAction() {
+            @Override
+            public int maxNumberOfExecutionsAllowed() {
+                return MAX_SHARE_SYNCH_TASKS;
             }
 
             @Override
@@ -97,9 +130,12 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
         try {
             PeerID peerID = peersToSynch.remove();
             ParallelTaskExecutor.executeTask(
-//                    () -> librarySynchManager.synchRemoteDatabase(peerID),
-                    () -> remoteSynchTask.executeRemoteSynch(peerID),
-                    remoteSynchConcurrencyController,
+                    () -> databaseSynchManager.synchRemoteDatabase(peerID),
+                    databaseSynchConcurrencyController,
+                    "SYNCH");
+            ParallelTaskExecutor.executeTask(
+                    () -> peerShareManager.synchRemoteShare(peerID),
+                    shareSynchConcurrencyController,
                     "SYNCH");
             return false;
         } catch (NoSuchElementException e) {
@@ -109,7 +145,8 @@ public class RemoteSynchReminder implements SimpleTimerAction, DaemonAction {
 
     public void stop() {
         timer.stop();
-        remoteSynchConcurrencyController.stopAndWaitForFinalization();
         daemon.blockUntilStateIsSolved();
+        databaseSynchConcurrencyController.stopAndWaitForFinalization();
+        shareSynchConcurrencyController.stopAndWaitForFinalization();
     }
 }

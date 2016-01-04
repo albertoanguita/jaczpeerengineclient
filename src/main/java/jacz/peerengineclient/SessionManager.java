@@ -21,6 +21,7 @@ import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.EightTuple;
+import jacz.util.log.ErrorHandler;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.xml.stream.XMLStreamException;
@@ -114,7 +115,8 @@ public class SessionManager {
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
             DatabaseSynchEvents databaseSynchEvents,
-            IntegrationEvents integrationEvents) throws IOException {
+            IntegrationEvents integrationEvents,
+            ErrorHandler errorHandler) throws IOException {
 
         try {
             EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> config =
@@ -145,7 +147,8 @@ public class SessionManager {
                     resourceTransferEvents,
                     tempFileManagerEvents,
                     databaseSynchEvents,
-                    integrationEvents);
+                    integrationEvents,
+                    errorHandler);
             peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);
             peerEngineClient.setMaxDesiredUploadSpeed(maxUploadSpeed);
             return peerEngineClient;

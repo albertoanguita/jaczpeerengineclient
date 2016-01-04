@@ -1,5 +1,7 @@
 package jacz.peerengineclient;
 
+import jacz.peerengineclient.data.PeerShareManager;
+import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.synch.DatabaseAccessor;
 import jacz.peerengineservice.PeerID;
@@ -15,8 +17,11 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
 
     private final DatabaseManager databaseManager;
 
-    public DataAccessorContainerImpl(DatabaseManager databaseManager) {
+    private final PeerShareManager peerShareManager;
+
+    public DataAccessorContainerImpl(DatabaseManager databaseManager, PeerShareManager peerShareManager) {
         this.databaseManager = databaseManager;
+        this.peerShareManager = peerShareManager;
     }
 
     @Override
@@ -35,10 +40,11 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
             case DatabaseAccessor.NAME:
                 return databaseManager.requestForSharedDatabaseSynchFromRemotePeer(peerID);
 
-//            case "qwer":
-//                return null;
+            case FileHashDatabaseAccessor.NAME:
+                return peerShareManager.requestForLocalHashSynch(peerID);
 
             default:
+                // todo error
                 throw new AccessorNotFoundException();
         }
     }

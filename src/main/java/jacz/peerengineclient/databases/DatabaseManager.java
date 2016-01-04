@@ -1,6 +1,6 @@
 package jacz.peerengineclient.databases;
 
-import jacz.database.DatabaseMediator;
+import jacz.database.DatabaseItem;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
@@ -65,8 +65,8 @@ public class DatabaseManager {
         }
     }
 
-    public synchronized void start() {
-        databaseSynchManager.start();
+    public DatabaseSynchManager getDatabaseSynchManager() {
+        return databaseSynchManager;
     }
 
     public Databases getDatabases() {
@@ -131,11 +131,9 @@ public class DatabaseManager {
      * This method is invoked by the list accessors of the remote databases
      *
      * @param peerID peer whose library must be synched
-     * @param type   type (class) of the item
-     * @param itemId id of the element to integrate
      */
-    public synchronized void remoteItemModified(PeerID peerID, DatabaseMediator.ItemType type, int itemId) {
-        // todo integrate this single item
+    public synchronized void remoteItemModified(PeerID peerID, DatabaseItem item) {
+        itemIntegrator.integrateRemoteItem(databases, peerID, item);
 //        remoteModifiedItems.addItem(peerID, library, elementIndex);
 //        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
     }
@@ -144,10 +142,9 @@ public class DatabaseManager {
      * A remote item is about to be removed
      *
      * @param peerID
-     * @param type
-     * @param itemId
      */
-    public synchronized void remoteItemWillBeRemoved(PeerID peerID, DatabaseMediator.ItemType type, int itemId) {
+    public synchronized void remoteItemWillBeRemoved(PeerID peerID, DatabaseItem item) {
+        itemIntegrator.removeRemoteItem(databases, peerID, item);
         // todo integrate this single item
 //        remoteModifiedItems.addItem(peerID, library, elementIndex);
 //        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
@@ -223,7 +220,6 @@ public class DatabaseManager {
         synchronized (this) {
             alive = false;
         }
-        databaseSynchManager.stop();
         itemIntegrator.stop();
     }
 }

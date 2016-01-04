@@ -1,18 +1,15 @@
-package jacz.peerengineclient.test.connect;
+package jacz.peerengineclient.test.synch_share;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.SessionManager;
-import jacz.peerengineclient.test.*;
-import jacz.peerengineservice.test.ResourceTransferEventsImpl;
-import jacz.peerengineservice.test.TempFileManagerEventsImpl;
+import jacz.peerengineclient.test.Client;
 import jacz.util.concurrency.ThreadUtil;
 
 import java.io.IOException;
 
 /**
- * Created by Alberto on 26/12/2015.
+ * Created by Alberto on 02/01/2016.
  */
-public class TestConnect_1 {
+public class TestSynchShare_1 {
 
     public static void main(String[] args) throws IOException {
 

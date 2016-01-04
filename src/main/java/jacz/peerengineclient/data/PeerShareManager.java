@@ -4,14 +4,16 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.data.synch.RemotePeerShareAccessor;
 import jacz.peerengineclient.data.synch.SynchProgress;
-import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineclient.util.synch.SynchMode;
 import jacz.peerengineclient.util.synch.SynchRecord;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
-import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
+import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
+import jacz.util.io.object_serialization.VersionedSerializationException;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -21,25 +23,20 @@ import java.util.Set;
  */
 public class PeerShareManager {
 
-    private static final long REMOTE_SYNCH_DELAY = 1000;
-
-    private static final int MAX_CONCURRENT__REMOTE_SYNCHS = 20;
-
     private static final long RECENTLY_THRESHOLD = 15000;
 
     private static final int LARGE_SHARED_SYNCH_COUNT = 10;
 
     private static final int VERY_LARGE_SHARED_SYNCH_COUNT = 20;
 
-    private static final String ACCESSOR_NAME = "FILE_HASH_DATA_ACCESSOR";
-
     private static final long SYNCH_TIMEOUT = 15000L;
-
 
 
     private final PeerEngineClient peerEngineClient;
 
     private final FileHashDatabaseWithTimestamp fileHash;
+
+    private ForeignShares foreignShares;
 
     private final Map<PeerID, RemotePeerShare> remotePeerShares;
 
@@ -47,40 +44,65 @@ public class PeerShareManager {
 
     private final Set<PeerID> activeRemoteShareSynchs;
 
-    private final RemoteSynchReminder remoteSynchReminder;
-
     private final SynchRecord sharedSynchRecord;
 
     private final SynchRecord remoteSynchRecord;
 
     public PeerShareManager(
             PeerEngineClient peerEngineClient,
-            FileHashDatabaseWithTimestamp fileHash,
-            Map<PeerID, RemotePeerShare> remotePeerShares) {
+            FileHashDatabaseWithTimestamp fileHash) {
         this.peerEngineClient = peerEngineClient;
         this.fileHash = fileHash;
-        this.remotePeerShares = remotePeerShares;
+        this.foreignShares = null;
+        this.remotePeerShares = new HashMap<>();
         activeLocalHashSynchs = new HashSet<>();
         activeRemoteShareSynchs = new HashSet<>();
-        remoteSynchReminder = new RemoteSynchReminder(
-                peerEngineClient,
-                this::synchRemoteShare,
-                REMOTE_SYNCH_DELAY,
-                MAX_CONCURRENT__REMOTE_SYNCHS);
         sharedSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
         remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
     }
 
-    public void start() {
-        remoteSynchReminder.start();
+    public void setPeerClient(PeerClient peerClient) {
+        this.foreignShares = new ForeignShares(peerClient);
     }
 
     public FileHashDatabaseWithTimestamp getFileHash() {
         return fileHash;
     }
 
-    public Map<PeerID, RemotePeerShare> getRemotePeerShares() {
-        return remotePeerShares;
+    public synchronized Set<Map.Entry<PeerID, RemotePeerShare>> getRemotePeerShares() {
+        return remotePeerShares.entrySet();
+    }
+
+    public synchronized void peerConnected(String basePath, PeerID peerID) {
+        RemotePeerShare remotePeerShare;
+        try {
+            remotePeerShare = PeerShareIO.loadRemoteShare(basePath, peerID, foreignShares);
+        } catch (IOException | VersionedSerializationException e) {
+            // could not load the share (maybe it did not exist) -> create a new one
+            remotePeerShare = new RemotePeerShare(peerID, foreignShares);
+        }
+        remotePeerShares.put(peerID, remotePeerShare);
+    }
+
+    public synchronized void peerDisconnected(String basePath, PeerID peerID) {
+        RemotePeerShare remotePeerShare = remotePeerShares.remove(peerID);
+        if (remotePeerShare != null) {
+            remotePeerShare.notifyPeerDisconnected();
+            try {
+                PeerShareIO.saveRemotePeerShare(basePath, peerID, remotePeerShare);
+            } catch (IOException e) {
+                // error writing the remote peer share to disk -> remove the files, if any
+                // a new peer share will be created at some time in the future
+                PeerShareIO.removeRemotePeerShare(basePath, peerID);
+            }
+        }
+    }
+
+    public synchronized void removeRemotePeer(String basePath, PeerID remotePeerID) {
+        if (remotePeerShares.containsKey(remotePeerID)) {
+            remotePeerShares.get(remotePeerID).clear();
+        }
+        PeerShareIO.removeRemotePeerShare(basePath, remotePeerID);
     }
 
     public FileHashDatabaseAccessor requestForLocalHashSynch(PeerID peerID) throws ServerBusyException {
@@ -118,9 +140,6 @@ public class PeerShareManager {
                         activeRemoteShareSynchs.add(peerID);
                         remoteSynchRecord.newSynchWithPeer(peerID);
                     }
-                } catch (AccessorNotFoundException e) {
-                    // todo fatal error
-                    e.printStackTrace();
                 } catch (UnavailablePeerException e) {
                     // peer is no longer connected, ignore request
                 }
@@ -138,9 +157,5 @@ public class PeerShareManager {
         synchronized (activeRemoteShareSynchs) {
             activeRemoteShareSynchs.remove(remotePeerID);
         }
-    }
-
-    public void stop() {
-        remoteSynchReminder.stop();
     }
 }

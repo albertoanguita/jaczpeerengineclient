@@ -57,7 +57,7 @@ public class DatabaseAccessor implements DataAccessor {
 
     @Override
     public void setDatabaseID(String databaseID) {
-        DatabaseMediator.setDatabaseIdentifier(dbPath, databaseID);
+        DatabaseMediator.dropAndCreate(dbPath, databaseID);
     }
 
     @Override
@@ -107,9 +107,9 @@ public class DatabaseAccessor implements DataAccessor {
                         movie = new Movie(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeMovie(item, movie);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, movie);
                 } else if (movie != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, movie);
                     movie.delete();
                 }
                 break;
@@ -121,9 +121,9 @@ public class DatabaseAccessor implements DataAccessor {
                         tvSeries = new TVSeries(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeTVSeries(item, tvSeries);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, tvSeries);
                 } else if (tvSeries != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, tvSeries);
                     tvSeries.delete();
                 }
                 break;
@@ -135,9 +135,9 @@ public class DatabaseAccessor implements DataAccessor {
                         chapter = new Chapter(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeChapter(item, chapter);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, chapter);
                 } else if (chapter != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, chapter);
                     chapter.delete();
                 }
                 break;
@@ -149,9 +149,9 @@ public class DatabaseAccessor implements DataAccessor {
                         person = new Person(dbPath, item.getId());
                     }
                     ItemSerializer.deserializePerson(item, person);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, person);
                 } else if (person != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, person);
                     person.delete();
                 }
                 break;
@@ -163,9 +163,9 @@ public class DatabaseAccessor implements DataAccessor {
                         company = new Company(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeCompany(item, company);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, company);
                 } else if (company != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, company);
                     company.delete();
                 }
                 break;
@@ -177,9 +177,9 @@ public class DatabaseAccessor implements DataAccessor {
                         videoFile = new VideoFile(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeVideoFile(item, videoFile);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, videoFile);
                 } else if (videoFile != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, videoFile);
                     videoFile.delete();
                 }
                 break;
@@ -191,9 +191,9 @@ public class DatabaseAccessor implements DataAccessor {
                         subtitleFile = new SubtitleFile(dbPath, item.getId());
                     }
                     ItemSerializer.deserializeSubtitleFile(item, subtitleFile);
-                    databaseManager.remoteItemModified(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemModified(remotePeerID, subtitleFile);
                 } else if (subtitleFile != null) {
-                    databaseManager.remoteItemWillBeRemoved(remotePeerID, item.getType(), item.getId());
+                    databaseManager.remoteItemWillBeRemoved(remotePeerID, subtitleFile);
                     subtitleFile.delete();
                 }
                 break;

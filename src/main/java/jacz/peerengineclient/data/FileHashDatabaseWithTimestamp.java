@@ -66,10 +66,11 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     }
 
     @Override
-    public void remove(String key) throws IOException {
-        super.remove(key);
+    public String remove(String key) {
+        String path = super.remove(key);
         Long timestamp = activeHashes.removeReverse(key);
         deletedHashes.put(timestamp, key);
+        return path;
     }
 
     @Override
@@ -102,6 +103,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
                         .filter(entry -> entry.getKey() >= fromTimestamp)
                         .map(entry -> new SerializedHashItem(entry.getKey(), entry.getValue(), false))
                         .collect(Collectors.toList()));
+        // todo add files in temp file manager
         Collections.sort(items);
         return items;
     }
@@ -114,6 +116,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     @Override
     public Map<String, Serializable> serialize() {
         Map<String, Serializable> map = new HashMap<>(super.serialize());
+        map.put("id", id);
         map.put("activeHashes", activeHashes);
         map.put("deletedHashes", deletedHashes);
         map.put("nextTimestamp", nextTimestamp);
@@ -123,6 +126,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     @Override
     public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
         if (version.equals(CURRENT_VERSION)) {
+            id = (String) attributes.get("id");
             activeHashes = (DoubleMap<Long, String>) attributes.get("activeHashes");
             deletedHashes = (HashMap<Long, String>) attributes.get("deletedHashes");
             nextTimestamp = (Long) attributes.get("nextTimestamp");

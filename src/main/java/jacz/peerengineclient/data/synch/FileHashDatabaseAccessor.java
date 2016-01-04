@@ -11,11 +11,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by Alberto on 03/12/2015.
+ * Accessor for the file hash database (with timestamp). Works in server mode only
  */
 public class FileHashDatabaseAccessor implements DataAccessor {
 
-    private static final String NAME = "FILE_HASH_DATA_ACCESSOR";
+    public static final String NAME = "FILE_HASH_DATA_ACCESSOR";
 
     private static final int ELEMENTS_PER_MESSAGE = 20;
 

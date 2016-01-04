@@ -4,10 +4,7 @@ import jacz.database.Movie;
 import jacz.database.util.GenreCode;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
-import jacz.peerengineclient.test.ConnectionEventsImpl;
-import jacz.peerengineclient.test.DatabaseSynchEventsImpl;
-import jacz.peerengineclient.test.GeneralEventsImpl;
-import jacz.peerengineclient.test.IntegrationEventsImpl;
+import jacz.peerengineclient.test.*;
 import jacz.peerengineservice.test.ResourceTransferEventsImpl;
 import jacz.peerengineservice.test.TempFileManagerEventsImpl;
 import jacz.util.concurrency.ThreadUtil;
@@ -21,14 +18,7 @@ public class TestSynch_2 {
 
     public static void main(String[] args) throws IOException {
 
-        PeerEngineClient peerEngineClient = SessionManager.load(
-                "./etc/user_1",
-                new GeneralEventsImpl(),
-                new ConnectionEventsImpl(),
-                new ResourceTransferEventsImpl(),
-                new TempFileManagerEventsImpl(),
-                new DatabaseSynchEventsImpl(),
-                new IntegrationEventsImpl());
+        PeerEngineClient peerEngineClient = Client.loadClient("./etc/user_1");
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
 

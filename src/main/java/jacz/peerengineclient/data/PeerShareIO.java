@@ -32,21 +32,19 @@ public class PeerShareIO {
 
     public static PeerShareManager load(String basePath, PeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
         FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
-        Map<PeerID, RemotePeerShare> remotePeerShares = new HashMap<>();
-        for (PeerID peerID : Paths.listRemoteSharePeers(basePath)) {
-            remotePeerShares.put(
-                    peerID,
-                    new RemotePeerShare(
-                            peerEngineClient.getPeerClient(),
-                            Paths.remoteSharePath(basePath, peerID),
-                            Paths.remoteShareBackupPath(basePath, peerID)));
-        }
-        return new PeerShareManager(peerEngineClient, fileHash, remotePeerShares);
+        return new PeerShareManager(peerEngineClient, fileHash);
+    }
+
+    static RemotePeerShare loadRemoteShare(String basePath, PeerID peerID, ForeignShares foreignShares) throws IOException, VersionedSerializationException {
+        return new RemotePeerShare(
+                foreignShares,
+                Paths.remoteSharePath(basePath, peerID),
+                Paths.remoteShareBackupPath(basePath, peerID));
     }
 
     public static void save(String basePath, PeerShareManager peerShareManager) throws IOException {
         saveLocalHash(basePath, peerShareManager.getFileHash());
-        for (Map.Entry<PeerID, RemotePeerShare> entry : peerShareManager.getRemotePeerShares().entrySet()) {
+        for (Map.Entry<PeerID, RemotePeerShare> entry : peerShareManager.getRemotePeerShares()) {
             saveRemotePeerShare(basePath, entry.getKey(), entry.getValue());
         }
     }
@@ -55,7 +53,7 @@ public class PeerShareIO {
         VersionedObjectSerializer.serialize(fileHash, CRCBytes, Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
     }
 
-    private static void saveRemotePeerShare(String basePath, PeerID peerID, RemotePeerShare remotePeerShare) throws IOException {
+    static void saveRemotePeerShare(String basePath, PeerID peerID, RemotePeerShare remotePeerShare) throws IOException {
         VersionedObjectSerializer.serialize(
                 remotePeerShare,
                 CRCBytes,
@@ -63,15 +61,7 @@ public class PeerShareIO {
                 Paths.remoteShareBackupPath(basePath, peerID));
     }
 
-    static RemotePeerShare createNewRemotePeerShare(String basePath, PeerEngineClient peerEngineClient, PeerID peerID) throws IOException {
-        // todo use
-        RemotePeerShare remotePeerShare = new RemotePeerShare(peerEngineClient.getPeerClient(), peerID);
-        saveRemotePeerShare(basePath, peerID, remotePeerShare);
-        return remotePeerShare;
-    }
-
-    public static void removeRemotePeerShare(String basePath, PeerID peerID) {
-        // todo use
+    static void removeRemotePeerShare(String basePath, PeerID peerID) {
         //noinspection ResultOfMethodCallIgnored
         new File(Paths.remoteSharePath(basePath, peerID)).delete();
         //noinspection ResultOfMethodCallIgnored

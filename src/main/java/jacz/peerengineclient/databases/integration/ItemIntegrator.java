@@ -47,7 +47,7 @@ public class ItemIntegrator {
         integrationEvents.stop();
     }
 
-    void integrateLocalItem(
+    public void integrateLocalItem(
             Databases databases,
             DatabaseItem localItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
@@ -74,7 +74,7 @@ public class ItemIntegrator {
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
     }
 
-    void removeLocalContent(
+    public void removeLocalContent(
             Databases databases,
             DatabaseItem localItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
@@ -101,10 +101,10 @@ public class ItemIntegrator {
     }
 
 
-    private void integrateRemoteItem(
+    public  void integrateRemoteItem(
             Databases databases,
             PeerID remotePeerID,
-            DatabaseItem remoteItem) throws ParseException {
+            DatabaseItem remoteItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
 
         DatabaseMediator.ItemType type = remoteItem.getItemType();
@@ -151,10 +151,10 @@ public class ItemIntegrator {
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
     }
 
-    private void removeExternalItem(
+    public  void removeRemoteItem(
             Databases databases,
             PeerID remotePeerID,
-            DatabaseItem remoteItem) throws ParseException, IOException {
+            DatabaseItem remoteItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
 
         DatabaseMediator.ItemType type = remoteItem.getItemType();

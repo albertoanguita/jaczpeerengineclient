@@ -64,8 +64,9 @@ public class DatabaseIO {
     }
 
     static String createNewRemoteDatabase(String basePath, PeerID peerID) throws IOException {
+        // set up a temporary database with a pre-fixed identifier. This database will be re-created in the first synch
         String dbPath = Paths.remoteDBPath(basePath, peerID);
-        DatabaseMediator.dropAndCreate(dbPath, RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        DatabaseMediator.dropAndCreate(dbPath, "temp-id");
         return dbPath;
     }
 

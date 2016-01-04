@@ -11,8 +11,6 @@ import java.util.Map;
  */
 public class SynchRecord {
 
-    private static final long RECENTLY_THRESHOLD = 30000;
-
     /**
      * For each peer, stores the last time that we synched the shared library with him
      */

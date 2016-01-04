@@ -45,6 +45,7 @@ public class GeneralEventsBridge implements GeneralEvents {
 
     @Override
     public void newPeerConnected(PeerID peerID, ConnectionStatus status) {
+        peerEngineClient.peerConnected(peerID);
         generalEvents.newPeerConnected(peerID, status);
     }
 
@@ -65,6 +66,7 @@ public class GeneralEventsBridge implements GeneralEvents {
 
     @Override
     public void peerDisconnected(PeerID peerID, CommError error) {
+        peerEngineClient.peerDisconnected(peerID);
         generalEvents.peerDisconnected(peerID, error);
     }
 

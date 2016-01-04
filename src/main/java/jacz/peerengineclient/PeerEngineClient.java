@@ -1,6 +1,7 @@
 package jacz.peerengineclient;
 
 import jacz.database.DatabaseMediator;
+import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.DatabaseIO;
@@ -8,6 +9,7 @@ import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
+import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
@@ -19,7 +21,6 @@ import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
-import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
@@ -33,6 +34,7 @@ import jacz.peerengineservice.util.tempfile_api.TempFileManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.log.ErrorHandler;
 import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
@@ -44,11 +46,9 @@ import java.util.Set;
 /**
  * PeerEngine client adapted for Jacuzzi
  * <p>
- * todo check synch
- * <p>
  * todo recover temp files in constructor and put them in paused mode
  * <p>
- * todo si no tiene conexion, tarda mucho en dar un unable to connect to server (unos 25 segs)
+ * todo si no tiene conexion, no debería sacar la ip pública
  */
 public class PeerEngineClient {
 
@@ -67,7 +67,6 @@ public class PeerEngineClient {
     static final String OWN_GENERIC_DATA_FIELD_GROUP = "@OWN_GENERIC_DATA_FIELD_GROUP";
 
     static final String FINAL_PATH_GENERIC_DATA_FIELD = "@FINAL_PATH_GENERIC_DATA_FIELD";
-
 
 
 //    /**
@@ -155,6 +154,10 @@ public class PeerEngineClient {
 
     private final PeerShareManager peerShareManager;
 
+    private final RemoteSynchReminder remoteSynchReminder;
+
+    private final ErrorHandlerBridge errorHandler;
+
     private final TempFileManager tempFileManager;
 
     // todo use??
@@ -163,7 +166,6 @@ public class PeerEngineClient {
     private final String tempDownloadsPath;
 
     private final String downloadsPath;
-
 
 
     public PeerEngineClient(
@@ -181,13 +183,15 @@ public class PeerEngineClient {
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
             DatabaseSynchEvents databaseSynchEvents,
-            IntegrationEvents integrationEvents) throws IOException, VersionedSerializationException {
+            IntegrationEvents integrationEvents,
+            ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
         this.peersPersonalData = peersPersonalData;
         this.transferStatistics = transferStatistics;
         databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this, peerRelations.getFriendPeers());
         peerShareManager = PeerShareIO.load(basePath, this);
-        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager);
+        this.errorHandler = new ErrorHandlerBridge(this, errorHandler);
+        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager, peerShareManager);
         peerClient = new PeerClient(
                 ownPeerID,
                 peerEncryption,
@@ -199,11 +203,12 @@ public class PeerEngineClient {
                 transferStatistics,
                 peerRelations,
                 new HashMap<>(),
-                dataAccessorContainer);
+                dataAccessorContainer,
+                this.errorHandler);
 
-        // todo restore
-        databaseManager.start();
-//        peerShareManager.start();
+        peerShareManager.setPeerClient(peerClient);
+        remoteSynchReminder = new RemoteSynchReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager);
+        remoteSynchReminder.start();
         tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
         downloadsManager = new DownloadsManager(peerClient);
         this.tempDownloadsPath = tempDownloadsPath;
@@ -225,12 +230,13 @@ public class PeerEngineClient {
     }
 
     public void stop() throws IOException {
+        remoteSynchReminder.stop();
         if (databaseManager != null) {
             databaseManager.stop();
             DatabaseIO.save(basePath, databaseManager);
         }
         if (peerShareManager != null) {
-            peerShareManager.stop();
+            PeerShareIO.save(basePath, peerShareManager);
         }
         if (transferStatistics != null) {
             transferStatistics.stop();
@@ -308,15 +314,15 @@ public class PeerEngineClient {
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
         databaseManager.removePeer(basePath, peerID);
+        peerShareManager.removeRemotePeer(basePath, peerID);
     }
 
-    synchronized void newPeerConnected(PeerID peerID) {
-        try {
-            databaseManager.addPeer(basePath, peerID);
-        } catch (IOException e) {
-            // todo handle
-            e.printStackTrace();
-        }
+    synchronized void peerConnected(PeerID peerID) {
+        peerShareManager.peerConnected(basePath, peerID);
+    }
+
+    synchronized void peerDisconnected(PeerID peerID) {
+        peerShareManager.peerDisconnected(basePath, peerID);
     }
 
     public synchronized void setNick(String nick) {
@@ -397,6 +403,18 @@ public class PeerEngineClient {
 //    public synchronized void removeForeignResourceStore(String resourceStore) {
 //        peerClient.removeForeignResourceStore(resourceStore);
 //    }
+
+    public String addLocalFile(String path, MoveFileAction moveFileAction) throws IOException {
+        // todo move to repo
+        return peerShareManager.getFileHash().put(path);
+    }
+
+    public void removeLocalFile(String key, boolean removeFile) {
+        String path = peerShareManager.getFileHash().remove(key);
+        if (path != null) {
+            // todo remove file
+        }
+    }
 
     public synchronized DownloadManager downloadMediaFile(
             DatabaseMediator.ItemType containerType,
@@ -749,7 +767,7 @@ public class PeerEngineClient {
     }
 
 
-    public boolean synchronizeList(PeerID peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws AccessorNotFoundException, UnavailablePeerException {
+    public boolean synchronizeList(PeerID peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
         return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessor, timeout, progress);
     }
 

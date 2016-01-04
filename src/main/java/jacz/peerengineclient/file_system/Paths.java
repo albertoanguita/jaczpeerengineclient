@@ -214,22 +214,11 @@ public class Paths {
      * peer shares
      ***********************/
 
-    public static Set<PeerID> listRemoteSharePeers(String basePath) throws FileNotFoundException {
-        String[] filesInRemoteDir = FileUtil.getDirectoryContents(getRemoteSharesDir(basePath));
-        Set<PeerID> remoteDatabasePeers = new HashSet<>();
-        for (String file : filesInRemoteDir) {
-            remoteDatabasePeers.add(new PeerID(FileUtil.getFileNameWithoutExtension(file)));
-        }
-        return remoteDatabasePeers;
-    }
-
     public static String remoteSharePath(String basePath, PeerID peerID) {
-        return FileUtil.joinPaths(basePath, DATABASES_DIR, REMOTE_DATABASES_DIR, peerID.toString(), EXT_DB);
+        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_VERSIONED);
     }
 
     public static String remoteShareBackupPath(String basePath, PeerID peerID) {
-        return FileUtil.joinPaths(basePath, DATABASES_DIR, REMOTE_DATABASES_DIR, peerID.toString(), EXT_BACKUP);
+        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
     }
-
-
 }

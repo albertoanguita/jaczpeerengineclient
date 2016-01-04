@@ -3,12 +3,12 @@ package jacz.peerengineclient.databases.synch;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
-import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineclient.util.synch.SynchMode;
 import jacz.peerengineclient.util.synch.SynchRecord;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
-import jacz.peerengineservice.util.data_synchronization.*;
+import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,11 +21,6 @@ import java.util.Set;
  * Finally, this class is in charge of reporting the progress of the active synch processes
  */
 public class DatabaseSynchManager {
-
-    private static final long REMOTE_SYNCH_DELAY = 2000;
-
-    private static final int MAX_CONCURRENT__REMOTE_SYNCHS = 10;
-
 
     private static final long RECENTLY_THRESHOLD = 30000;
 
@@ -48,8 +43,6 @@ public class DatabaseSynchManager {
 
     private final Set<PeerID> activeRemoteSynchs;
 
-    private final RemoteSynchReminder remoteSynchReminder;
-
     private final SynchRecord sharedSynchRecord;
 
     private final SynchRecord remoteSynchRecord;
@@ -65,17 +58,8 @@ public class DatabaseSynchManager {
         this.databases = databases;
         activeSharedSynchs = new HashSet<>();
         activeRemoteSynchs = new HashSet<>();
-        remoteSynchReminder = new RemoteSynchReminder(
-                peerEngineClient,
-                this::synchRemoteDatabase,
-                REMOTE_SYNCH_DELAY,
-                MAX_CONCURRENT__REMOTE_SYNCHS);
         sharedSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
         remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
-    }
-
-    public void start() {
-        remoteSynchReminder.start();
     }
 
     /**
@@ -137,10 +121,6 @@ public class DatabaseSynchManager {
 //    }
 //
     public void synchRemoteDatabase(PeerID peerID) {
-        // todo tests
-        if (peerID.toString().equals("0000000000000000000000000000000000000000001")) {
-            return;
-        }
         synchronized (activeRemoteSynchs) {
             // we only consider this request if we are not currently synching with this peer and
             // we did not recently synched with this peer
@@ -163,9 +143,6 @@ public class DatabaseSynchManager {
                         activeRemoteSynchs.add(peerID);
                         remoteSynchRecord.newSynchWithPeer(peerID);
                     }
-                } catch (AccessorNotFoundException e) {
-                    // todo fatal error
-                    e.printStackTrace();
                 } catch (UnavailablePeerException e) {
                     // peer is no longer connected, ignore request
                 }
@@ -231,9 +208,5 @@ public class DatabaseSynchManager {
             activeRemoteSynchs.remove(remotePeerID);
         }
         databaseSynchEvents.remoteSynchTimeout(remotePeerID);
-    }
-
-    public void stop() {
-        remoteSynchReminder.stop();
     }
 }

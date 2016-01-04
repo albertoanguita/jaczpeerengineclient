@@ -7,6 +7,8 @@ import jacz.peerengineservice.util.ForeignStoreShare;
 /**
  * This class stores the two foreign shares used and corresponding to the two resource stores defined in the API.
  * One is for video and subtitle files, and the other is for image files.
+ * <p>
+ * We only use one object of this class, as these shares store the resources share for all peers
  */
 public class ForeignShares {
 
