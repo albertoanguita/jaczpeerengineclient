@@ -76,6 +76,7 @@ public class RemotePeerShareAccessor implements DataAccessor {
             System.out.println("New item: " + item.hash);
             remotePeerShare.addHash(item.timestamp, item.hash);
         } else {
+            System.out.println("remove item: " + item.hash);
             remotePeerShare.removeHash(item.timestamp, item.hash);
         }
     }

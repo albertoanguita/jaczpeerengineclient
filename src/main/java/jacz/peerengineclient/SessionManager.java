@@ -18,7 +18,7 @@ import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileUtil;
 import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.object_serialization.VersionedObjectSerializer;
+import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.EightTuple;
 import jacz.util.log.ErrorHandler;
@@ -45,10 +45,7 @@ public class SessionManager {
 
     public static final int CRC_LENGTH = 8;
 
-    // todo allow changing these
-    private static final String DEFAULT_TEMP_DIR = "temp";
-
-    private static final String DEFAULT_DATA_DIR = "downloads";
+    // todo allow changing temp and downloads dir
 
     public static synchronized String createUserConfig(String basePath, byte[] randomBytes, String nick) throws IOException {
         // creates a new user account
@@ -61,8 +58,8 @@ public class SessionManager {
         try {
             Duple<String, String> newUserDirectory = FileUtil.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
             String userPath = newUserDirectory.element1;
-            String tempPath = FileUtil.joinPaths(userPath, DEFAULT_TEMP_DIR);
-            String dataPath = FileUtil.joinPaths(userPath, DEFAULT_DATA_DIR);
+            String tempPath = Paths.getDefaultTempDir(userPath);
+            String dataPath = Paths.getDefaultDownloadsDir(userPath);
 
             // create sub-directories
             for (String dir : Paths.getOrderedDirectories(userPath)) {
@@ -115,6 +112,7 @@ public class SessionManager {
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
             DatabaseSynchEvents databaseSynchEvents,
+            DownloadEvents downloadEvents,
             IntegrationEvents integrationEvents,
             ErrorHandler errorHandler) throws IOException {
 
@@ -147,6 +145,7 @@ public class SessionManager {
                     resourceTransferEvents,
                     tempFileManagerEvents,
                     databaseSynchEvents,
+                    downloadEvents,
                     integrationEvents,
                     errorHandler);
             peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);

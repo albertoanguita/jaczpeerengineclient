@@ -1,5 +1,9 @@
 package jacz.peerengineclient;
 
+import jacz.database.Chapter;
+import jacz.database.DatabaseMediator;
+import jacz.database.Movie;
+import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.DownloadProgressNotificationHandler;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
@@ -31,72 +35,72 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
 
     @Override
     public void started(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.started(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        downloadEvents.started(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
     public void resourceSize(String resourceID, String storeName, DownloadManager downloadManager, long resourceSize) {
-        downloadEvents.resourceSize(resourceID, handleStore(storeName), downloadManager, resourceSize, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void providerAdded(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
-        downloadEvents.providerAdded(resourceID, handleStore(storeName), providerStatistics, downloadManager, provider, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void providerRemoved(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
-        downloadEvents.providerRemoved(resourceID, handleStore(storeName), providerStatistics, downloadManager, provider, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void providerReportedSharedPart(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, ResourcePart sharedPart) {
-        downloadEvents.providerReportedSharedPart(resourceID, handleStore(storeName), providerStatistics, downloadManager, sharedPart, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void providerWasAssignedSegment(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, LongRange assignedSegment) {
-        downloadEvents.providerWasAssignedSegment(resourceID, handleStore(storeName), providerStatistics, downloadManager, assignedSegment, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void providerWasClearedAssignation(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager) {
-        downloadEvents.providerWasClearedAssignation(resourceID, handleStore(storeName), providerStatistics, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void paused(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.paused(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        downloadEvents.paused(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
     public void resumed(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.resumed(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        downloadEvents.resumed(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
     public void downloadedSegment(String resourceID, String storeName, LongRange segment, DownloadManager downloadManager) {
-        downloadEvents.downloadedSegment(resourceID, storeName, segment, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void checkingTotalHash(String resourceID, String storeName, int percentage, DownloadManager downloadManager) {
-        downloadEvents.checkingTotalHash(resourceID, storeName, percentage, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void successTotalHash(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.successTotalHash(resourceID, storeName, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void failedTotalHash(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.failedTotalHash(resourceID, storeName, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
     public void invalidTotalHashAlgorithm(String resourceID, String storeName, String hashAlgorithm, DownloadManager downloadManager) {
-        downloadEvents.invalidTotalHashAlgorithm(resourceID, storeName, hashAlgorithm, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        // ignore
     }
 
     @Override
@@ -133,17 +137,35 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
 //        } else {
 //            finalPath = this.downloadManager.getCurrentPath();
 //        }
-        downloadEvents.completed(resourceID, handleStore(storeName), finalPath, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        DownloadInfo downloadInfo = buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
+        if (downloadInfo.type.isMedia()) {
+            // move file to required location
+            if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
+                Movie movie = Movie.getMovieById(, downloadInfo.containerId);
+                finalPath = Paths.movieFilePath(, downloadInfo.containerId, movie.getTitle(), downloadInfo.fileName);
+            } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
+                Chapter chapter = Chapter.getChapterById(, downloadInfo.containerId);
+                finalPath = Paths.seriesFilePath(, downloadInfo.containerId, chapter.getTitle(), downloadInfo.fileName);
+            } else {
+                // todo error
+            }
+            try {
+                FileUtil.move(resourceWriter.getPath(), finalPath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        downloadEvents.completed(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), finalPath, downloadManager);
     }
 
     @Override
     public void cancelled(String resourceID, String storeName, CancellationReason reason, DownloadManager downloadManager) {
-        downloadEvents.cancelled(resourceID, handleStore(storeName), reason, downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        downloadEvents.cancelled(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager, reason);
     }
 
     @Override
     public void stopped(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.stopped(resourceID, handleStore(storeName), downloadManager, buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()));
+        downloadEvents.stopped(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     private String handleStore(String storeName) {

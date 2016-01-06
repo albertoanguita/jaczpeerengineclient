@@ -1,7 +1,9 @@
 package jacz.peerengineclient.data;
 
+import jacz.peerengineclient.PeerEngineClient;
+import jacz.util.hash.HashFunction;
 import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.object_serialization.*;
+import jacz.util.io.serialization.*;
 import jacz.util.maps.DoubleMap;
 
 import java.io.IOException;
@@ -37,6 +39,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     }
 
     public FileHashDatabaseWithTimestamp(String id) {
+        super(PeerEngineClient.getHashFunction());
         this.id = id;
         activeHashes = new DoubleMap<>();
         deletedHashes = new HashMap<>();
@@ -66,19 +69,25 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     }
 
     @Override
-    public String remove(String key) {
-        String path = super.remove(key);
-        Long timestamp = activeHashes.removeReverse(key);
-        deletedHashes.put(timestamp, key);
+    public String remove(String hash) {
+        String path = super.remove(hash);
+        moveFromActiveToDeleted(hash);
         return path;
     }
 
     @Override
     public String removeValue(String path) throws IOException {
         String hash = super.removeValue(path);
-        Long timestamp = activeHashes.removeReverse(hash);
-        deletedHashes.put(timestamp, hash);
+        moveFromActiveToDeleted(hash);
         return hash;
+    }
+
+    private void moveFromActiveToDeleted(String hash) {
+        Long timestamp = activeHashes.removeReverse(hash);
+        if (timestamp != null) {
+            // the item did exist in activeHashes -> add to deleted hashes
+            deletedHashes.put(getNextTimestamp(), hash);
+        }
     }
 
     @Override

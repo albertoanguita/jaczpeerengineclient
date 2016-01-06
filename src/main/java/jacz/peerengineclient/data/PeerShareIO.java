@@ -3,8 +3,8 @@ package jacz.peerengineclient.data;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
-import jacz.util.io.object_serialization.VersionedObjectSerializer;
-import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.io.serialization.VersionedObjectSerializer;
+import jacz.util.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;

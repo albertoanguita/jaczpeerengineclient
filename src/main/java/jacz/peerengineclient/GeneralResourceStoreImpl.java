@@ -38,7 +38,7 @@ public class GeneralResourceStoreImpl implements GeneralResourceStore {
                 try {
                     HashMap<String, Serializable> userDictionary = tempFileManager.getUserDictionary(tempFile);
                     DownloadInfo downloadInfo = DownloadProgressNotificationHandlerBridge.buildDownloadInfo(userDictionary);
-                    if (resourceID.equals(downloadInfo.itemHash)) {
+                    if (resourceID.equals(downloadInfo.fileHash)) {
                         // resource found!
                         return ResourceStoreResponse.resourceApproved(new TempFileReader(tempFileManager, tempFile));
                     }

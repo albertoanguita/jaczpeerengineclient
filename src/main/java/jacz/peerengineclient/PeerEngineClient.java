@@ -1,6 +1,7 @@
 package jacz.peerengineclient;
 
 import jacz.database.DatabaseMediator;
+import jacz.database.util.ImageHash;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
@@ -9,6 +10,7 @@ import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
+import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.util.synch.RemoteSynchReminder;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
@@ -32,13 +34,16 @@ import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWrite
 import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
+import jacz.util.hash.HashFunction;
+import jacz.util.hash.MD5;
 import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.log.ErrorHandler;
 import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +62,8 @@ public class PeerEngineClient {
     public static final String MEDIA_STORE = "@PEER_ENGINE_CLIENT_MEDIA_RESOURCE_STORE";
 
     public static final String IMAGE_STORE = "@PEER_ENGINE_CLIENT_IMAGE_RESOURCE_STORE";
+
+    private static final String HASH_ALGORITHM = "MD5";
 
     private static final String DEFAULT_TEMPORARY_FILE_NAME = "downloadedFile";
 
@@ -156,6 +163,8 @@ public class PeerEngineClient {
 
     private final RemoteSynchReminder remoteSynchReminder;
 
+    private final DownloadEvents downloadEvents;
+
     private final ErrorHandlerBridge errorHandler;
 
     private final TempFileManager tempFileManager;
@@ -183,6 +192,7 @@ public class PeerEngineClient {
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
             DatabaseSynchEvents databaseSynchEvents,
+            DownloadEvents downloadEvents,
             IntegrationEvents integrationEvents,
             ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
@@ -210,6 +220,7 @@ public class PeerEngineClient {
         remoteSynchReminder = new RemoteSynchReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager);
         remoteSynchReminder.start();
         tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
+        this.downloadEvents = downloadEvents;
         downloadsManager = new DownloadsManager(peerClient);
         this.tempDownloadsPath = tempDownloadsPath;
         this.downloadsPath = downloadsPath;
@@ -417,57 +428,42 @@ public class PeerEngineClient {
     }
 
     public synchronized DownloadManager downloadMediaFile(
+            DownloadInfo.Type type,
             DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            DatabaseMediator.ItemType itemType,
-            String itemHash,
-            String itemName,
-            DownloadEvents downloadEvents) throws IOException, NotAliveException {
-        ResourceWriter resourceWriter = generateTempFileWriter(containerType, containedId, itemType, itemHash, itemName);
-        return downloadFile(MEDIA_STORE, itemHash, resourceWriter, downloadEvents, 0d);
+            int containerId,
+            int itemId,
+            String fileHash,
+            String fileName) throws IOException, NotAliveException {
+        HashMap<String, Serializable> userDictionary =
+                buildUserDictionary(type, containerType, containerId, itemId, fileHash, fileName);
+        ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
+        return downloadFile(MEDIA_STORE, fileHash, resourceWriter, 0d);
     }
 
     public synchronized DownloadManager downloadImage(
             DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            String itemHash,
-            DownloadEvents downloadEvents) throws IOException, NotAliveException {
-        ResourceWriter resourceWriter = generateBasicFileWriter("", "", containerType, containedId, null, itemHash, "");
-        return downloadFile(IMAGE_STORE, itemHash, resourceWriter, downloadEvents, 0d);
-    }
-
-    private ResourceWriter generateTempFileWriter(
-            DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            DatabaseMediator.ItemType itemType,
-            String itemHash,
-            String itemName) throws IOException {
-        return new TempFileWriter(tempFileManager, buildUserDictionary(containerType, containedId, itemType, itemHash, itemName));
-    }
-
-    private ResourceWriter generateBasicFileWriter(
-            String downloadDir,
-            String expectedFileName,
-            DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            DatabaseMediator.ItemType itemType,
-            String itemHash,
-            String itemName) throws IOException {
-        return new BasicFileWriter(downloadDir, expectedFileName, buildUserDictionary(containerType, containedId, itemType, itemHash, itemName));
+            int containerId,
+            ImageHash imageHash) throws IOException, NotAliveException {
+        HashMap<String, Serializable> userDictionary =
+                buildUserDictionary(DownloadInfo.Type.IMAGE, containerType, containerId, null, imageHash.getHash(), imageHash.serialize());
+        ResourceWriter resourceWriter = new BasicFileWriter(Paths.imagesDir(downloadsPath), Paths.imageFileName(downloadsPath, imageHash), userDictionary);
+        return downloadFile(IMAGE_STORE, imageHash.getHash(), resourceWriter, 0d);
     }
 
     static HashMap<String, Serializable> buildUserDictionary(
+            DownloadInfo.Type type,
             DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            DatabaseMediator.ItemType itemType,
+            int containedId,
+            Integer itemId,
             String itemHash,
             String itemName) {
         HashMap<String, Serializable> userDictionary = new HashMap<>();
+        userDictionary.put("type", type);
         userDictionary.put("containerType", containerType);
-        userDictionary.put("containedId", containedId);
-        userDictionary.put("itemType", itemType);
-        userDictionary.put("itemHash", itemHash);
-        userDictionary.put("itemName", itemName);
+        userDictionary.put("containerId", containedId);
+        userDictionary.put("itemId", itemId);
+        userDictionary.put("fileHash", itemHash);
+        userDictionary.put("fileName", itemName);
         return userDictionary;
     }
 
@@ -476,10 +472,15 @@ public class PeerEngineClient {
             String resourceStore,
             String fileHash,
             ResourceWriter resourceWriter,
-            DownloadEvents downloadEvents,
             double streamingNeed) throws IOException, NotAliveException {
-        DownloadProgressNotificationHandlerBridge downloadProgressNotificationHandler = new DownloadProgressNotificationHandlerBridge(downloadEvents);
-        return peerClient.downloadResource(resourceStore, fileHash, resourceWriter, downloadProgressNotificationHandler, streamingNeed, fileHash, "MD5");
+        return peerClient.downloadResource(
+                resourceStore,
+                fileHash,
+                resourceWriter,
+                new DownloadProgressNotificationHandlerBridge(downloadEvents),
+                streamingNeed,
+                fileHash,
+                HASH_ALGORITHM);
     }
 
 
@@ -790,5 +791,14 @@ public class PeerEngineClient {
 
     public String getDownloadsPath() {
         return downloadsPath;
+    }
+
+    public static HashFunction getHashFunction() {
+        try {
+            return new HashFunction(HASH_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            // ignore, cannot happen
+            return new MD5();
+        }
     }
 }

@@ -1,9 +1,12 @@
 package jacz.peerengineclient.file_system;
 
+import jacz.database.util.ImageHash;
 import jacz.peerengineservice.PeerID;
 import jacz.util.files.FileUtil;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +27,6 @@ public class Paths {
 
     private static final String STATISTICS_DIR = "stats";
 
-//    private static final String LOG_DIR = "log";
-
     private static final String DATA_DIR = "data";
 
     private static final String DATABASES_DIR = FileUtil.joinPaths(DATA_DIR, "databases");
@@ -33,6 +34,18 @@ public class Paths {
     private static final String REMOTE_DATABASES_DIR = FileUtil.joinPaths(DATABASES_DIR, "remote");
 
     private static final String REMOTE_SHARES_DIR = FileUtil.joinPaths(DATA_DIR, "remote-shares");
+
+    private static final String DEFAULT_TEMP_DIR = "temp";
+
+    private static final String DEFAULT_DOWNLOADS_DIR = FileUtil.joinPaths(DATA_DIR, "remote-shares");
+
+    private static final String IMAGES_DIR = "images";
+
+    private static final String MOVIES_DIR = "movies";
+
+    private static final String TV_SERIES_DIR = "series";
+
+    private static final String UNKNOWN_TITLE_DIR = "untitled_item";
 
 
     /**********************
@@ -104,6 +117,14 @@ public class Paths {
 
     public static String getRemoteSharesDir(String basePath) {
         return FileUtil.joinPaths(basePath, REMOTE_SHARES_DIR);
+    }
+
+    public static String getDefaultTempDir(String basePath) {
+        return FileUtil.joinPaths(basePath, DEFAULT_TEMP_DIR);
+    }
+
+    public static String getDefaultDownloadsDir(String basePath) {
+        return FileUtil.joinPaths(basePath, DEFAULT_DOWNLOADS_DIR);
     }
 
     public static List<String> getOrderedDirectories(String basePath) {
@@ -220,5 +241,57 @@ public class Paths {
 
     public static String remoteShareBackupPath(String basePath, PeerID peerID) {
         return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
+    }
+
+    /************************
+     * downloads
+     ***********************/
+
+    public static String imagesDir(String downloadsDir) {
+        return FileUtil.joinPaths(downloadsDir, IMAGES_DIR);
+    }
+
+    public static String moviesDir(String downloadsDir) {
+        return FileUtil.joinPaths(downloadsDir, MOVIES_DIR);
+    }
+
+    public static String seriesDir(String downloadsDir) {
+        return FileUtil.joinPaths(downloadsDir, TV_SERIES_DIR);
+    }
+
+    private static String generateTitleDir(String baseDir, int itemId, String itemTitle) {
+        String dir = itemTitle != null ? itemTitle : UNKNOWN_TITLE_DIR;
+        dir += "_" + itemId;
+        return FileUtil.joinPaths(baseDir, dir);
+    }
+
+    private static void createDir(String dir) throws IOException {
+        File file = new File(dir);
+        if (!file.isDirectory()) {
+            if (!file.mkdir()) {
+                throw new IOException("Could not create directory: " + dir);
+            }
+        }
+    }
+
+    public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {
+        createDir(imagesDir(downloadsDir));
+        return imageHash.getHash() + "." + imageHash.getExtension();
+    }
+
+    public static String movieFilePath(String downloadsDir, int movieId, String movieTitle, String fileName) throws IOException {
+        createDir(moviesDir(downloadsDir));
+        String titleDir = generateTitleDir(downloadsDir, movieId, movieTitle);
+        createDir(titleDir);
+        return FileUtil.joinPaths(titleDir, fileName);
+    }
+
+    public static String seriesFilePath(String downloadsDir, int seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
+        createDir(seriesDir(downloadsDir));
+        String seriesTitledDir = generateTitleDir(downloadsDir, seriesId, seriesTitle);
+        createDir(seriesTitledDir);
+        String chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
+        createDir(chapterTitledDir);
+        return FileUtil.joinPaths(chapterTitledDir, fileName);
     }
 }

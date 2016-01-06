@@ -1,11 +1,10 @@
 package jacz.peerengineclient.test.synch_db;
 
-import jacz.database.Movie;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
 import jacz.peerengineclient.test.IntegrationEventsImpl;
 import jacz.peerengineservice.PeerID;
-import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 

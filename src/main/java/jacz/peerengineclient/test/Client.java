@@ -20,6 +20,7 @@ public class Client {
                 new jacz.peerengineservice.test.ResourceTransferEventsImpl(),
                 new TempFileManagerEventsImpl(),
                 new DatabaseSynchEventsImpl(),
+                new DownloadEventsImpl(),
                 new IntegrationEventsImpl(),
                 new ErrorHandlerImpl());
     }

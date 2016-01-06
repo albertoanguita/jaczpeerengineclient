@@ -2,7 +2,7 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseMediator;
 import jacz.peerengineservice.PeerID;
-import jacz.util.io.object_serialization.*;
+import jacz.util.io.serialization.*;
 import jacz.util.lists.tuple.Duple;
 
 import java.io.IOException;

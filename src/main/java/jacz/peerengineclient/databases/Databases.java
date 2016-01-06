@@ -2,7 +2,7 @@ package jacz.peerengineclient.databases;
 
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
-import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,7 +1,7 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineservice.PeerID;
-import jacz.util.io.object_serialization.*;
+import jacz.util.io.serialization.*;
 import jacz.util.maps.DoubleMap;
 
 import java.io.IOException;
@@ -31,8 +31,8 @@ public class RemotePeerShare implements VersionedObject {
     public RemotePeerShare(PeerID remotePeerID, ForeignShares foreignShares) {
         this.remotePeerID = remotePeerID;
         this.id = "";
-        clear();
         this.foreignShares = foreignShares;
+        clear();
     }
 
     public void clear() {

@@ -10,7 +10,7 @@ import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
-import jacz.util.io.object_serialization.VersionedSerializationException;
+import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 import java.util.HashMap;

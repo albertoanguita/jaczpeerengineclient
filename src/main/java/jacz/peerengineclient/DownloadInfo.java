@@ -8,26 +8,43 @@ import jacz.database.DatabaseMediator;
  */
 public class DownloadInfo {
 
+    public enum Type {
+        VIDEO_FILE,
+        SUBTITLE_FILE,
+        IMAGE;
+
+        public boolean isMedia() {
+            return this == VIDEO_FILE || this == SUBTITLE_FILE;
+        }
+    }
+
+    public final Type type;
+
     public final DatabaseMediator.ItemType containerType;
 
-    public final Integer containedId;
+    public final Integer containerId;
 
-    public final DatabaseMediator.ItemType itemType;
+    /**
+     * null for images
+     */
+    public final Integer itemId;
 
-    public final String itemHash;
+    public final String fileHash;
 
-    public final String itemName;
+    public final String fileName;
 
     public DownloadInfo(
+            Type type,
             DatabaseMediator.ItemType containerType,
-            Integer containedId,
-            DatabaseMediator.ItemType itemType,
-            String itemHash,
-            String itemName) {
+            Integer containerId,
+            Integer itemId,
+            String fileHash,
+            String fileName) {
+        this.type = type;
         this.containerType = containerType;
-        this.containedId = containedId;
-        this.itemType = itemType;
-        this.itemHash = itemHash;
-        this.itemName = itemName;
+        this.containerId = containerId;
+        this.itemId = itemId;
+        this.fileHash = fileHash;
+        this.fileName = fileName;
     }
 }
