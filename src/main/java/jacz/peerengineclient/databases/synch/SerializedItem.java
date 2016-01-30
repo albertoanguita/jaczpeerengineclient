@@ -33,6 +33,7 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
     private HashMap<DatabaseMediator.Field, Date> dateFields;
     private HashMap<DatabaseMediator.Field, QualityCode> qualityFields;
     private HashMap<DatabaseMediator.Field, List<String>> stringListFields;
+    private HashMap<DatabaseMediator.Field, List<Integer>> integerListFields;
     private HashMap<DatabaseMediator.Field, List<CountryCode>> countryListFields;
     private HashMap<DatabaseMediator.Field, List<GenreCode>> genreListFields;
     private HashMap<DatabaseMediator.Field, List<LanguageCode>> languageListFields;
@@ -113,6 +114,13 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         stringListFields.put(field, idList);
     }
 
+    public void addIntegerList(DatabaseMediator.Field field, List<Integer> idList) {
+        if (integerListFields == null) {
+            integerListFields = new HashMap<>();
+        }
+        integerListFields.put(field, idList);
+    }
+
     public void addCountryList(DatabaseMediator.Field field, List<CountryCode> countryList) {
         if (countryListFields == null) {
             countryListFields = new HashMap<>();
@@ -163,6 +171,10 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
 
     public List<String> getStringList(DatabaseMediator.Field field) {
         return stringListFields.get(field);
+    }
+
+    public List<Integer> getIntegerList(DatabaseMediator.Field field) {
+        return integerListFields.get(field);
     }
 
     public List<CountryCode> getCountryList(DatabaseMediator.Field field) {

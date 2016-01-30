@@ -1,7 +1,6 @@
 package jacz.peerengineclient.test.synch_share;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.test.Client;
 import jacz.util.concurrency.ThreadUtil;
 

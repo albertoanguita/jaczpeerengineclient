@@ -8,10 +8,7 @@ import jacz.util.maps.DoubleMap;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -97,7 +94,11 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
         return null;
     }
 
-    public List<SerializedHashItem> getElementsFrom(long fromTimestamp) {
+    public Set<String> getActiveHashesSetCopy() {
+        return new HashSet<>(activeHashes.values());
+    }
+
+    public List<SerializedHashItem> getHashesFrom(long fromTimestamp) {
         List<SerializedHashItem> items =
                 activeHashes
                         .entrySet()
@@ -112,8 +113,6 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
                         .filter(entry -> entry.getKey() >= fromTimestamp)
                         .map(entry -> new SerializedHashItem(entry.getKey(), entry.getValue(), false))
                         .collect(Collectors.toList()));
-        // todo add files in temp file manager
-        Collections.sort(items);
         return items;
     }
 

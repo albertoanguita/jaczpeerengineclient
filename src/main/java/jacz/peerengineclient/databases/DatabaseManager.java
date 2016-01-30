@@ -2,13 +2,16 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseItem;
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.databases.integration.IntegrationConcurrencyController;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
+import jacz.peerengineclient.databases.integration.SharedDatabaseGenerator;
 import jacz.peerengineclient.databases.synch.DatabaseAccessor;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
+import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 
 import java.io.IOException;
 import java.util.Set;
@@ -43,6 +46,10 @@ public class DatabaseManager {
 
 //    private final RemoteDatabasesIntegrator remoteDatabasesIntegrator;
 
+    private final ConcurrencyController concurrencyController;
+
+    private final SharedDatabaseGenerator sharedDatabaseGenerator;
+
     private final ItemIntegrator itemIntegrator;
 
     private boolean alive;
@@ -57,7 +64,9 @@ public class DatabaseManager {
             Set<PeerID> friendPeers) throws IOException {
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
-        itemIntegrator = new ItemIntegrator(integrationEvents);
+        concurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
+        sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, concurrencyController);
+        itemIntegrator = new ItemIntegrator(sharedDatabaseGenerator, concurrencyController, integrationEvents);
         alive = true;
         // just in case, try to add databases for all registered friend peers
         for (PeerID friendPeer : friendPeers) {
@@ -91,38 +100,11 @@ public class DatabaseManager {
      * This method is blocking, and execution completes once the integrated database has been updated with the local changes. The request must
      * therefore be immediately attended
      *
-     * @param library      local library of the modified item
-     * @param elementIndex index of the modified item
+     * @param item the modified item
      */
-    public synchronized void localItemModified(String library, String elementIndex) {
-        // local item modifications are served as soon as possible, interrupting if necessary the integration of remote items
-        // the method is blocking, waiting until the item has been integrated
-        if (alive) {
-            // todo integrate local item
-//            try {
-//                Triple<Set<String>, String, Boolean> hasChangedItemIdAndHasLocal = integrateLocalItem(library, elementIndex);
-//                if (hasChangedItemIdAndHasLocal.element1 != null) {
-//                    reportIntegratedItemModified(library, hasChangedItemIdAndHasLocal.element1, hasChangedItemIdAndHasLocal.element2, hasChangedItemIdAndHasLocal.element3, true);
-//                }
-//            } catch (Exception e) {
-//                databasesCannotBeAccessed();
-//            }
-        } else {
-            throw new IllegalStateException();
-        }
+    public synchronized void localItemModified(DatabaseItem item) {
+        itemIntegrator.integrateLocalItem(databases, item);
     }
-
-    /**
-     * Performs the integration of a local item in the integrated database. Permission must have been previously gained, as this method does not
-     * check the conditions for it
-     *
-     * @param library      local library of the modified item
-     * @param elementIndex index of the modified item
-     */
-//    private Triple<Set<String>, String, Boolean> integrateLocalItem(String library, String elementIndex) throws IllegalDataException, DBException, ParseException, IOException, CorruptDataException {
-//        LibraryItem localItem = localDatabase.getDatabase().getItem(library, elementIndex);
-//        return ItemIntegrator.integrateExternalItem(integratedDatabase, localDatabase, remoteDatabases, library, itemLockManager, null, elementIndex, localItem, localDatabase.getItemsToIntegratedItems());
-//    }
 
     /**
      * An item from a remote database has been modified, and therefore integration is required with the integrated database
@@ -134,8 +116,6 @@ public class DatabaseManager {
      */
     public synchronized void remoteItemModified(PeerID peerID, DatabaseItem item) {
         itemIntegrator.integrateRemoteItem(databases, peerID, item);
-//        remoteModifiedItems.addItem(peerID, library, elementIndex);
-//        remoteDatabasesIntegrator.remoteDatabaseIntegrationRequested();
     }
 
     /**
@@ -220,6 +200,8 @@ public class DatabaseManager {
         synchronized (this) {
             alive = false;
         }
+        sharedDatabaseGenerator.stop();
         itemIntegrator.stop();
+        concurrencyController.stopAndWaitForFinalization();
     }
 }

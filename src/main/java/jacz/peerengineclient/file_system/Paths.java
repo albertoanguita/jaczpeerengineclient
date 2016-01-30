@@ -1,8 +1,10 @@
 package jacz.peerengineclient.file_system;
 
 import jacz.database.util.ImageHash;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerID;
 import jacz.util.files.FileUtil;
+import jacz.util.lists.tuple.Triple;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -274,24 +276,30 @@ public class Paths {
         }
     }
 
+    public static String imageFilePath(String downloadsDir, String filePath) throws IOException {
+        String hash = PeerEngineClient.getHashFunction().digestAsHex(filePath);
+        String extension = FileUtil.getFileExtension(FileUtil.getFileName(filePath));
+        return FileUtil.joinPaths(imagesDir(downloadsDir), imageFileName(downloadsDir, new ImageHash(hash, extension)));
+    }
+
     public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {
         createDir(imagesDir(downloadsDir));
         return imageHash.getHash() + "." + imageHash.getExtension();
     }
 
-    public static String movieFilePath(String downloadsDir, int movieId, String movieTitle, String fileName) throws IOException {
+    public static Triple<String, String, String> movieFilePath(String downloadsDir, int movieId, String movieTitle, String fileName) throws IOException {
         createDir(moviesDir(downloadsDir));
         String titleDir = generateTitleDir(downloadsDir, movieId, movieTitle);
         createDir(titleDir);
-        return FileUtil.joinPaths(titleDir, fileName);
+        return new Triple<>(titleDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
     }
 
-    public static String seriesFilePath(String downloadsDir, int seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
+    public static Triple<String, String, String> seriesFilePath(String downloadsDir, int seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
         createDir(seriesDir(downloadsDir));
         String seriesTitledDir = generateTitleDir(downloadsDir, seriesId, seriesTitle);
         createDir(seriesTitledDir);
         String chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
         createDir(chapterTitledDir);
-        return FileUtil.joinPaths(chapterTitledDir, fileName);
+        return new Triple<>(chapterTitledDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
     }
 }

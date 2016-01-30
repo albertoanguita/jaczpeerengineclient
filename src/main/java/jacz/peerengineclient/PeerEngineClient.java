@@ -1,6 +1,9 @@
 package jacz.peerengineclient;
 
+import jacz.database.Chapter;
 import jacz.database.DatabaseMediator;
+import jacz.database.Movie;
+import jacz.database.TVSeries;
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
@@ -34,13 +37,16 @@ import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWrite
 import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
+import jacz.util.files.FileUtil;
 import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.serialization.VersionedSerializationException;
+import jacz.util.lists.tuple.Triple;
 import jacz.util.log.ErrorHandler;
 import jacz.util.notification.ProgressNotificationWithError;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
@@ -376,54 +382,52 @@ public class PeerEngineClient {
         peerClient.searchFriends();
     }
 
-//    /**
-//     * Sends an object message to a connected peer. If the given peer is not among the list of connected peers, the
-//     * message will be ignored
-//     *
-//     * @param peerID  ID of the peer to which the message is to be sent
-//     * @param message string message to send
-//     */
-//    public void sendObjectMessage(PeerID peerID, Serializable message) {
-//        peerClient.sendObjectMessage(peerID, message);
-//    }
-//
-//    /**
-//     * Sends an object message to all connected peers
-//     *
-//     * @param message string message to send to all connected peers
-//     */
-//    public void broadcastObjectMessage(Serializable message) {
-//        peerClient.broadcastObjectMessage(message);
-//    }
-
-//    /**
-//     * Adds a store of resources shared to us by other peers. It it used to handle downloads from other peers
-//     *
-//     * @param resourceStore    name of the resource store
-//     * @param foreignPeerShare peers share for letting us know the share of resources of each peer
-//     */
-//    public synchronized void addForeignResourceStore(String resourceStore, ForeignStoreShare foreignPeerShare) {
-//        peerClient.addForeignResourceStore(resourceStore, foreignPeerShare);
-//    }
-//
-//    /**
-//     * Removes an already defined foreign store
-//     *
-//     * @param resourceStore name of the store to remove
-//     */
-//    public synchronized void removeForeignResourceStore(String resourceStore) {
-//        peerClient.removeForeignResourceStore(resourceStore);
-//    }
-
-    public String addLocalFile(String path, MoveFileAction moveFileAction) throws IOException {
-        // todo move to repo
+    public synchronized String addLocalFile(String path) throws IOException {
         return peerShareManager.getFileHash().put(path);
     }
 
-    public void removeLocalFile(String key, boolean removeFile) {
+    public synchronized String addLocalFile(String path, MoveFileAction moveFileAction, Movie movie) throws IOException {
+        return addLocalFile(path, moveFileAction, movie, null, null);
+    }
+
+    public synchronized String addLocalFile(String path, MoveFileAction moveFileAction, TVSeries tvSeries, Chapter chapter) throws IOException {
+        return addLocalFile(path, moveFileAction, null, tvSeries, chapter);
+    }
+
+    private synchronized String addLocalFile(
+            String path,
+            MoveFileAction moveFileAction,
+            Movie movie,
+            TVSeries tvSeries,
+            Chapter chapter) throws IOException {
+        if (!peerShareManager.getFileHash().containsValue(path)) {
+            String newPath;
+            Triple<String, String, String> location = null;
+            if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
+                if (movie != null) {
+                    location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), FileUtil.getFileName(path));
+                } else {
+                    location = Paths.seriesFilePath(downloadsPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FileUtil.getFileName(path));
+                }
+            } else {
+                newPath = Paths.imageFilePath(downloadsPath, path);
+                String fileName = FileUtil.getFileName(newPath);
+                location = new Triple<>(FileUtil.getFileDirectory(path), FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
+            }
+            newPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+            FileUtil.move(path, newPath);
+            return addLocalFile(newPath);
+        } else {
+            return addLocalFile(path);
+        }
+    }
+
+    public synchronized void removeLocalFile(String key, boolean removeFile) {
         String path = peerShareManager.getFileHash().remove(key);
-        if (path != null) {
-            // todo remove file
+        if (path != null && removeFile) {
+            File file = new File(path);
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
         }
     }
 
@@ -431,11 +435,12 @@ public class PeerEngineClient {
             DownloadInfo.Type type,
             DatabaseMediator.ItemType containerType,
             int containerId,
+            Integer superContainerId,
             int itemId,
             String fileHash,
             String fileName) throws IOException, NotAliveException {
         HashMap<String, Serializable> userDictionary =
-                buildUserDictionary(type, containerType, containerId, itemId, fileHash, fileName);
+                buildUserDictionary(type, containerType, containerId, superContainerId, itemId, fileHash, fileName);
         ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
         return downloadFile(MEDIA_STORE, fileHash, resourceWriter, 0d);
     }
@@ -445,7 +450,7 @@ public class PeerEngineClient {
             int containerId,
             ImageHash imageHash) throws IOException, NotAliveException {
         HashMap<String, Serializable> userDictionary =
-                buildUserDictionary(DownloadInfo.Type.IMAGE, containerType, containerId, null, imageHash.getHash(), imageHash.serialize());
+                buildUserDictionary(DownloadInfo.Type.IMAGE, containerType, containerId, null, null, imageHash.getHash(), imageHash.serialize());
         ResourceWriter resourceWriter = new BasicFileWriter(Paths.imagesDir(downloadsPath), Paths.imageFileName(downloadsPath, imageHash), userDictionary);
         return downloadFile(IMAGE_STORE, imageHash.getHash(), resourceWriter, 0d);
     }
@@ -453,18 +458,13 @@ public class PeerEngineClient {
     static HashMap<String, Serializable> buildUserDictionary(
             DownloadInfo.Type type,
             DatabaseMediator.ItemType containerType,
-            int containedId,
+            int containerId,
+            Integer superContainerId,
             Integer itemId,
-            String itemHash,
-            String itemName) {
-        HashMap<String, Serializable> userDictionary = new HashMap<>();
-        userDictionary.put("type", type);
-        userDictionary.put("containerType", containerType);
-        userDictionary.put("containerId", containedId);
-        userDictionary.put("itemId", itemId);
-        userDictionary.put("fileHash", itemHash);
-        userDictionary.put("fileName", itemName);
-        return userDictionary;
+            String fileHash,
+            String fileName) {
+        DownloadInfo downloadInfo = new DownloadInfo(type, containerType, containerId, superContainerId, itemId, fileHash, fileName);
+        return downloadInfo.buildUserDictionary();
     }
 
 
@@ -477,7 +477,7 @@ public class PeerEngineClient {
                 resourceStore,
                 fileHash,
                 resourceWriter,
-                new DownloadProgressNotificationHandlerBridge(downloadEvents),
+                new DownloadProgressNotificationHandlerBridge(downloadEvents, databaseManager.getDatabases().getIntegratedDB(), downloadsPath),
                 streamingNeed,
                 fileHash,
                 HASH_ALGORITHM);

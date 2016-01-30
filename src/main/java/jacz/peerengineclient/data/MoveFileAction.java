@@ -6,6 +6,5 @@ package jacz.peerengineclient.data;
 public enum MoveFileAction {
 
     MOVE_TO_MEDIA_REPO,
-    MOVE_TO_IMAGE_REPO,
-    DO_NOT_MOVE
+    MOVE_TO_IMAGE_REPO
 }

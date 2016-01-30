@@ -8,8 +8,6 @@ import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.hash.SHA_1;
 import jacz.util.lists.tuple.Duple;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,10 +18,10 @@ import java.util.List;
  */
 public class ItemIntegrator {
 
-    private static class CreationDateComparator implements Comparator<DatabaseItem> {
+    private static class CreationDateComparator implements Comparator<Duple<PeerID, DatabaseItem>> {
         @Override
-        public int compare(DatabaseItem o1, DatabaseItem o2) {
-            return o1.getCreationDate().compareTo(o2.getCreationDate());
+        public int compare(Duple<PeerID, DatabaseItem> o1, Duple<PeerID, DatabaseItem> o2) {
+            return o1.element2.getCreationDate().compareTo(o2.element2.getCreationDate());
         }
     }
 
@@ -32,25 +30,31 @@ public class ItemIntegrator {
 
     private static final CreationDateComparator creationDateComparator = new CreationDateComparator();
 
+    private final SharedDatabaseGenerator sharedDatabaseGenerator;
+
     private final ConcurrencyController concurrencyController;
 
     private final IntegrationEventsBridge integrationEvents;
 
-    public ItemIntegrator(IntegrationEvents integrationEvents) {
-        concurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
+    public ItemIntegrator(SharedDatabaseGenerator sharedDatabaseGenerator, ConcurrencyController concurrencyController, IntegrationEvents integrationEvents) {
+        this.sharedDatabaseGenerator = sharedDatabaseGenerator;
+        this.concurrencyController = concurrencyController;
         this.integrationEvents = new IntegrationEventsBridge(integrationEvents);
     }
 
     public void stop() {
-        // todo we might still receive jobs!!! we should be disconnected from all peers
-        concurrencyController.stopAndWaitForFinalization();
         integrationEvents.stop();
     }
 
     public void integrateLocalItem(
             Databases databases,
             DatabaseItem localItem) {
-        concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
+        try {
+            concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
+        } catch (IllegalStateException e) {
+            // the activity is stopped
+            // todo
+        }
 
         DatabaseMediator.ItemType type = localItem.getItemType();
         DatabaseItem integratedItem;
@@ -93,6 +97,7 @@ public class ItemIntegrator {
                     type,
                     databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
             databases.getItemRelations().getIntegratedToDeleted().remove(type, integratedItem.getId());
+            databases.getItemRelations().getDeletedToIntegrated().remove(type, deletedItem.getId());
             deletedItem.delete();
         }
         processIntegratedItem(databases, integratedItem, false);
@@ -180,6 +185,7 @@ public class ItemIntegrator {
                 // no deleted item -> build a new one
                 deletedItem = DatabaseMediator.createNewItem(databases.getDeletedDB(), type);
                 databases.getItemRelations().getIntegratedToDeleted().put(type, integratedItem.getId(), deletedItem.getId());
+                databases.getItemRelations().getDeletedToIntegrated().put(type, deletedItem.getId(), integratedItem.getId());
             }
 
             // copy the contents from the removed remote item to the deleted item
@@ -217,6 +223,8 @@ public class ItemIntegrator {
             // the integrated item has died
             integrationEvents.integratedItemDeleted(integratedItem.getItemType(), integratedItem.getId());
         }
+        // in both cases, recalculate the shared db
+        sharedDatabaseGenerator.requestUpdate();
     }
 
     /**
@@ -245,23 +253,30 @@ public class ItemIntegrator {
                     databases.getLocalDB(),
                     type,
                     databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
-            integratedItem.mergePostponed(localItem);
+            integratedItem.mergeBasicPostponed(localItem);
+            // todo references: map and merge
+            DatabaseMediator.ReferencedElements referencedElements = localItem.getReferencedElements();
+            referencedElements.mapIds(databases.getItemRelations().getLocalToIntegrated().getTypeMappings());
+            integratedItem.mergeReferencedElementsPostponed(referencedElements);
             isAlive = true;
         }
 
         // remote items
-        List<DatabaseItem> remoteItems = new ArrayList<>();
+        List<Duple<PeerID, DatabaseItem>> remoteItems = new ArrayList<>();
         for (Duple<PeerID, Integer> peerAndId : databases.getItemRelations().getIntegratedToRemote().get(type, integratedItem.getId())) {
             DatabaseItem remoteItem = DatabaseMediator.getItem(
                     databases.getRemoteDBs().get(peerAndId.element1),
                     type,
                     peerAndId.element2);
-            remoteItems.add(remoteItem);
+            remoteItems.add(new Duple<>(peerAndId.element1, remoteItem));
             isAlive = true;
         }
         Collections.sort(remoteItems, creationDateComparator);
-        for (DatabaseItem remoteItem : remoteItems) {
-            integratedItem.mergePostponed(remoteItem);
+        for (Duple<PeerID, DatabaseItem> peerAndRemoteItem : remoteItems) {
+            integratedItem.mergeBasicPostponed(peerAndRemoteItem.element2);
+            DatabaseMediator.ReferencedElements referencedElements = peerAndRemoteItem.element2.getReferencedElements();
+            referencedElements.mapIds(databases.getItemRelations().getRemoteToIntegrated(peerAndRemoteItem.element1).getTypeMappings());
+            integratedItem.mergeReferencedElementsPostponed(referencedElements);
         }
 
         // deleted item
@@ -270,7 +285,10 @@ public class ItemIntegrator {
                     databases.getDeletedDB(),
                     type,
                     databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
-            integratedItem.mergePostponed(deletedItem);
+            integratedItem.mergeBasicPostponed(deletedItem);
+            DatabaseMediator.ReferencedElements referencedElements = deletedItem.getReferencedElements();
+            referencedElements.mapIds(databases.getItemRelations().getDeletedToIntegrated().getTypeMappings());
+            integratedItem.mergeReferencedElementsPostponed(referencedElements);
             isAlive = true;
         }
 

@@ -3,6 +3,7 @@ package jacz.peerengineclient;
 import jacz.database.Chapter;
 import jacz.database.DatabaseMediator;
 import jacz.database.Movie;
+import jacz.database.TVSeries;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.DownloadProgressNotificationHandler;
@@ -11,31 +12,31 @@ import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.util.files.FileUtil;
+import jacz.util.lists.tuple.Triple;
 import jacz.util.numeric.range.LongRange;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
 
 /**
- * todo
+ * Handles download events for a file and appropriately redirects them to the client
  */
 public class DownloadProgressNotificationHandlerBridge implements DownloadProgressNotificationHandler {
 
-    private DownloadEvents downloadEvents;
+    private final DownloadEvents downloadEvents;
 
-    public DownloadProgressNotificationHandlerBridge(DownloadEvents downloadEvents) {
+    private final String integratedPath;
+
+    private final String downloadsPath;
+
+    public DownloadProgressNotificationHandlerBridge(DownloadEvents downloadEvents, String integratedPath, String downloadsPath) {
         this.downloadEvents = downloadEvents;
-    }
-
-    static DownloadInfo buildDownloadInfo(HashMap<String, Serializable> userDictionary) {
-        // todo
-        return null;
+        this.integratedPath = integratedPath;
+        this.downloadsPath = downloadsPath;
     }
 
     @Override
     public void started(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.started(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
+        downloadEvents.started(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
@@ -70,12 +71,12 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
 
     @Override
     public void paused(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.paused(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
+        downloadEvents.paused(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
     public void resumed(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.resumed(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
+        downloadEvents.resumed(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 
     @Override
@@ -106,69 +107,38 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
     @Override
     public synchronized void completed(String resourceID, String storeName, ResourceWriter resourceWriter, DownloadManager downloadManager) {
         String finalPath = null;
-//        if (this.downloadManager.getFinalPath() != null && !this.downloadManager.getCurrentPath().equals(this.downloadManager.getFinalPath())) {
-//            try {
-//                String finalDir = FileUtil.getFileDirectory(this.downloadManager.getFinalPath());
-//                String finalFile = FileUtil.getFileName(this.downloadManager.getFinalPath());
-//
-//
-//                if (finalFile.length() == 0) {
-//                    finalFile = "downloadedFile";
-//                }
-//                // divide file name of extension
-//                int indexOfPoint = finalFile.lastIndexOf(FileUtil.FILE_EXTENSION_SEPARATOR_CHAR);
-//                String baseFileName;
-//                String extension;
-//                if (indexOfPoint > -1) {
-//                    baseFileName = finalFile.substring(0, indexOfPoint);
-//                    extension = finalFile.substring(indexOfPoint + 1);
-//                } else {
-//                    baseFileName = finalFile;
-//                    extension = "";
-//                }
-//                finalPath = FileUtil.createNonExistingFileNameWithIndex(finalDir, baseFileName, extension, " (", ")", true);
-//                FileUtil.move(this.downloadManager.getCurrentPath(), finalPath, true);
-//            } catch (IOException e) {
-//                // any error in the operation -> leave the file where it is
-//                System.out.println("ERROR AL TRANSFERIR EL FICHERO!!! finalPath=" + this.downloadManager.getFinalPath() + ", currentPath=" + this.downloadManager.getCurrentPath() + ", localFinalPath=" + finalPath);
-//                e.printStackTrace();
-//                finalPath = this.downloadManager.getCurrentPath();
-//            }
-//        } else {
-//            finalPath = this.downloadManager.getCurrentPath();
-//        }
-        DownloadInfo downloadInfo = buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
+        DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
         if (downloadInfo.type.isMedia()) {
             // move file to required location
-            if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
-                Movie movie = Movie.getMovieById(, downloadInfo.containerId);
-                finalPath = Paths.movieFilePath(, downloadInfo.containerId, movie.getTitle(), downloadInfo.fileName);
-            } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
-                Chapter chapter = Chapter.getChapterById(, downloadInfo.containerId);
-                finalPath = Paths.seriesFilePath(, downloadInfo.containerId, chapter.getTitle(), downloadInfo.fileName);
-            } else {
-                // todo error
-            }
             try {
+                Triple<String, String, String> location;
+                if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
+                    Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
+                    location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
+                } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
+                    TVSeries tvSeries = TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId);
+                    Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
+                    location = Paths.seriesFilePath(downloadsPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
+                } else {
+                    // todo error
+                    return;
+                }
+                finalPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
                 FileUtil.move(resourceWriter.getPath(), finalPath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        downloadEvents.completed(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), finalPath, downloadManager);
+        downloadEvents.completed(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), finalPath, downloadManager);
     }
 
     @Override
     public void cancelled(String resourceID, String storeName, CancellationReason reason, DownloadManager downloadManager) {
-        downloadEvents.cancelled(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager, reason);
+        downloadEvents.cancelled(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager, reason);
     }
 
     @Override
     public void stopped(String resourceID, String storeName, DownloadManager downloadManager) {
-        downloadEvents.stopped(buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
-    }
-
-    private String handleStore(String storeName) {
-        return storeName.equals(PeerEngineClient.DEFAULT_STORE) ? null : storeName;
+        downloadEvents.stopped(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager);
     }
 }

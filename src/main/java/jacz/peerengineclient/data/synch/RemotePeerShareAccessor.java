@@ -16,10 +16,6 @@ import java.util.List;
  */
 public class RemotePeerShareAccessor implements DataAccessor {
 
-//    private static final int ELEMENTS_PER_MESSAGE = 20;
-//
-//    private static final int CRC_BYTES = 2;
-
     private final RemotePeerShare remotePeerShare;
 
     public RemotePeerShareAccessor(RemotePeerShare remotePeerShare) {

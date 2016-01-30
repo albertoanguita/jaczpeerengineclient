@@ -48,6 +48,18 @@ public class ItemRelations implements VersionedObject {
                 itemRelations.get(type).remove(from);
             }
         }
+
+        public Map<DatabaseMediator.ItemType, Map<Integer, Integer>> getTypeMappings() {
+            return itemRelations;
+        }
+
+//        public void mapReferencedElements(DatabaseMediator.ReferencedElements referencedElements) {
+//            for (List<String> idList : referencedElements.getIdLists()) {
+//                for (int i = 0; i < idList.size(); i++) {
+//
+//                }
+//            }
+//        }
     }
 
     public static class ItemToPeerListRelationsMap implements Serializable {
@@ -96,6 +108,8 @@ public class ItemRelations implements VersionedObject {
 
     private ItemRelationsMap integratedToDeleted;
 
+    private ItemRelationsMap deletedToIntegrated;
+
     private ItemRelationsMap integratedToShared;
 
     private ItemRelationsMap localToIntegrated;
@@ -106,6 +120,7 @@ public class ItemRelations implements VersionedObject {
         integratedToLocal = new ItemRelationsMap();
         integratedToRemote = new ItemToPeerListRelationsMap();
         integratedToDeleted = new ItemRelationsMap();
+        deletedToIntegrated = new ItemRelationsMap();
         integratedToShared = new ItemRelationsMap();
         localToIntegrated = new ItemRelationsMap();
         remoteToIntegrated = new HashMap<>();
@@ -125,6 +140,10 @@ public class ItemRelations implements VersionedObject {
 
     public ItemRelationsMap getIntegratedToDeleted() {
         return integratedToDeleted;
+    }
+
+    public ItemRelationsMap getDeletedToIntegrated() {
+        return deletedToIntegrated;
     }
 
     public ItemRelationsMap getIntegratedToShared() {
@@ -153,6 +172,7 @@ public class ItemRelations implements VersionedObject {
         attributes.put("integratedToLocal", integratedToLocal);
         attributes.put("integratedToRemote", integratedToRemote);
         attributes.put("integratedToDeleted", integratedToDeleted);
+        attributes.put("deletedToIntegrated", deletedToIntegrated);
         attributes.put("integratedToShared", integratedToShared);
         attributes.put("localToIntegrated", localToIntegrated);
         attributes.put("remoteToIntegrated", remoteToIntegrated);
@@ -165,6 +185,7 @@ public class ItemRelations implements VersionedObject {
             integratedToLocal = (ItemRelationsMap) attributes.get("integratedToLocal");
             integratedToRemote = (ItemToPeerListRelationsMap) attributes.get("integratedToRemote");
             integratedToDeleted = (ItemRelationsMap) attributes.get("integratedToDeleted");
+            deletedToIntegrated = (ItemRelationsMap) attributes.get("deletedToIntegrated");
             integratedToShared = (ItemRelationsMap) attributes.get("integratedToShared");
             localToIntegrated = (ItemRelationsMap) attributes.get("localToIntegrated");
             remoteToIntegrated = (HashMap<PeerID, ItemRelationsMap>) attributes.get("remoteToIntegrated");

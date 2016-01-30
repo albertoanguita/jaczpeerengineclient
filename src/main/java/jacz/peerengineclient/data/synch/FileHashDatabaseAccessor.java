@@ -1,6 +1,7 @@
 package jacz.peerengineclient.data.synch;
 
 import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
+import jacz.peerengineclient.data.SerializedHashItem;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
@@ -8,6 +9,7 @@ import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -58,7 +60,9 @@ public class FileHashDatabaseAccessor implements DataAccessor {
 
     @Override
     public List<? extends Serializable> getElementsFrom(long fromTimestamp) throws DataAccessException {
-        return fileHash.getElementsFrom(fromTimestamp);
+        List<SerializedHashItem> items = fileHash.getHashesFrom(fromTimestamp);
+        Collections.sort(items);
+        return items;
     }
 
     @Override
