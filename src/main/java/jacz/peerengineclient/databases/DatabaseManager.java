@@ -2,6 +2,7 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseItem;
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.databases.integration.IntegrationConcurrencyController;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
@@ -59,13 +60,14 @@ public class DatabaseManager {
             Databases databases,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
+            FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp,
             PeerEngineClient peerEngineClient,
             String basePath,
             Set<PeerID> friendPeers) throws IOException {
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
         concurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
-        sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, concurrencyController);
+        sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, fileHashDatabaseWithTimestamp, peerEngineClient, concurrencyController);
         itemIntegrator = new ItemIntegrator(sharedDatabaseGenerator, concurrencyController, integrationEvents);
         alive = true;
         // just in case, try to add databases for all registered friend peers
@@ -169,9 +171,9 @@ public class DatabaseManager {
      * @param peerID new friend peer
      */
     public synchronized void addPeer(String path, PeerID peerID) throws IOException {
-        if (!databases.getRemoteDBs().containsKey(peerID)) {
+        if (!databases.containsRemoteDB(peerID)) {
             String dbPath = DatabaseIO.createNewRemoteDatabase(path, peerID);
-            databases.getRemoteDBs().put(peerID, dbPath);
+            databases.addRemoteDB(peerID, dbPath);
         }
     }
 
@@ -182,8 +184,10 @@ public class DatabaseManager {
      * @param peerID peer which is no longer friend.
      */
     public synchronized void removePeer(String path, PeerID peerID) {
-        databases.getRemoteDBs().remove(peerID);
-        DatabaseIO.removeRemoteDatabase(path, peerID);
+        databases.removeRemoteDB(peerID);
+        // todo to avoid problems with other pieces of code that access remote dbs, we postpone the actual deletion
+        // of the db file until the next startup
+        // DatabaseIO.removeRemoteDatabase(path, peerID);
         // todo remove from integrated, and copy necessary info to local database
     }
 

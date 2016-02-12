@@ -4,6 +4,7 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.test.Client;
 import jacz.util.concurrency.ThreadUtil;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 /**
@@ -11,7 +12,7 @@ import java.io.IOException;
  */
 public class TestSynchShare_1 {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, XMLStreamException {
 
         PeerEngineClient peerEngineClient = Client.loadClient("./etc/user_0");
         peerEngineClient.connect();

@@ -2,6 +2,7 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
@@ -34,6 +35,7 @@ public class DatabaseIO {
             String basePath,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
+            FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp,
             PeerEngineClient peerEngineClient,
             Set<PeerID> friendPeers
     ) throws IOException, VersionedSerializationException {
@@ -41,6 +43,7 @@ public class DatabaseIO {
                 new Databases(basePath),
                 databaseSynchEvents,
                 integrationEvents,
+                fileHashDatabaseWithTimestamp,
                 peerEngineClient,
                 basePath,
                 friendPeers);

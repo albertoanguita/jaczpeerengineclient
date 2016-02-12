@@ -15,9 +15,9 @@ public class TestSynchLocal {
 
     public static void main(String[] args) throws IOException, VersionedSerializationException {
 
-        Databases databases = new Databases("./etc/user_0");
-        ItemIntegrator itemIntegrator = new ItemIntegrator(new IntegrationEventsImpl());
-        PeerID peerID2 = new PeerID("0000000000000000000000000000000000000000002");
+//        Databases databases = new Databases("./etc/user_0");
+//        ItemIntegrator itemIntegrator = new ItemIntegrator(new IntegrationEventsImpl());
+//        PeerID peerID2 = new PeerID("0000000000000000000000000000000000000000002");
 
 //        itemIntegrator.removeRemoteItem(databases, peerID2, Movie.getMovieById(databases.getRemoteDBs().get(peerID2), 3));
     }

@@ -93,7 +93,7 @@ public class FileIO {
         }
         xmlWriter.endStruct();
         xmlWriter.beginStruct("blocked-peers");
-        for (PeerID blockedPeerID : peerRelations.getFriendPeers()) {
+        for (PeerID blockedPeerID : peerRelations.getBlockedPeers()) {
             xmlWriter.beginStruct();
             xmlWriter.addField("peer-id", blockedPeerID.toString());
             xmlWriter.addField("nick", peersPersonalData.getPeerNick(blockedPeerID));

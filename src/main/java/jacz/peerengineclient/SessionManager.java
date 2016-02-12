@@ -1,11 +1,12 @@
 package jacz.peerengineclient;
 
 import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
+import jacz.peerengineclient.data.PeerShareIO;
+import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.FileIO;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.GeneralEvents;
@@ -17,7 +18,6 @@ import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileUtil;
-import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.EightTuple;
@@ -81,8 +81,10 @@ public class SessionManager {
                     tempPath,
                     dataPath,
                     peerIDAndEncryption.element2,
-                    new TransferStatistics(),
-                    new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
+                    new TransferStatistics()
+                    );
+
+            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
 
             return userPath;
         } catch (XMLStreamException e) {
@@ -167,12 +169,10 @@ public class SessionManager {
             String tempDownloadsPath,
             String basedDataPath,
             PeerEncryption peerEncryption,
-            TransferStatistics transferStatistics,
-            FileHashDatabase fileHashDatabase) throws IOException, XMLStreamException {
+            TransferStatistics transferStatistics) throws IOException, XMLStreamException {
         transferStatistics.stop();
         FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, basedDataPath);
         VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
         VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
-        VersionedObjectSerializer.serialize(fileHashDatabase, CRC_LENGTH, Paths.fileHashPath(userPath), Paths.fileHashBackupPath(userPath));
     }
 }

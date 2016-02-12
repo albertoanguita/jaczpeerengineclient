@@ -74,6 +74,7 @@ public class ItemSerializer {
         item.addString(DatabaseMediator.Field.TITLE, creationItem.getTitle());
         item.addString(DatabaseMediator.Field.ORIGINAL_TITLE, creationItem.getOriginalTitle());
         item.addInteger(DatabaseMediator.Field.YEAR, creationItem.getYear());
+        item.addString(DatabaseMediator.Field.SYNOPSIS, creationItem.getSynopsis());
         item.addCountryList(DatabaseMediator.Field.COUNTRIES, creationItem.getCountries());
         item.addStringList(DatabaseMediator.Field.EXTERNAL_URLS, creationItem.getExternalURLs());
         item.addIntegerList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreatorsIds());
@@ -162,6 +163,7 @@ public class ItemSerializer {
         creationItem.setTitlePostponed(item.getString(DatabaseMediator.Field.TITLE));
         creationItem.setOriginalTitlePostponed(item.getString(DatabaseMediator.Field.ORIGINAL_TITLE));
         creationItem.setYearPostponed(item.getInteger(DatabaseMediator.Field.YEAR));
+        creationItem.setSynopsisPostponed(item.getString(DatabaseMediator.Field.SYNOPSIS));
         creationItem.setCountriesPostponed(item.getCountryList(DatabaseMediator.Field.COUNTRIES));
         creationItem.setExternalURLsPostponed(item.getStringList(DatabaseMediator.Field.EXTERNAL_URLS));
         creationItem.setCreatorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.CREATOR_LIST));

@@ -49,7 +49,7 @@ public class PeerShareIO {
         }
     }
 
-    private static void saveLocalHash(String basePath, FileHashDatabaseWithTimestamp fileHash) throws IOException {
+    public static void saveLocalHash(String basePath, FileHashDatabaseWithTimestamp fileHash) throws IOException {
         VersionedObjectSerializer.serialize(fileHash, CRCBytes, Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
     }
 

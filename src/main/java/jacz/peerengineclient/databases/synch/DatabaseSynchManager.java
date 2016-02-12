@@ -130,7 +130,7 @@ public class DatabaseSynchManager {
                     DatabaseAccessor databaseAccessor = new DatabaseAccessor(
                             databaseManager,
                             peerID,
-                            databases.getRemoteDBs().get(peerID),
+                            databases.getRemoteDB(peerID),
                             new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
                     boolean success = peerEngineClient.synchronizeList(
                             peerID,

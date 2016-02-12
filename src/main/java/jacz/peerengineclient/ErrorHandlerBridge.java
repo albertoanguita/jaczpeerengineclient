@@ -3,6 +3,7 @@ package jacz.peerengineclient;
 import jacz.util.log.ErrorFactory;
 import jacz.util.log.ErrorHandler;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 /**
@@ -24,7 +25,7 @@ public class ErrorHandlerBridge implements ErrorHandler {
         errorHandler.errorRaised(errorMessage);
         try {
             peerEngineClient.stop();
-        } catch (IOException e) {
+        } catch (IOException | XMLStreamException e) {
             ErrorFactory.reportError(errorHandler, "Could not save session data", e);
         }
     }

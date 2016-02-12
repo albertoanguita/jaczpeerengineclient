@@ -5,11 +5,14 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
+import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
 import jacz.util.concurrency.timer.SimpleTimerAction;
 import jacz.util.concurrency.timer.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +26,8 @@ import java.util.Set;
  * be hard to track all this places, so we just do it automatically and periodically
  */
 public class SharedDatabaseGenerator implements SimpleTimerAction {
+
+    private final static Logger logger = LoggerFactory.getLogger(SharedDatabaseGenerator.class);
 
     /**
      * The shared database is updated every minute
@@ -63,11 +68,13 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
      */
     private final Timer timer;
 
-    public SharedDatabaseGenerator(Databases databases, ConcurrencyController concurrencyController) {
+    public SharedDatabaseGenerator(Databases databases, FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp, PeerEngineClient peerEngineClient, ConcurrencyController concurrencyController) {
         this.integratedPath = databases.getIntegratedDB();
         this.sharedPath = databases.getSharedDB();
         this.integratedToShared = databases.getItemRelations().getIntegratedToShared();
         this.availableHashes = new HashSet<>();
+        this.fileHashDatabaseWithTimestamp = fileHashDatabaseWithTimestamp;
+        this.peerEngineClient = peerEngineClient;
         sequentialTaskExecutor = new SequentialTaskExecutor();
         this.concurrencyController = concurrencyController;
         timer = new Timer(UPDATE_DELAY, this, true, this.getClass().getName());
@@ -91,14 +98,18 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         sequentialTaskExecutor.executeTask(() -> {
             updateAvailableHashes();
             // go through all movies and series
+            logger.info("listing movies in integrated...");
             List<Movie> movies = Movie.getMovies(integratedPath);
+            logger.info("listed movies in integrated...");
             for (Movie movie : movies) {
                 if (checkFiles(movie.getVideoFiles())) {
                     // this movie must be included in the shared db
                     addProducedCreationItem(movie);
                 }
             }
+            logger.info("listing tvSeries in integrated...");
             List<TVSeries> tvSeries = TVSeries.getTVSeries(integratedPath);
+            logger.info("listed tvSeries in integrated...");
             for (TVSeries aTvSeries : tvSeries) {
                 if (checkChapters(aTvSeries.getChapters())) {
                     // this tv series must be included in the shared db
@@ -111,8 +122,11 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
     private void updateAvailableHashes() {
         availableHashes.clear();
         availableHashes.addAll(fileHashDatabaseWithTimestamp.getActiveHashesSetCopy());
-        for (DownloadManager downloadManager : peerEngineClient.getPeerClient().getAllDownloads()) {
-            availableHashes.add(downloadManager.getResourceID());
+        PeerClient peerClient = peerEngineClient.getPeerClient();
+        if (peerClient != null) {
+            for (DownloadManager downloadManager : peerEngineClient.getPeerClient().getAllDownloads()) {
+                availableHashes.add(downloadManager.getResourceID());
+            }
         }
     }
 

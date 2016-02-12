@@ -4,6 +4,7 @@ import jacz.database.*;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.hash.SHA_1;
 import jacz.util.lists.tuple.Duple;
@@ -26,7 +27,7 @@ public class ItemIntegrator {
     }
 
 
-    private static final float MATCH_THRESHOLD = 0.9f;
+    private static final float MATCH_THRESHOLD = 0.95f;
 
     private static final CreationDateComparator creationDateComparator = new CreationDateComparator();
 
@@ -58,7 +59,7 @@ public class ItemIntegrator {
 
         DatabaseMediator.ItemType type = localItem.getItemType();
         DatabaseItem integratedItem;
-        boolean isNew = databases.getItemRelations().getLocalToIntegrated().contains(type, localItem.getId());
+        boolean isNew = !databases.getItemRelations().getLocalToIntegrated().contains(type, localItem.getId());
         if (isNew) {
             // define a new integrated item for this local item
             // we assume that the use has checked that this local item does not merge with any existing
@@ -264,10 +265,16 @@ public class ItemIntegrator {
         // remote items
         List<Duple<PeerID, DatabaseItem>> remoteItems = new ArrayList<>();
         for (Duple<PeerID, Integer> peerAndId : databases.getItemRelations().getIntegratedToRemote().get(type, integratedItem.getId())) {
-            DatabaseItem remoteItem = DatabaseMediator.getItem(
-                    databases.getRemoteDBs().get(peerAndId.element1),
-                    type,
-                    peerAndId.element2);
+            DatabaseItem remoteItem = null;
+            try {
+                remoteItem = DatabaseMediator.getItem(
+                        databases.getRemoteDB(peerAndId.element1),
+                        type,
+                        peerAndId.element2);
+            } catch (UnavailablePeerException e) {
+                // this peer is no longer a friend -> skip
+                continue;
+            }
             remoteItems.add(new Duple<>(peerAndId.element1, remoteItem));
             isAlive = true;
         }

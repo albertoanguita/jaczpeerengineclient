@@ -1,9 +1,6 @@
 package jacz.peerengineclient;
 
-import jacz.database.Chapter;
-import jacz.database.DatabaseMediator;
-import jacz.database.Movie;
-import jacz.database.TVSeries;
+import jacz.database.*;
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
@@ -46,6 +43,7 @@ import jacz.util.lists.tuple.Triple;
 import jacz.util.log.ErrorHandler;
 import jacz.util.notification.ProgressNotificationWithError;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,7 +57,7 @@ import java.util.Set;
  * <p>
  * todo recover temp files in constructor and put them in paused mode
  * <p>
- * todo si no tiene conexion, no debería sacar la ip pública
+ * todo si no tiene conexion, no deberia sacar la ip publica
  */
 public class PeerEngineClient {
 
@@ -155,6 +153,8 @@ public class PeerEngineClient {
 
     private final String basePath;
 
+    private final NetworkConfiguration networkConfiguration;
+
     private final PeersPersonalData peersPersonalData;
 
     private final TransferStatistics transferStatistics;
@@ -202,25 +202,30 @@ public class PeerEngineClient {
             IntegrationEvents integrationEvents,
             ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
+        this.networkConfiguration = networkConfiguration;
         this.peersPersonalData = peersPersonalData;
         this.transferStatistics = transferStatistics;
-        databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this, peerRelations.getFriendPeers());
         peerShareManager = PeerShareIO.load(basePath, this);
+        databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, peerShareManager.getFileHash(), this, peerRelations.getFriendPeers());
         this.errorHandler = new ErrorHandlerBridge(this, errorHandler);
         DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager, peerShareManager);
-        peerClient = new PeerClient(
-                ownPeerID,
-                peerEncryption,
-                networkConfiguration,
-                new GeneralEventsBridge(this, generalEvents),
-                connectionEvents,
-                resourceTransferEvents,
-                peersPersonalData,
-                transferStatistics,
-                peerRelations,
-                new HashMap<>(),
-                dataAccessorContainer,
-                this.errorHandler);
+        synchronized (this) {
+            // other threads will try to get the peerClient while it has not yet been created. We avoid concurrency
+            // issues by synchronizing its creation and its getter
+            peerClient = new PeerClient(
+                    ownPeerID,
+                    peerEncryption,
+                    networkConfiguration,
+                    new GeneralEventsBridge(this, generalEvents),
+                    connectionEvents,
+                    resourceTransferEvents,
+                    peersPersonalData,
+                    transferStatistics,
+                    peerRelations,
+                    new HashMap<>(),
+                    dataAccessorContainer,
+                    this.errorHandler);
+        }
 
         peerShareManager.setPeerClient(peerClient);
         remoteSynchReminder = new RemoteSynchReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager);
@@ -234,7 +239,7 @@ public class PeerEngineClient {
         peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(peerShareManager.getFileHash(), tempFileManager));
     }
 
-    public PeerClient getPeerClient() {
+    public synchronized PeerClient getPeerClient() {
         return peerClient;
     }
 
@@ -246,7 +251,7 @@ public class PeerEngineClient {
         peerClient.disconnect();
     }
 
-    public void stop() throws IOException {
+    public void stop() throws IOException, XMLStreamException {
         remoteSynchReminder.stop();
         if (databaseManager != null) {
             databaseManager.stop();
@@ -263,12 +268,29 @@ public class PeerEngineClient {
         }
         if (peerClient != null) {
             peerClient.stop();
+            // only if we managed to create a peer client, save all data
+            SessionManager.stopAndSave(
+                    basePath,
+                    peerClient.getOwnPeerID(),
+                    peerClient.getNetworkConfiguration(),
+                    peerClient.getPeersPersonalData(),
+                    peerClient.getPeerRelations(),
+                    getMaxDesiredDownloadSpeed(),
+                    getMaxDesiredUploadSpeed(),
+                    tempDownloadsPath,
+                    downloadsPath,
+                    peerClient.getPeerEncryption(),
+                    transferStatistics
+                    );
         }
-        // todo save all data
     }
 
     public Databases getDatabases() {
         return databaseManager.getDatabases();
+    }
+
+    public void localItemModified(DatabaseItem item) {
+        databaseManager.localItemModified(item);
     }
 
     public State getConnectionState() {
@@ -774,7 +796,7 @@ public class PeerEngineClient {
 
     // todo use?
     public synchronized void localItemModified(String library, String elementIndex) {
-        databaseManager.localItemModified(library, elementIndex);
+        //databaseManager.localItemModified(library, elementIndex);
     }
 
     FileHashDatabase getFileHashDatabase() {

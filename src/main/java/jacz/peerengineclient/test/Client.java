@@ -2,7 +2,6 @@ package jacz.peerengineclient.test;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
-import jacz.peerengineservice.test.*;
 import jacz.peerengineservice.test.TempFileManagerEventsImpl;
 
 import java.io.IOException;
@@ -13,9 +12,10 @@ import java.io.IOException;
 public class Client {
 
     public static PeerEngineClient loadClient(String userPath) throws IOException {
-        return SessionManager.load(
+        GeneralEventsImpl generalEvents = new GeneralEventsImpl();
+        PeerEngineClient peerEngineClient = SessionManager.load(
                 userPath,
-                new GeneralEventsImpl(),
+                generalEvents,
                 new ConnectionEventsImpl(),
                 new jacz.peerengineservice.test.ResourceTransferEventsImpl(),
                 new TempFileManagerEventsImpl(),
@@ -23,5 +23,8 @@ public class Client {
                 new DownloadEventsImpl(),
                 new IntegrationEventsImpl(),
                 new ErrorHandlerImpl());
+
+        generalEvents.setPeerEngineClient(peerEngineClient);
+        return peerEngineClient;
     }
 }

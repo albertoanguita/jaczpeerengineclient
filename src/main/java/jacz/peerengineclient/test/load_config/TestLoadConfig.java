@@ -7,6 +7,7 @@ import jacz.peerengineservice.test.ResourceTransferEventsImpl;
 import jacz.peerengineservice.test.TempFileManagerEventsImpl;
 import jacz.util.concurrency.ThreadUtil;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 /**
@@ -14,7 +15,7 @@ import java.io.IOException;
  */
 public class TestLoadConfig {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, XMLStreamException {
 
         System.out.println(SessionManager.listAvailableConfigs("./etc"));
 

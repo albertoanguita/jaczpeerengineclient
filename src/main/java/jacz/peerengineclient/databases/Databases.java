@@ -2,6 +2,7 @@ package jacz.peerengineclient.databases;
 
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
@@ -45,8 +46,28 @@ public class Databases {
         return localDB;
     }
 
-    public Map<PeerID, String> getRemoteDBs() {
-        return remoteDBs;
+//    public Map<PeerID, String> getRemoteDBs() {
+//        return remoteDBs;
+//    }
+
+    public synchronized boolean containsRemoteDB(PeerID peerID) {
+        return remoteDBs.containsKey(peerID);
+    }
+
+    public synchronized String getRemoteDB(PeerID peerID) throws UnavailablePeerException {
+        if (remoteDBs.containsKey(peerID)) {
+            return remoteDBs.get(peerID);
+        } else {
+            throw new UnavailablePeerException();
+        }
+    }
+
+    public synchronized void addRemoteDB(PeerID peerID, String dbPath) {
+        remoteDBs.put(peerID, dbPath);
+    }
+
+    public synchronized void removeRemoteDB(PeerID peerID) {
+        remoteDBs.remove(peerID);
     }
 
     public String getSharedDB() {

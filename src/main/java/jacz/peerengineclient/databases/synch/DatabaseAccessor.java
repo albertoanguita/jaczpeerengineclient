@@ -76,6 +76,8 @@ public class DatabaseAccessor implements DataAccessor {
         itemsFromTimestamp.addAll(chapters.stream().map(ItemSerializer::serializeChapter).collect(Collectors.toList()));
         List<Person> persons = Person.getPeopleFromTimestamp(dbPath, fromTimestamp);
         itemsFromTimestamp.addAll(persons.stream().map(ItemSerializer::serializePerson).collect(Collectors.toList()));
+        List<Company> companies = Company.getCompaniesFromTimestamp(dbPath, fromTimestamp);
+        itemsFromTimestamp.addAll(companies.stream().map(ItemSerializer::serializeCompany).collect(Collectors.toList()));
         List<VideoFile> videoFiles = VideoFile.getVideoFilesFromTimestamp(dbPath, fromTimestamp);
         itemsFromTimestamp.addAll(videoFiles.stream().map(ItemSerializer::serializeVideoFile).collect(Collectors.toList()));
         List<SubtitleFile> subtitleFiles = SubtitleFile.getSubtitleFilesFromTimestamp(dbPath, fromTimestamp);
