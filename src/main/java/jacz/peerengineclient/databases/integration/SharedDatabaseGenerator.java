@@ -32,7 +32,7 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
     /**
      * The shared database is updated every minute
      */
-    private static final long UPDATE_DELAY = 60000;
+    private static final long UPDATE_DELAY = 10000;
 
     private final String integratedPath;
 
@@ -98,13 +98,17 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         sequentialTaskExecutor.executeTask(() -> {
             updateAvailableHashes();
             // go through all movies and series
+            logger.info("Starting shared database generation...");
             logger.info("listing movies in integrated...");
             List<Movie> movies = Movie.getMovies(integratedPath);
             logger.info("listed movies in integrated...");
             for (Movie movie : movies) {
                 if (checkFiles(movie.getVideoFiles())) {
                     // this movie must be included in the shared db
+                    logger.info("adding movie " + movie.getId() + " to shared...");
                     addProducedCreationItem(movie);
+                } else {
+                    removeProducedCreationItem(movie);
                 }
             }
             logger.info("listing tvSeries in integrated...");
@@ -113,9 +117,13 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
             for (TVSeries aTvSeries : tvSeries) {
                 if (checkChapters(aTvSeries.getChapters())) {
                     // this tv series must be included in the shared db
+                    logger.info("adding tv series " + aTvSeries.getId() + " to shared...");
                     addProducedCreationItem(aTvSeries);
+                } else {
+                    removeProducedCreationItem(aTvSeries);
                 }
             }
+            logger.info("Shared database generation complete!");
         });
     }
 
@@ -135,8 +143,11 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         for (Chapter chapter : chapters) {
             if (checkFiles(chapter.getVideoFiles())) {
                 // this chapter must be included in the shared db
+                logger.info("adding chapter " + chapter.getId() + " to shared...");
                 addCreationItem(chapter);
                 anyTrue = true;
+            } else {
+                removeCreationItem(chapter);
             }
         }
         return anyTrue;
@@ -158,14 +169,23 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         String hash = file.getHash();
         boolean isAdded;
         if (availableHashes.contains(hash)) {
-            addItem(file);
-            isAdded = true;
+            // subtitle files must be added before video files, so the subtitle files mappings are set prior adding
+            // video files
             if (file instanceof VideoFile) {
                 // its subtitles files are subject to be added as well
                 VideoFile videoFile = (VideoFile) file;
                 checkFiles(videoFile.getSubtitleFiles());
             }
+            addItem(file);
+            isAdded = true;
         } else {
+            if (file instanceof VideoFile) {
+                // its subtitles files are all removed before the video file is removed
+                VideoFile videoFile = (VideoFile) file;
+                for (SubtitleFile subtitleFile : videoFile.getSubtitleFiles()) {
+                    removeItem(subtitleFile);
+                }
+            }
             removeItem(file);
             isAdded = false;
         }
@@ -183,12 +203,31 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         addItem(item);
     }
 
+    private void removeCreationItem(CreationItem item) {
+        // add creators and actors, and then the item itself
+        for (Person creator : item.getCreators()) {
+            removeItem(creator);
+        }
+        for (Person actor : item.getActors()) {
+            removeItem(actor);
+        }
+        removeItem(item);
+    }
+
     private void addProducedCreationItem(ProducedCreationItem item) {
         // add production companies, and then the rest of the creation item
         for (Company company : item.getProductionCompanies()) {
             addItem(company);
         }
         addCreationItem(item);
+    }
+
+    private void removeProducedCreationItem(ProducedCreationItem item) {
+        // add production companies, and then the rest of the creation item
+        for (Company company : item.getProductionCompanies()) {
+            removeItem(company);
+        }
+        removeCreationItem(item);
     }
 
     private void addItem(DatabaseItem integratedItem) {

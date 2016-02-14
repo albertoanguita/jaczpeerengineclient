@@ -53,12 +53,13 @@ public class SynchAndIntegrateIT {
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
 
+        setupLocal(localDB, peerEngineClient);
         // connect and warm up
         peerEngineClient.connect();
         ThreadUtil.safeSleep(WARM_UP);
 
         announceEvent(0);
-        setupLocal(localDB, peerEngineClient);
+//        setupLocal(localDB, peerEngineClient);
         assertLocal(localDB);
         assertIntegrated(integratedDB, 0);
 

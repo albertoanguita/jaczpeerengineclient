@@ -2,6 +2,7 @@ package jacz.peerengineclient;
 
 import jacz.database.*;
 import jacz.database.util.ImageHash;
+import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
@@ -180,7 +181,7 @@ public class PeerEngineClient {
 
     private final String tempDownloadsPath;
 
-    private final String downloadsPath;
+    private final String baseMediaPath;
 
 
     public PeerEngineClient(
@@ -192,7 +193,7 @@ public class PeerEngineClient {
             TransferStatistics transferStatistics,
             PeerRelations peerRelations,
             String tempDownloadsPath,
-            String downloadsPath,
+            String baseMediaPath,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
             ResourceTransferEvents resourceTransferEvents,
@@ -234,7 +235,7 @@ public class PeerEngineClient {
         this.downloadEvents = downloadEvents;
         downloadsManager = new DownloadsManager(peerClient);
         this.tempDownloadsPath = tempDownloadsPath;
-        this.downloadsPath = downloadsPath;
+        this.baseMediaPath = baseMediaPath;
 
         peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(peerShareManager.getFileHash(), tempFileManager));
     }
@@ -278,7 +279,7 @@ public class PeerEngineClient {
                     getMaxDesiredDownloadSpeed(),
                     getMaxDesiredUploadSpeed(),
                     tempDownloadsPath,
-                    downloadsPath,
+                    baseMediaPath,
                     peerClient.getPeerEncryption(),
                     transferStatistics
                     );
@@ -427,12 +428,12 @@ public class PeerEngineClient {
             Triple<String, String, String> location = null;
             if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
                 if (movie != null) {
-                    location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), FileUtil.getFileName(path));
+                    location = Paths.movieFilePath(baseMediaPath, movie.getId(), movie.getTitle(), FileUtil.getFileName(path));
                 } else {
-                    location = Paths.seriesFilePath(downloadsPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FileUtil.getFileName(path));
+                    location = Paths.seriesFilePath(baseMediaPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FileUtil.getFileName(path));
                 }
             } else {
-                newPath = Paths.imageFilePath(downloadsPath, path);
+                newPath = Paths.imageFilePath(baseMediaPath, path);
                 String fileName = FileUtil.getFileName(newPath);
                 location = new Triple<>(FileUtil.getFileDirectory(path), FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
             }
@@ -473,7 +474,7 @@ public class PeerEngineClient {
             ImageHash imageHash) throws IOException, NotAliveException {
         HashMap<String, Serializable> userDictionary =
                 buildUserDictionary(DownloadInfo.Type.IMAGE, containerType, containerId, null, null, imageHash.getHash(), imageHash.serialize());
-        ResourceWriter resourceWriter = new BasicFileWriter(Paths.imagesDir(downloadsPath), Paths.imageFileName(downloadsPath, imageHash), userDictionary);
+        ResourceWriter resourceWriter = new BasicFileWriter(Paths.imagesDir(baseMediaPath), Paths.imageFileName(baseMediaPath, imageHash), userDictionary);
         return downloadFile(IMAGE_STORE, imageHash.getHash(), resourceWriter, 0d);
     }
 
@@ -499,7 +500,7 @@ public class PeerEngineClient {
                 resourceStore,
                 fileHash,
                 resourceWriter,
-                new DownloadProgressNotificationHandlerBridge(downloadEvents, databaseManager.getDatabases().getIntegratedDB(), downloadsPath),
+                new DownloadProgressNotificationHandlerBridge(downloadEvents, databaseManager.getDatabases().getIntegratedDB(), baseMediaPath),
                 streamingNeed,
                 fileHash,
                 HASH_ALGORITHM);
@@ -811,8 +812,8 @@ public class PeerEngineClient {
         return tempDownloadsPath;
     }
 
-    public String getDownloadsPath() {
-        return downloadsPath;
+    public String getMediaPath() {
+        return baseMediaPath;
     }
 
     public static HashFunction getHashFunction() {

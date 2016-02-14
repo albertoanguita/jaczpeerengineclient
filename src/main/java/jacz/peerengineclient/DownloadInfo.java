@@ -21,12 +21,26 @@ public class DownloadInfo {
         }
     }
 
+    /**
+     * The type of downloaded file
+     */
     public final Type type;
 
+    /**
+     * The type of container of this file (MOVIE or CHAPTER)
+     */
     public final DatabaseMediator.ItemType containerType;
 
+    /**
+     * Id of the contained in the integrated database
+     */
     public final Integer containerId;
 
+    /**
+     * In case the container is a chapter, the super container refers to the TVSeries containing that chapter.
+     * A chapter does not need to be contained in a TVSeries, or it can be contained in several. In the former case,
+     * this value stores null. In the latter, it will randomly store one of those TVSeries
+     */
     public final Integer superContainerId;
 
     /**
@@ -34,8 +48,15 @@ public class DownloadInfo {
      */
     public final Integer itemId;
 
+    /**
+     * Hash of the downloaded file
+     */
     public final String fileHash;
 
+    /**
+     * Physical name of the file. At the time of writing the file to disk, this name must be sanitized, since a name
+     * in linux might not be a valid name in windows
+     */
     public final String fileName;
 
     public DownloadInfo(

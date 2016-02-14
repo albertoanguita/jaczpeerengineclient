@@ -39,7 +39,7 @@ public class Paths {
 
     private static final String DEFAULT_TEMP_DIR = "temp";
 
-    private static final String DEFAULT_DOWNLOADS_DIR = FileUtil.joinPaths(DATA_DIR, "remote-shares");
+    private static final String DEFAULT_MEDIA_DIR = "media";
 
     private static final String IMAGES_DIR = "images";
 
@@ -125,8 +125,8 @@ public class Paths {
         return FileUtil.joinPaths(basePath, DEFAULT_TEMP_DIR);
     }
 
-    public static String getDefaultDownloadsDir(String basePath) {
-        return FileUtil.joinPaths(basePath, DEFAULT_DOWNLOADS_DIR);
+    public static String getDefaultMediaDir(String basePath) {
+        return FileUtil.joinPaths(basePath, DEFAULT_MEDIA_DIR);
     }
 
     public static List<String> getOrderedDirectories(String basePath) {
@@ -138,6 +138,8 @@ public class Paths {
         directories.add(getDatabasesDir(basePath));
         directories.add(getRemoteDatabasesDir(basePath));
         directories.add(getRemoteSharesDir(basePath));
+        directories.add(getDefaultTempDir(basePath));
+        directories.add(getDefaultMediaDir(basePath));
         return directories;
     }
 
@@ -261,9 +263,11 @@ public class Paths {
         return FileUtil.joinPaths(downloadsDir, TV_SERIES_DIR);
     }
 
-    private static String generateTitleDir(String baseDir, int itemId, String itemTitle) {
+    private static String generateTitleDir(String baseDir, Integer itemId, String itemTitle) {
         String dir = itemTitle != null ? itemTitle : UNKNOWN_TITLE_DIR;
-        dir += "_" + itemId;
+        if (itemId != null) {
+            dir += "_" + itemId;
+        }
         return FileUtil.joinPaths(baseDir, dir);
     }
 
@@ -294,7 +298,7 @@ public class Paths {
         return new Triple<>(titleDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
     }
 
-    public static Triple<String, String, String> seriesFilePath(String downloadsDir, int seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
+    public static Triple<String, String, String> seriesFilePath(String downloadsDir, Integer seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
         createDir(seriesDir(downloadsDir));
         String seriesTitledDir = generateTitleDir(downloadsDir, seriesId, seriesTitle);
         createDir(seriesTitledDir);

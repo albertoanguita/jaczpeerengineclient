@@ -116,9 +116,11 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
                     location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
                 } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
-                    TVSeries tvSeries = TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId);
+                    Integer tvSeriesID = downloadInfo.superContainerId;
+                    String tvSeriesTitle = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId).getTitle() : "unclassified-chapters";
                     Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
-                    location = Paths.seriesFilePath(downloadsPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
+                    // todo sanitize fileName
+                    location = Paths.seriesFilePath(downloadsPath, tvSeriesID, tvSeriesTitle, chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
                 } else {
                     // todo error
                     return;

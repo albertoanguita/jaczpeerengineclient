@@ -45,7 +45,7 @@ public class SessionManager {
 
     public static final int CRC_LENGTH = 8;
 
-    // todo allow changing temp and downloads dir
+    // todo allow changing temp and downloads dir. Store old downloads dir to be able to automatically detect files requiring move in old dirs
 
     public static synchronized String createUserConfig(String basePath, byte[] randomBytes, String nick) throws IOException {
         // creates a new user account
@@ -59,7 +59,7 @@ public class SessionManager {
             Duple<String, String> newUserDirectory = FileUtil.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
             String userPath = newUserDirectory.element1;
             String tempPath = Paths.getDefaultTempDir(userPath);
-            String dataPath = Paths.getDefaultDownloadsDir(userPath);
+            String mediaPath = Paths.getDefaultMediaDir(userPath);
 
             // create sub-directories
             for (String dir : Paths.getOrderedDirectories(userPath)) {
@@ -79,7 +79,7 @@ public class SessionManager {
                     null,
                     null,
                     tempPath,
-                    dataPath,
+                    mediaPath,
                     peerIDAndEncryption.element2,
                     new TransferStatistics()
                     );
@@ -128,7 +128,7 @@ public class SessionManager {
             Integer maxDownloadSpeed = config.element5;
             Integer maxUploadSpeed = config.element6;
             String tempDownloadsPath = config.element7;
-            String baseDataPath = config.element8;
+            String baseMediaPath = config.element8;
             PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
             TransferStatistics transferStatistics = new TransferStatistics(Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
 
@@ -141,7 +141,7 @@ public class SessionManager {
                     transferStatistics,
                     peerRelations,
                     tempDownloadsPath,
-                    baseDataPath,
+                    baseMediaPath,
                     generalEvents,
                     connectionEvents,
                     resourceTransferEvents,
@@ -167,11 +167,11 @@ public class SessionManager {
             Integer maxDownloadSpeed,
             Integer maxUploadSpeed,
             String tempDownloadsPath,
-            String basedDataPath,
+            String baseMediaPath,
             PeerEncryption peerEncryption,
             TransferStatistics transferStatistics) throws IOException, XMLStreamException {
         transferStatistics.stop();
-        FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, basedDataPath);
+        FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
         VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
         VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
     }

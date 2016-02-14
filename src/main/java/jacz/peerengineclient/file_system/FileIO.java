@@ -55,7 +55,7 @@ public class FileIO {
         Integer maxUploadSpeed = StrCast.asInteger(xmlReader.getFieldValue("max-upload-speed"));
 
         String tempDownloadsPath = xmlReader.getFieldValue("temp-downloads-path");
-        String basedDataPath = xmlReader.getFieldValue("base-data-path");
+        String baseDataPath = xmlReader.getFieldValue("base-data-path");
 
         return new EightTuple<>(
                 ownPeerID,
@@ -65,7 +65,7 @@ public class FileIO {
                 maxDownloadSpeed,
                 maxUploadSpeed,
                 tempDownloadsPath,
-                basedDataPath);
+                baseDataPath);
     }
 
     public static void writeConfig(
@@ -77,7 +77,7 @@ public class FileIO {
             Integer maxDownloadSpeed,
             Integer maxUploadSpeed,
             String tempDownloadsPath,
-            String basedDataPath) throws IOException, XMLStreamException {
+            String baseDataPath) throws IOException, XMLStreamException {
         XMLWriter xmlWriter = new XMLWriter("config");
         xmlWriter.addField("peer-id", peerID.toString());
         xmlWriter.addField("port", networkConfiguration.getLocalPort());
@@ -105,7 +105,7 @@ public class FileIO {
         xmlWriter.addField("max-upload-speed", maxUploadSpeed);
 
         xmlWriter.addField("temp-downloads-path", tempDownloadsPath);
-        xmlWriter.addField("base-data-path", basedDataPath);
+        xmlWriter.addField("base-data-path", baseDataPath);
 
         xmlWriter.write(Paths.configPath(basePath), SessionManager.CRC_LENGTH, Paths.configBackupPath(basePath));
     }
