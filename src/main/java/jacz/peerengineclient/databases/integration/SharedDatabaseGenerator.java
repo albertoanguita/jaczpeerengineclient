@@ -32,7 +32,7 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
     /**
      * The shared database is updated every minute
      */
-    private static final long UPDATE_DELAY = 10000;
+    private static final long UPDATE_DELAY = 60000;
 
     private final String integratedPath;
 
@@ -156,7 +156,7 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
     private boolean checkFiles(List<? extends File> files) {
         boolean anyTrue = false;
         for (File file : files) {
-            if (checkVideoFile(file)) {
+            if (checkFile(file)) {
                 // this element must be included in the shared db
                 anyTrue = true;
             }
@@ -164,28 +164,20 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         return anyTrue;
     }
 
-    private boolean checkVideoFile(File file) {
+    private boolean checkFile(File file) {
 
+        if (file instanceof VideoFile) {
+            // before anything else, check if we must add or remove subtitle files (if add, we need to do it before
+            // adding the actual video file, so this is the best place to do it)
+            VideoFile videoFile = (VideoFile) file;
+            checkFiles(videoFile.getSubtitleFiles());
+        }
         String hash = file.getHash();
         boolean isAdded;
         if (availableHashes.contains(hash)) {
-            // subtitle files must be added before video files, so the subtitle files mappings are set prior adding
-            // video files
-            if (file instanceof VideoFile) {
-                // its subtitles files are subject to be added as well
-                VideoFile videoFile = (VideoFile) file;
-                checkFiles(videoFile.getSubtitleFiles());
-            }
             addItem(file);
             isAdded = true;
         } else {
-            if (file instanceof VideoFile) {
-                // its subtitles files are all removed before the video file is removed
-                VideoFile videoFile = (VideoFile) file;
-                for (SubtitleFile subtitleFile : videoFile.getSubtitleFiles()) {
-                    removeItem(subtitleFile);
-                }
-            }
             removeItem(file);
             isAdded = false;
         }

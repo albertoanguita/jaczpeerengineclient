@@ -10,6 +10,7 @@ import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
+import jacz.peerengineclient.databases.integration.SharedDatabaseGenerator;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.util.synch.RemoteSynchReminder;
@@ -290,6 +291,10 @@ public class PeerEngineClient {
         return databaseManager.getDatabases();
     }
 
+    public SharedDatabaseGenerator getSharedDatabaseGenerator() {
+        return databaseManager.getSharedDatabaseGenerator();
+    }
+
     public void localItemModified(DatabaseItem item) {
         databaseManager.localItemModified(item);
     }
@@ -500,7 +505,7 @@ public class PeerEngineClient {
                 resourceStore,
                 fileHash,
                 resourceWriter,
-                new DownloadProgressNotificationHandlerBridge(downloadEvents, databaseManager.getDatabases().getIntegratedDB(), baseMediaPath),
+                new DownloadProgressNotificationHandlerBridge(this, downloadEvents, databaseManager.getDatabases().getIntegratedDB(), baseMediaPath),
                 streamingNeed,
                 fileHash,
                 HASH_ALGORITHM);

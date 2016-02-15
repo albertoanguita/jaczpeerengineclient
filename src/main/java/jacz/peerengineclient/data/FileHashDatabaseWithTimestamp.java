@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
  * <p>
  * This class is used to model the hashes stored locally and shared with the rest of the peers. The put and remove
  * methods are overridden to maintain track of active and deleted items.
+ *
+ * todo we must synchronize this class
  */
 public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
 

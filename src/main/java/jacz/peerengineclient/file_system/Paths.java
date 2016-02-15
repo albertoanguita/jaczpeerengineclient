@@ -293,14 +293,14 @@ public class Paths {
 
     public static Triple<String, String, String> movieFilePath(String downloadsDir, int movieId, String movieTitle, String fileName) throws IOException {
         createDir(moviesDir(downloadsDir));
-        String titleDir = generateTitleDir(downloadsDir, movieId, movieTitle);
+        String titleDir = generateTitleDir(moviesDir(downloadsDir), movieId, movieTitle);
         createDir(titleDir);
         return new Triple<>(titleDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
     }
 
     public static Triple<String, String, String> seriesFilePath(String downloadsDir, Integer seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
         createDir(seriesDir(downloadsDir));
-        String seriesTitledDir = generateTitleDir(downloadsDir, seriesId, seriesTitle);
+        String seriesTitledDir = generateTitleDir(seriesDir(downloadsDir), seriesId, seriesTitle);
         createDir(seriesTitledDir);
         String chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
         createDir(chapterTitledDir);

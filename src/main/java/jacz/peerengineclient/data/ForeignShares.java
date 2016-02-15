@@ -1,5 +1,6 @@
 package jacz.peerengineclient.data;
 
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.ForeignStoreShare;
@@ -19,6 +20,8 @@ public class ForeignShares {
     public ForeignShares(PeerClient peerClient) {
         this.videosShare = new ForeignStoreShare(peerClient);
         this.imagesShare = new ForeignStoreShare(peerClient);
+        peerClient.addForeignResourceStore(PeerEngineClient.MEDIA_STORE, videosShare);
+        peerClient.addForeignResourceStore(PeerEngineClient.IMAGE_STORE, imagesShare);
     }
 
     public ForeignStoreShare getVideosShare() {

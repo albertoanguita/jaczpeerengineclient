@@ -80,6 +80,10 @@ public class DatabaseManager {
         return databaseSynchManager;
     }
 
+    public SharedDatabaseGenerator getSharedDatabaseGenerator() {
+        return sharedDatabaseGenerator;
+    }
+
     public Databases getDatabases() {
         return databases;
     }

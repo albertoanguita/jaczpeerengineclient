@@ -128,17 +128,23 @@ public class PeerShareManager {
             if (!activeRemoteShareSynchs.contains(peerID) &&
                     !remoteSynchRecord.lastSynchIsRecent(peerID)) {
                 try {
-                    RemotePeerShareAccessor remotePeerShareAccessor = new RemotePeerShareAccessor(remotePeerShares.get(peerID));
-                    boolean success = peerEngineClient.synchronizeList(
-                            peerID,
-                            remotePeerShareAccessor,
-                            SYNCH_TIMEOUT,
-                            new SynchProgress(this, SynchMode.REMOTE, peerID));
+                    RemotePeerShare remotePeerShare = remotePeerShares.get(peerID);
+                    if (remotePeerShare != null) {
+                        RemotePeerShareAccessor remotePeerShareAccessor = new RemotePeerShareAccessor(remotePeerShare);
+                        boolean success = peerEngineClient.synchronizeList(
+                                peerID,
+                                remotePeerShareAccessor,
+                                SYNCH_TIMEOUT,
+                                new SynchProgress(this, SynchMode.REMOTE, peerID));
 
-                    if (success) {
-                        // synch process has been successfully registered
-                        activeRemoteShareSynchs.add(peerID);
-                        remoteSynchRecord.newSynchWithPeer(peerID);
+                        if (success) {
+                            // synch process has been successfully registered
+                            activeRemoteShareSynchs.add(peerID);
+                            remoteSynchRecord.newSynchWithPeer(peerID);
+                        }
+                    } else {
+                        // remote share not stored for this peer!!!
+                        System.out.println("HELP!!!");
                     }
                 } catch (UnavailablePeerException e) {
                     // peer is no longer connected, ignore request

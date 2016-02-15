@@ -22,13 +22,16 @@ import java.io.IOException;
  */
 public class DownloadProgressNotificationHandlerBridge implements DownloadProgressNotificationHandler {
 
+    private final PeerEngineClient peerEngineClient;
+
     private final DownloadEvents downloadEvents;
 
     private final String integratedPath;
 
     private final String downloadsPath;
 
-    public DownloadProgressNotificationHandlerBridge(DownloadEvents downloadEvents, String integratedPath, String downloadsPath) {
+    public DownloadProgressNotificationHandlerBridge(PeerEngineClient peerEngineClient, DownloadEvents downloadEvents, String integratedPath, String downloadsPath) {
+        this.peerEngineClient = peerEngineClient;
         this.downloadEvents = downloadEvents;
         this.integratedPath = integratedPath;
         this.downloadsPath = downloadsPath;
@@ -117,6 +120,8 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
                 } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
                     Integer tvSeriesID = downloadInfo.superContainerId;
+                    // in fact, chapters without tv series are never received because they are not shared by the other peer
+                    // we however maintain this code in case this situation changes
                     String tvSeriesTitle = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId).getTitle() : "unclassified-chapters";
                     Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
                     // todo sanitize fileName
@@ -127,6 +132,9 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                 }
                 finalPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
                 FileUtil.move(resourceWriter.getPath(), finalPath);
+
+                // finally, add this file to the file hash database
+                peerEngineClient.getFileHashDatabase().put(finalPath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
