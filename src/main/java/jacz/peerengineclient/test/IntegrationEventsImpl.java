@@ -19,7 +19,7 @@ public class IntegrationEventsImpl implements IntegrationEvents {
     }
 
     @Override
-    public void integratedItemDeleted(DatabaseMediator.ItemType type, Integer id) {
-        System.out.println("Integrated item deleted. Type: " + type + ", id: " + id);
+    public void integratedItemsRemoved() {
+        System.out.println("Integrated items removed");
     }
 }

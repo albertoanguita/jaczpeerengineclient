@@ -3,18 +3,19 @@ package jacz.peerengineclient.data;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.data.synch.RemotePeerShareAccessor;
-import jacz.peerengineclient.data.synch.SynchProgress;
-import jacz.peerengineclient.util.synch.SynchMode;
-import jacz.peerengineclient.util.synch.SynchRecord;
+import jacz.peerengineclient.data.synch.TempFilesAccessor;
+import jacz.peerengineclient.util.synch.DataAccessorController;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.PeerClient;
+import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
+import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.io.serialization.VersionedSerializationException;
+import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +23,80 @@ import java.util.Set;
  * Created by Alberto on 13/12/2015.
  */
 public class PeerShareManager {
+
+    private static class FileHashDataAccessorController extends DataAccessorController<FileHashDatabaseAccessor, RemotePeerShareAccessor> {
+
+        private final FileHashDatabaseWithTimestamp fileHash;
+
+        private final Map<PeerID, RemotePeerShare> remotePeerShares;
+
+        public FileHashDataAccessorController(
+                PeerEngineClient peerEngineClient,
+                FileHashDatabaseWithTimestamp fileHash,
+                Map<PeerID, RemotePeerShare> remotePeerShares) {
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient);
+            this.fileHash = fileHash;
+            this.remotePeerShares = remotePeerShares;
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+            return new DummyProgress();
+        }
+
+        @Override
+        public FileHashDatabaseAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+            return new FileHashDatabaseAccessor(fileHash, progress);
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+            return new DummyProgress();
+        }
+
+        @Override
+        public RemotePeerShareAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+            RemotePeerShare remotePeerShare = remotePeerShares.get(peerID);
+            if (remotePeerShare != null) {
+                return new RemotePeerShareAccessor(remotePeerShare);
+            } else {
+                // remote share not stored for this peer!!!
+                throw new UnavailablePeerException();
+            }
+        }
+    }
+
+    private static class TempFilesDataAccessorController extends DataAccessorController<TempFilesAccessor, TempFilesAccessor> {
+
+        private final ForeignShares foreignShares;
+
+        public TempFilesDataAccessorController(
+                PeerEngineClient peerEngineClient,
+                ForeignShares foreignShares) {
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient);
+            this.foreignShares = foreignShares;
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+            return new DummyProgress();
+        }
+
+        @Override
+        public TempFilesAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+            return new TempFilesAccessor(peerEngineClient, progress);
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+            return new DummyProgress();
+        }
+
+        @Override
+        public TempFilesAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+            return new TempFilesAccessor(new RemotePeerTempShare(peerID, foreignShares));
+        }
+    }
 
     private static final long RECENTLY_THRESHOLD = 15000;
 
@@ -31,6 +106,7 @@ public class PeerShareManager {
 
     private static final long SYNCH_TIMEOUT = 15000L;
 
+    private static final int MAX_SHARE_SYNCH_TASKS = 20;
 
     private final PeerEngineClient peerEngineClient;
 
@@ -40,13 +116,9 @@ public class PeerShareManager {
 
     private final Map<PeerID, RemotePeerShare> remotePeerShares;
 
-    private final Set<PeerID> activeLocalHashSynchs;
+    private final FileHashDataAccessorController fileHashDataAccessorController;
 
-    private final Set<PeerID> activeRemoteShareSynchs;
-
-    private final SynchRecord sharedSynchRecord;
-
-    private final SynchRecord remoteSynchRecord;
+    private TempFilesDataAccessorController tempFilesDataAccessorController;
 
     public PeerShareManager(
             PeerEngineClient peerEngineClient,
@@ -55,14 +127,12 @@ public class PeerShareManager {
         this.fileHash = fileHash;
         this.foreignShares = null;
         this.remotePeerShares = new HashMap<>();
-        activeLocalHashSynchs = new HashSet<>();
-        activeRemoteShareSynchs = new HashSet<>();
-        sharedSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
-        remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
+        fileHashDataAccessorController = new FileHashDataAccessorController(peerEngineClient, fileHash, remotePeerShares);
     }
 
     public void setPeerClient(PeerClient peerClient) {
         this.foreignShares = new ForeignShares(peerClient);
+        this.tempFilesDataAccessorController = new TempFilesDataAccessorController(peerEngineClient, foreignShares);
     }
 
     public FileHashDatabaseWithTimestamp getFileHash() {
@@ -100,68 +170,30 @@ public class PeerShareManager {
 
     public synchronized void removeRemotePeer(String basePath, PeerID remotePeerID) {
         if (remotePeerShares.containsKey(remotePeerID)) {
-            remotePeerShares.get(remotePeerID).clear();
+//            remotePeerShares.get(remotePeerID).clear();
+            remotePeerShares.remove(remotePeerID);
         }
         PeerShareIO.removeRemotePeerShare(basePath, remotePeerID);
     }
 
     public FileHashDatabaseAccessor requestForLocalHashSynch(PeerID peerID) throws ServerBusyException {
-        synchronized (activeLocalHashSynchs) {
-            if (activeLocalHashSynchs.contains(peerID) ||
-                    activeLocalHashSynchs.size() > VERY_LARGE_SHARED_SYNCH_COUNT ||
-                    (activeLocalHashSynchs.size() > LARGE_SHARED_SYNCH_COUNT && sharedSynchRecord.lastSynchIsRecent(peerID))) {
-                // if we are already synching with this peer, or there are many ongoing synchs, deny
-                throw new ServerBusyException();
-            } else {
-                // synch process can proceed
-                activeLocalHashSynchs.add(peerID);
-                sharedSynchRecord.newSynchWithPeer(peerID);
-                return new FileHashDatabaseAccessor(fileHash, new SynchProgress(this, SynchMode.SHARED, peerID));
-            }
-        }
+        return fileHashDataAccessorController.requestForLocalHashSynch(peerID);
+    }
+
+    public TempFilesAccessor requestForLocalTempFilesSynch(PeerID peerID) throws ServerBusyException {
+        return tempFilesDataAccessorController.requestForLocalHashSynch(peerID);
     }
 
     public void synchRemoteShare(PeerID peerID) {
-        synchronized (activeRemoteShareSynchs) {
-            // we only consider this request if we are not currently synching with this peer and
-            // we did not recently synched with this peer
-            if (!activeRemoteShareSynchs.contains(peerID) &&
-                    !remoteSynchRecord.lastSynchIsRecent(peerID)) {
-                try {
-                    RemotePeerShare remotePeerShare = remotePeerShares.get(peerID);
-                    if (remotePeerShare != null) {
-                        RemotePeerShareAccessor remotePeerShareAccessor = new RemotePeerShareAccessor(remotePeerShare);
-                        boolean success = peerEngineClient.synchronizeList(
-                                peerID,
-                                remotePeerShareAccessor,
-                                SYNCH_TIMEOUT,
-                                new SynchProgress(this, SynchMode.REMOTE, peerID));
-
-                        if (success) {
-                            // synch process has been successfully registered
-                            activeRemoteShareSynchs.add(peerID);
-                            remoteSynchRecord.newSynchWithPeer(peerID);
-                        }
-                    } else {
-                        // remote share not stored for this peer!!!
-                        System.out.println("HELP!!!");
-                    }
-                } catch (UnavailablePeerException e) {
-                    // peer is no longer connected, ignore request
-                }
-            }
-        }
+        fileHashDataAccessorController.synchRemoteShare(peerID);
     }
 
-    public void localHashSynchFinished(PeerID remotePeerID) {
-        synchronized (activeLocalHashSynchs) {
-            activeLocalHashSynchs.remove(remotePeerID);
-        }
+    public void synchRemoteTempFiles(PeerID peerID) {
+        tempFilesDataAccessorController.synchRemoteShare(peerID);
     }
 
-    public void remoteShareSynchFinished(PeerID remotePeerID) {
-        synchronized (activeRemoteShareSynchs) {
-            activeRemoteShareSynchs.remove(remotePeerID);
-        }
+    public void stop() {
+        fileHashDataAccessorController.stop();
+        tempFilesDataAccessorController.stop();
     }
 }

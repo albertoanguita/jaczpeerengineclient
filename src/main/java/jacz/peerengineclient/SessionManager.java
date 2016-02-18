@@ -84,7 +84,8 @@ public class SessionManager {
                     new TransferStatistics()
                     );
 
-            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
+            PeerShareIO.createNewFileStructure(userPath);
+//            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
 
             return userPath;
         } catch (XMLStreamException e) {

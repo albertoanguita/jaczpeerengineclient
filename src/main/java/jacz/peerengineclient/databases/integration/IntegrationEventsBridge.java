@@ -21,32 +21,17 @@ public class IntegrationEventsBridge implements IntegrationEvents {
 
     @Override
     public void newIntegratedItem(DatabaseMediator.ItemType type, Integer id) {
-        sequentialTaskExecutor.executeTask(new ParallelTask() {
-            @Override
-            public void performTask() {
-                integrationEvents.newIntegratedItem(type, id);
-            }
-        });
+        sequentialTaskExecutor.executeTask(() -> integrationEvents.newIntegratedItem(type, id));
     }
 
     @Override
     public void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id) {
-        sequentialTaskExecutor.executeTask(new ParallelTask() {
-            @Override
-            public void performTask() {
-                integrationEvents.integratedItemHasNewMediaContent(type, id);
-            }
-        });
+        sequentialTaskExecutor.executeTask(() -> integrationEvents.integratedItemHasNewMediaContent(type, id));
     }
 
     @Override
-    public void integratedItemDeleted(DatabaseMediator.ItemType type, Integer id) {
-        sequentialTaskExecutor.executeTask(new ParallelTask() {
-            @Override
-            public void performTask() {
-                integrationEvents.integratedItemDeleted(type, id);
-            }
-        });
+    public void integratedItemsRemoved() {
+        sequentialTaskExecutor.executeTask(integrationEvents::integratedItemsRemoved);
     }
 
     public void stop() {

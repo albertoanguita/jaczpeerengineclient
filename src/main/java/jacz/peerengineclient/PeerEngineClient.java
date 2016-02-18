@@ -2,7 +2,6 @@ package jacz.peerengineclient;
 
 import jacz.database.*;
 import jacz.database.util.ImageHash;
-import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
@@ -13,7 +12,7 @@ import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.SharedDatabaseGenerator;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineclient.util.synch.RemoteSynchReminder;
+import jacz.peerengineclient.util.synch.PeriodicTaskReminder;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerID;
@@ -169,7 +168,7 @@ public class PeerEngineClient {
 
     private final PeerShareManager peerShareManager;
 
-    private final RemoteSynchReminder remoteSynchReminder;
+    private final PeriodicTaskReminder periodicTaskReminder;
 
     private final DownloadEvents downloadEvents;
 
@@ -230,8 +229,8 @@ public class PeerEngineClient {
         }
 
         peerShareManager.setPeerClient(peerClient);
-        remoteSynchReminder = new RemoteSynchReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager);
-        remoteSynchReminder.start();
+        periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager);
+        periodicTaskReminder.start();
         tempFileManager = new TempFileManager(tempDownloadsPath, tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
         downloadsManager = new DownloadsManager(peerClient);
@@ -254,12 +253,13 @@ public class PeerEngineClient {
     }
 
     public void stop() throws IOException, XMLStreamException {
-        remoteSynchReminder.stop();
+        periodicTaskReminder.stop();
         if (databaseManager != null) {
             databaseManager.stop();
             DatabaseIO.save(basePath, databaseManager);
         }
         if (peerShareManager != null) {
+            peerShareManager.stop();
             PeerShareIO.save(basePath, peerShareManager);
         }
         if (transferStatistics != null) {
@@ -283,7 +283,7 @@ public class PeerEngineClient {
                     baseMediaPath,
                     peerClient.getPeerEncryption(),
                     transferStatistics
-                    );
+            );
         }
     }
 
@@ -358,6 +358,7 @@ public class PeerEngineClient {
     }
 
     synchronized void peerIsNoLongerFriend(PeerID peerID) {
+        System.out.println("Peer is no longer friend: " + peerID);
         databaseManager.removePeer(basePath, peerID);
         peerShareManager.removeRemotePeer(basePath, peerID);
     }
@@ -410,16 +411,20 @@ public class PeerEngineClient {
         peerClient.searchFriends();
     }
 
-    public synchronized String addLocalFile(String path) throws IOException {
+    public synchronized String addLocalFileFixedPath(String path) throws IOException {
         return peerShareManager.getFileHash().put(path);
     }
 
-    public synchronized String addLocalFile(String path, MoveFileAction moveFileAction, Movie movie) throws IOException {
-        return addLocalFile(path, moveFileAction, movie, null, null);
+    public synchronized String addLocalMovieFile(String path, Movie movie) throws IOException {
+        return addLocalFile(path, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
     }
 
-    public synchronized String addLocalFile(String path, MoveFileAction moveFileAction, TVSeries tvSeries, Chapter chapter) throws IOException {
-        return addLocalFile(path, moveFileAction, null, tvSeries, chapter);
+    public synchronized String addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter) throws IOException {
+        return addLocalFile(path, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+    }
+
+    public synchronized String addLocalImageFile(String path) throws IOException {
+        return addLocalFile(path, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
     }
 
     private synchronized String addLocalFile(
@@ -430,7 +435,7 @@ public class PeerEngineClient {
             Chapter chapter) throws IOException {
         if (!peerShareManager.getFileHash().containsValue(path)) {
             String newPath;
-            Triple<String, String, String> location = null;
+            Triple<String, String, String> location;
             if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
                 if (movie != null) {
                     location = Paths.movieFilePath(baseMediaPath, movie.getId(), movie.getTitle(), FileUtil.getFileName(path));
@@ -438,15 +443,17 @@ public class PeerEngineClient {
                     location = Paths.seriesFilePath(baseMediaPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FileUtil.getFileName(path));
                 }
             } else {
-                newPath = Paths.imageFilePath(baseMediaPath, path);
-                String fileName = FileUtil.getFileName(newPath);
-                location = new Triple<>(FileUtil.getFileDirectory(path), FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
+                // to images repo
+                location = Paths.imageFilePath(baseMediaPath, path);
             }
             newPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
-            FileUtil.move(path, newPath);
-            return addLocalFile(newPath);
+            if (!new File(path).getAbsolutePath().equals(new File(newPath).getAbsolutePath())) {
+                // if necessary, move or copy the file to its corresponding place in the media directory
+                FileUtil.move(path, newPath);
+            }
+            return addLocalFileFixedPath(newPath);
         } else {
-            return addLocalFile(path);
+            return addLocalFileFixedPath(path);
         }
     }
 

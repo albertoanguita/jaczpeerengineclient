@@ -264,7 +264,7 @@ public class Paths {
     }
 
     private static String generateTitleDir(String baseDir, Integer itemId, String itemTitle) {
-        String dir = itemTitle != null ? itemTitle : UNKNOWN_TITLE_DIR;
+        String dir = (itemTitle != null && !itemTitle.isEmpty()) ? itemTitle : UNKNOWN_TITLE_DIR;
         if (itemId != null) {
             dir += "_" + itemId;
         }
@@ -280,10 +280,10 @@ public class Paths {
         }
     }
 
-    public static String imageFilePath(String downloadsDir, String filePath) throws IOException {
-        String hash = PeerEngineClient.getHashFunction().digestAsHex(filePath);
-        String extension = FileUtil.getFileExtension(FileUtil.getFileName(filePath));
-        return FileUtil.joinPaths(imagesDir(downloadsDir), imageFileName(downloadsDir, new ImageHash(hash, extension)));
+    public static Triple<String, String, String> imageFilePath(String downloadsDir, String filePath) throws IOException {
+        createDir(imagesDir(downloadsDir));
+        String hash = PeerEngineClient.getHashFunction().digestAsHex(new File(filePath));
+        return new Triple<>(imagesDir(downloadsDir), hash, FileUtil.getFileExtension(FileUtil.getFileName(filePath)));
     }
 
     public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {

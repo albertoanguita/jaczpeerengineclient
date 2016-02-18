@@ -27,18 +27,15 @@ public class ItemIntegrator {
     }
 
 
-    private static final float MATCH_THRESHOLD = 0.95f;
+    private static final float MATCH_THRESHOLD = 0.9f;
 
     private static final CreationDateComparator creationDateComparator = new CreationDateComparator();
-
-    private final SharedDatabaseGenerator sharedDatabaseGenerator;
 
     private final ConcurrencyController concurrencyController;
 
     private final IntegrationEventsBridge integrationEvents;
 
-    public ItemIntegrator(SharedDatabaseGenerator sharedDatabaseGenerator, ConcurrencyController concurrencyController, IntegrationEvents integrationEvents) {
-        this.sharedDatabaseGenerator = sharedDatabaseGenerator;
+    public ItemIntegrator(ConcurrencyController concurrencyController, IntegrationEvents integrationEvents) {
         this.concurrencyController = concurrencyController;
         this.integrationEvents = new IntegrationEventsBridge(integrationEvents);
     }
@@ -107,7 +104,7 @@ public class ItemIntegrator {
     }
 
 
-    public  void integrateRemoteItem(
+    public void integrateRemoteItem(
             Databases databases,
             PeerID remotePeerID,
             DatabaseItem remoteItem) {
@@ -127,7 +124,7 @@ public class ItemIntegrator {
             float maxMatch = -1;
             for (DatabaseItem anIntegratedItem : allIntegratedItems) {
                 float match = remoteItem.match(anIntegratedItem);
-                if (match >= MATCH_THRESHOLD && match > maxMatch) {
+                if (match >= jacz.database.util.ItemIntegrator.THRESHOLD && match > maxMatch) {
                     // match found! -> remember the integrated item and update the max match
                     integratedItem = anIntegratedItem;
                     maxMatch = match;
@@ -157,7 +154,7 @@ public class ItemIntegrator {
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
     }
 
-    public  void removeRemoteItem(
+    public void removeRemoteItem(
             Databases databases,
             PeerID remotePeerID,
             DatabaseItem remoteItem) {
@@ -208,10 +205,13 @@ public class ItemIntegrator {
             // the integrated item is alive
             DatabaseItem matchedIntegratedItem = checkIntegratedItemMatches(databases, integratedItem);
             if (matchedIntegratedItem != null) {
-                // we have a match -> merge with the match and report the matched item
+                // we have a match -> merge with the match
+                // delete the item and report the matched item
                 isAliveAndHasNewContent = mergeIntegratedItems(databases, integratedItem, matchedIntegratedItem);
-                integratedItem.delete();
-                integrationEvents.integratedItemHasNewMediaContent(matchedIntegratedItem.getItemType(), matchedIntegratedItem.getId());
+                deleteIntegratedItem(integratedItem);
+                if (isAliveAndHasNewContent.element2) {
+                    integrationEvents.integratedItemHasNewMediaContent(matchedIntegratedItem.getItemType(), matchedIntegratedItem.getId());
+                }
             } else {
                 // no match with any other integrated item -> report this integrated item
                 if (isNew) {
@@ -222,10 +222,13 @@ public class ItemIntegrator {
             }
         } else {
             // the integrated item has died
-            integrationEvents.integratedItemDeleted(integratedItem.getItemType(), integratedItem.getId());
+            deleteIntegratedItem(integratedItem);
         }
-        // in both cases, recalculate the shared db
-        sharedDatabaseGenerator.requestUpdate();
+    }
+
+    private void deleteIntegratedItem(DatabaseItem integratedItem) {
+        integratedItem.delete();
+        integrationEvents.integratedItemsRemoved();
     }
 
     /**
@@ -265,7 +268,7 @@ public class ItemIntegrator {
         // remote items
         List<Duple<PeerID, DatabaseItem>> remoteItems = new ArrayList<>();
         for (Duple<PeerID, Integer> peerAndId : databases.getItemRelations().getIntegratedToRemote().get(type, integratedItem.getId())) {
-            DatabaseItem remoteItem = null;
+            DatabaseItem remoteItem;
             try {
                 remoteItem = DatabaseMediator.getItem(
                         databases.getRemoteDB(peerAndId.element1),
@@ -359,7 +362,7 @@ public class ItemIntegrator {
                 continue;
             }
             float match = integratedItem.match(anIntegratedItem);
-            if (match >= MATCH_THRESHOLD && match > maxMatch) {
+            if (match >= jacz.database.util.ItemIntegrator.THRESHOLD && match > maxMatch) {
                 // match found! -> remember the integrated item and update the max match
                 matchedIntegratedItem = anIntegratedItem;
                 maxMatch = match;

@@ -10,19 +10,6 @@ import jacz.util.notification.ProgressNotificationWithError;
  */
 public class DatabaseSynchProgress implements ProgressNotificationWithError<Integer, SynchError> {
 
-//    enum Mode {
-//        SHARED,
-//        REMOTE;
-//
-//        boolean isShared() {
-//            return this == SHARED;
-//        }
-//
-//        boolean isRemote() {
-//            return this == REMOTE;
-//        }
-//    }
-
     private final DatabaseSynchManager databaseSynchManager;
 
     private final SynchMode mode;

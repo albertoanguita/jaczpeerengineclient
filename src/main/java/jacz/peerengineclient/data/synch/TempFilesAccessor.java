@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Data accessor implementation for tempo files shares (as this is a very simple implementation, both client and
+ * Data accessor implementation for temp files shares (as this is a very simple implementation, both client and
  * server are merged here)
  */
 public class TempFilesAccessor implements DataAccessor {
@@ -35,6 +35,8 @@ public class TempFilesAccessor implements DataAccessor {
      */
     private final PeerEngineClient peerEngineClient;
 
+    private final ProgressNotificationWithError<Integer, SynchError> progress;
+
     /**
      * Constructor for client mode
      *
@@ -43,6 +45,7 @@ public class TempFilesAccessor implements DataAccessor {
     public TempFilesAccessor(RemotePeerTempShare remotePeerTempShare) {
         this.remotePeerTempShare = remotePeerTempShare;
         this.peerEngineClient = null;
+        this.progress = null;
     }
 
     /**
@@ -50,9 +53,10 @@ public class TempFilesAccessor implements DataAccessor {
      *
      * @param peerEngineClient
      */
-    public TempFilesAccessor(PeerEngineClient peerEngineClient) {
+    public TempFilesAccessor(PeerEngineClient peerEngineClient, ProgressNotificationWithError<Integer, SynchError> progress) {
         this.remotePeerTempShare = null;
         this.peerEngineClient = peerEngineClient;
+        this.progress = progress;
     }
 
     @Override
@@ -112,12 +116,12 @@ public class TempFilesAccessor implements DataAccessor {
     public void endSynchProcess(Mode mode, boolean success) {
         // notify the RemotePeerTempShare, when in client mode
         if (mode.isClient()) {
-            remotePeerTempShare.startNewSynch();
+            remotePeerTempShare.completeSynch();
         }
     }
 
     @Override
     public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
-        return null;
+        return progress;
     }
 }

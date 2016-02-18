@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by Alberto on 22/12/2015.
+ * Accessor (client) for updating the resource share of our friend peers (resources that they share with us)
  */
 public class RemotePeerShareAccessor implements DataAccessor {
 
@@ -69,10 +69,8 @@ public class RemotePeerShareAccessor implements DataAccessor {
     public void setElement(Object element) throws DataAccessException {
         SerializedHashItem item = (SerializedHashItem) element;
         if (item.alive) {
-            System.out.println("New item: " + item.hash);
             remotePeerShare.addHash(item.timestamp, item.hash);
         } else {
-            System.out.println("remove item: " + item.hash);
             remotePeerShare.removeHash(item.timestamp, item.hash);
         }
     }

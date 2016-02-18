@@ -36,7 +36,7 @@ public class SynchAndIntegrateIT {
 
     private static final long WARM_UP = 10000;
 
-    private static final long CYCLE_LENGTH = 15000;
+    private static final long CYCLE_LENGTH = 20000;
 
     @org.junit.Test
     public void synchAndIntegrate1() throws IOException, XMLStreamException, UnavailablePeerException {
@@ -194,16 +194,13 @@ public class SynchAndIntegrateIT {
     }
 
     private static void setupLocal(String db, PeerEngineClient peerEngineClient) {
-        Movie movie = new Movie(db);
-        movie.setTitle("The lord of the rings");
+        Movie movie = new Movie(db, "The lord of the rings");
         peerEngineClient.localItemModified(movie);
 
-        TVSeries tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Bottom");
+        TVSeries tvSeries = new TVSeries(db, "Bottom");
         peerEngineClient.localItemModified(tvSeries);
 
-        Chapter chapter = new Chapter(db);
-        chapter.setTitle("Day out");
+        Chapter chapter = new Chapter(db, "Day out");
         peerEngineClient.localItemModified(chapter);
     }
 
@@ -221,21 +218,16 @@ public class SynchAndIntegrateIT {
     }
 
     private static void setupDB2(String db) {
-        Movie movie = new Movie(db);
-        movie.setTitle("Avatar");
+        Movie movie = new Movie(db, "Avatar");
         movie.setMinutes(150);
-        Person person = new Person(db);
-        person.setName("actor 1");
+        Person person = new Person(db, "actor 1");
         person.addAlias("actor 1 1");
         movie.addActor(person);
-        person = new Person(db);
-        person.setName("actor 2");
+        person = new Person(db, "actor 2");
         movie.addActor(person);
-        person = new Person(db);
-        person.setName("director 1");
+        person = new Person(db, "director 1");
         movie.addCreator(person);
-        Company company = new Company(db);
-        company.setName("Disney");
+        Company company = new Company(db, "Disney");
         company.addAlias("Disney inc");
         movie.addProductionCompany(company);
         movie.setSynopsis("Marines in a remote planet");
@@ -244,56 +236,46 @@ public class SynchAndIntegrateIT {
         movie.addCountry(CountryCode.AC);
         movie.setImageHash(new ImageHash("abcd", "jpg"));
         movie.addExternalURL("external URL 1");
-        VideoFile videoFile = new VideoFile(db);
-        videoFile.setHash("abcdef");
+        VideoFile videoFile = new VideoFile(db, "abcdef");
+        videoFile.setName("video file 1");
         videoFile.setQuality(QualityCode.HD);
         videoFile.setResolution(720);
-        videoFile.setName("video file 1");
         videoFile.addAdditionalSource("torrent 1");
         videoFile.setMinutes(155);
         videoFile.setLength(2048L);
         videoFile.addLanguage(LanguageCode.aa);
-        SubtitleFile subtitleFile = new SubtitleFile(db);
+        SubtitleFile subtitleFile = new SubtitleFile(db, "qqqwww");
         subtitleFile.setLength(1024L);
         subtitleFile.setName("sub 1");
-        subtitleFile.setHash("qqqwww");
         subtitleFile.addLanguage(LanguageCode.ab);
         subtitleFile.addAdditionalSource("torrent 2");
         videoFile.addSubtitleFile(subtitleFile);
         movie.addVideoFile(videoFile);
 
-        movie = new Movie(db);
-        movie.setTitle("Star wars");
+        movie = new Movie(db, "Star wars");
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ADVENTURE);
-        movie = new Movie(db);
-        movie.setTitle("The goonies");
+        movie = new Movie(db, "The goonies");
         movie.setOriginalTitle("The goonies orig");
         movie.setYear(1996);
 
-        Chapter chapter1 = new Chapter(db);
-        chapter1.setTitle("Friends 1");
+        Chapter chapter1 = new Chapter(db, "Friends 1");
         chapter1.setYear(1989);
         chapter1.setSeason("s01");
         chapter1.setMinutes(45);
-        videoFile = new VideoFile(db);
-        videoFile.setHash("abcdefgh");
+        videoFile = new VideoFile(db, "abcdefgh");
+        videoFile.setName("vf");
         chapter1.addVideoFile(videoFile);
 
-        Chapter chapter2 = new Chapter(db);
-        chapter2.setTitle("Friends 2");
+        Chapter chapter2 = new Chapter(db, "Friends 2");
         chapter2.setMinutes(28);
-        Chapter chapter3 = new Chapter(db);
-        chapter3.setTitle("Breaking bad 1");
-        Chapter chapter4 = new Chapter(db);
-        chapter4.setTitle("Breaking bad 2");
+        Chapter chapter3 = new Chapter(db, "Breaking bad 1");
+        Chapter chapter4 = new Chapter(db, "Breaking bad 2");
 
-        TVSeries tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Friends");
+        TVSeries tvSeries = new TVSeries(db, "Friends");
         tvSeries.addChapter(chapter1);
         tvSeries.addChapter(chapter2);
-        tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Breaking bad");
+        tvSeries = new TVSeries(db, "Breaking bad");
         tvSeries.addChapter(chapter3);
         tvSeries.addChapter(chapter4);
     }
@@ -409,44 +391,36 @@ public class SynchAndIntegrateIT {
     }
 
     private static void setupDB3(String db) {
-        Movie movie = new Movie(db);
-        movie.setTitle("Star wars");
+        Movie movie = new Movie(db, "Star wars");
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ACTION);
         movie.addGenre(GenreCode.SCI_FI);
         movie.addCountry(CountryCode.ES);
-        movie = new Movie(db);
-        movie.setTitle("The goonies");
+        movie = new Movie(db, "The goonies wrong");
         movie.setSynopsis("The goonies synopsis");
-        movie = new Movie(db);
-        movie.setTitle("Interestellar");
+        movie = new Movie(db, "Interestellar");
         movie.addCountry(CountryCode.US);
 
-        Chapter chapter1 = new Chapter(db);
-        chapter1.setTitle("Game of thrones 1");
+        Chapter chapter1 = new Chapter(db, "Game of thrones 1");
         chapter1.setOriginalTitle("GOT 1");
-        Chapter chapter2 = new Chapter(db);
-        chapter2.setTitle("Game of thrones 2");
+        Chapter chapter2 = new Chapter(db, "Game of thrones 2");
         chapter2.setMinutes(32);
-        Chapter chapter3 = new Chapter(db);
-        chapter3.setTitle("Breaking bad 2");
+        Chapter chapter3 = new Chapter(db, "Breaking bad 2 other");
         chapter3.setSeason("one");
-        Chapter chapter4 = new Chapter(db);
-        chapter4.setTitle("Breaking bad 3");
+        Chapter chapter4 = new Chapter(db, "Breaking bad 3");
         chapter4.setSeason("one");
 
-        TVSeries tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Game of thrones");
+        TVSeries tvSeries = new TVSeries(db, "Game of thrones");
         tvSeries.addChapter(chapter1);
         tvSeries.addChapter(chapter2);
-        tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Breaking bad");
+        tvSeries = new TVSeries(db, "Breaking bad other");
         tvSeries.addChapter(chapter3);
         tvSeries.addChapter(chapter4);
     }
 
     private static void updateDB3(String db) {
         Movie movie = Movie.getMovies(db).get(1);
+        movie.setTitle("The goonies");
         movie.setOriginalTitle("The goonies orig");
     }
 
@@ -465,10 +439,11 @@ public class SynchAndIntegrateIT {
         List<CountryCode> countries = new ArrayList<>();
         countries.add(CountryCode.ES);
         ListAssert.assertEquals(countries, movie1.getCountries());
-        Assert.assertEquals("The goonies", movie2.getTitle());
         if (phase == 0) {
+            Assert.assertEquals("The goonies wrong", movie2.getTitle());
             Assert.assertEquals(null, movie2.getOriginalTitle());
         } else {
+            Assert.assertEquals("The goonies", movie2.getTitle());
             Assert.assertEquals("The goonies orig", movie2.getOriginalTitle());
         }
         Assert.assertEquals("The goonies synopsis", movie2.getSynopsis());
@@ -486,7 +461,7 @@ public class SynchAndIntegrateIT {
         Assert.assertEquals("GOT 1", chapter1.getOriginalTitle());
         Assert.assertEquals("Game of thrones 2", chapter2.getTitle());
         Assert.assertEquals(new Integer(32), chapter2.getMinutes());
-        Assert.assertEquals("Breaking bad 2", chapter3.getTitle());
+        Assert.assertEquals("Breaking bad 2 other", chapter3.getTitle());
         Assert.assertEquals("one", chapter3.getSeason());
         Assert.assertEquals("Breaking bad 3", chapter4.getTitle());
         Assert.assertEquals("one", chapter4.getSeason());
@@ -498,9 +473,9 @@ public class SynchAndIntegrateIT {
         Assert.assertEquals(2, tvSeries1.getChapters(db).size());
         Assert.assertEquals("Game of thrones 1", tvSeries1.getChapters(db).get(0).getTitle());
         Assert.assertEquals("Game of thrones 2", tvSeries1.getChapters(db).get(1).getTitle());
-        Assert.assertEquals("Breaking bad", tvSeries2.getTitle());
+        Assert.assertEquals("Breaking bad other", tvSeries2.getTitle());
         Assert.assertEquals(2, tvSeries2.getChapters(db).size());
-        Assert.assertEquals("Breaking bad 2", tvSeries2.getChapters(db).get(0).getTitle());
+        Assert.assertEquals("Breaking bad 2 other", tvSeries2.getChapters(db).get(0).getTitle());
         Assert.assertEquals("Breaking bad 3", tvSeries2.getChapters(db).get(1).getTitle());
         endDBAssert(db, phase);
     }
@@ -630,7 +605,7 @@ public class SynchAndIntegrateIT {
             Assert.assertEquals(new Integer(1996), movie3.getYear());
             if (phase == 3) {
                 // the goonies is not yet merged
-                Assert.assertEquals("The goonies", movie4.getTitle());
+                Assert.assertEquals("The goonies wrong", movie4.getTitle());
                 Assert.assertEquals("The goonies synopsis", movie4.getSynopsis());
                 Assert.assertEquals("Interestellar", movie5.getTitle());
                 countries = new ArrayList<>();
@@ -690,7 +665,7 @@ public class SynchAndIntegrateIT {
                 Assert.assertEquals("GOT 1", chapter5.getOriginalTitle());
                 Assert.assertEquals("Game of thrones 2", chapter6.getTitle());
                 Assert.assertEquals(new Integer(32), chapter6.getMinutes());
-                Assert.assertEquals("Breaking bad 2", chapter7.getTitle());
+                Assert.assertEquals("Breaking bad 2 other", chapter7.getTitle());
                 Assert.assertEquals("one", chapter7.getSeason());
                 Assert.assertEquals("Breaking bad 3", chapter8.getTitle());
                 Assert.assertEquals("one", chapter8.getSeason());
@@ -728,9 +703,9 @@ public class SynchAndIntegrateIT {
                 Assert.assertEquals(2, tvSeries3.getChapters(db).size());
                 Assert.assertEquals("Game of thrones 1", tvSeries3.getChapters(db).get(0).getTitle());
                 Assert.assertEquals("Game of thrones 2", tvSeries3.getChapters(db).get(1).getTitle());
-                Assert.assertEquals("Breaking bad", tvSeries4.getTitle());
+                Assert.assertEquals("Breaking bad other", tvSeries4.getTitle());
                 Assert.assertEquals(2, tvSeries4.getChapters(db).size());
-                Assert.assertEquals("Breaking bad 2", tvSeries4.getChapters(db).get(0).getTitle());
+                Assert.assertEquals("Breaking bad 2 other", tvSeries4.getChapters(db).get(0).getTitle());
                 Assert.assertEquals("Breaking bad 3", tvSeries4.getChapters(db).get(1).getTitle());
             }
         }

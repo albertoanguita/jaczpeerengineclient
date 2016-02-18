@@ -14,6 +14,8 @@ import java.util.List;
 
 /**
  * Accessor for the file hash database (with timestamp). Works in server mode only
+ * <p>
+ * What resources we share with our friend peers
  */
 public class FileHashDatabaseAccessor implements DataAccessor {
 

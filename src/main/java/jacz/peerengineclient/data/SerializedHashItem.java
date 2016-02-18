@@ -33,4 +33,13 @@ public class SerializedHashItem implements Serializable, Comparable<SerializedHa
             return timestamp < o.timestamp ? -1 : 1;
         }
     }
+
+    @Override
+    public String toString() {
+        return "SerializedHashItem{" +
+                "timestamp=" + timestamp +
+                ", hash='" + hash + '\'' +
+                ", alive=" + alive +
+                '}';
+    }
 }

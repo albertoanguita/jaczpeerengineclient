@@ -31,7 +31,11 @@ public class GeneralResourceStoreImpl implements GeneralResourceStore {
     public ResourceStoreResponse requestResource(String resourceStore, PeerID peerID, String resourceID) {
         try {
             // first check in the file hash database
-            return ResourceStoreResponse.resourceApproved(new BasicFileReader(fileHashDatabase.getFilePath(resourceID)));
+            if (fileHashDatabase.containsKey(resourceID)) {
+                return ResourceStoreResponse.resourceApproved(new BasicFileReader(fileHashDatabase.getFilePath(resourceID)));
+            } else {
+                throw new FileNotFoundException();
+            }
         } catch (FileNotFoundException e) {
             // now check with the temp file manager
             for (String tempFile : tempFileManager.getExistingTempFiles()) {

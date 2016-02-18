@@ -40,6 +40,10 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
     public FileHashDatabaseWithTimestamp(String id) {
         super(PeerEngineClient.getHashFunction());
         this.id = id;
+        init();
+    }
+
+    private void init() {
         activeHashes = new DoubleMap<>();
         deletedHashes = new HashMap<>();
         nextTimestamp = 1L;
@@ -47,6 +51,12 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
 
     public FileHashDatabaseWithTimestamp(String path, String... backupPaths) throws IOException, VersionedSerializationException {
         VersionedObjectSerializer.deserialize(this, path, backupPaths);
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        init();
     }
 
     public String getId() {

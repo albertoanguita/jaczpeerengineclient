@@ -17,7 +17,7 @@ public class Client {
                 userPath,
                 generalEvents,
                 new ConnectionEventsImpl(),
-                new jacz.peerengineservice.test.ResourceTransferEventsImpl(),
+                new ResourceTransferEventsImpl(),
                 new TempFileManagerEventsImpl(),
                 new DatabaseSynchEventsImpl(),
                 new DownloadEventsImpl(),

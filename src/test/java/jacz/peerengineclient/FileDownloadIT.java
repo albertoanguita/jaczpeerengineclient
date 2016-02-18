@@ -46,6 +46,7 @@ public class FileDownloadIT {
     //   file5.wmv
     // a video file partially available from another movie (peer 3, which is getting it from peer 4)
     //   file6.wmv
+    //   WE SKIP THIS TEST AND DO IT IN FileDownloadIncompleteIT
 
     public enum File {
         VIDEO_1,
@@ -120,7 +121,7 @@ public class FileDownloadIT {
 
     private static final long WARM_UP = 10000;
 
-    private static final long CYCLE_LENGTH = 15000;
+    private static final long CYCLE_LENGTH = 20000;
 
 
     @org.junit.Test
@@ -312,17 +313,14 @@ public class FileDownloadIT {
 
     private static void setupDB2(String db, PeerEngineClient peerEngineClient) throws IOException {
         // named movie
-        Movie movie = new Movie(db);
-        movie.setTitle("Rocky");
+        Movie movie = new Movie(db, "Rocky");
         movie.setOriginalTitle("Rocky");
         movie.setMinutes(150);
         movie.setYear(2000);
-        VideoFile videoFile = new VideoFile(db);
+        VideoFile videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_1).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_1).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_1).element3);
-        SubtitleFile subtitleFile = new SubtitleFile(db);
+        SubtitleFile subtitleFile = new SubtitleFile(db, namePathAndHash(File.SUB_1).element3);
         subtitleFile.setName(namePathAndHash(File.SUB_1).element1);
-        subtitleFile.setHash(namePathAndHash(File.SUB_1).element3);
         videoFile.addSubtitleFile(subtitleFile);
         movie.addVideoFile(videoFile);
         peerEngineClient.localItemModified(subtitleFile);
@@ -330,18 +328,14 @@ public class FileDownloadIT {
         peerEngineClient.localItemModified(movie);
 
         // named chapter with tv series
-        Chapter chapter1 = new Chapter(db);
-        chapter1.setTitle("Friends 1");
-        videoFile = new VideoFile(db);
+        Chapter chapter1 = new Chapter(db, "Friends 1");
+        videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_2).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_2).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_2).element3);
-        subtitleFile = new SubtitleFile(db);
+        subtitleFile = new SubtitleFile(db, namePathAndHash(File.SUB_2).element3);
         subtitleFile.setName(namePathAndHash(File.SUB_2).element1);
-        subtitleFile.setHash(namePathAndHash(File.SUB_2).element3);
         videoFile.addSubtitleFile(subtitleFile);
         chapter1.addVideoFile(videoFile);
-        TVSeries tvSeries = new TVSeries(db);
-        tvSeries.setTitle("Friends");
+        TVSeries tvSeries = new TVSeries(db, "Friends");
         tvSeries.addChapter(chapter1);
         peerEngineClient.localItemModified(subtitleFile);
         peerEngineClient.localItemModified(videoFile);
@@ -349,38 +343,32 @@ public class FileDownloadIT {
         peerEngineClient.localItemModified(tvSeries);
 
         // named chapter without tv series
-        Chapter chapter2 = new Chapter(db);
-        chapter2.setTitle("Breaking bad 1");
-        videoFile = new VideoFile(db);
+        Chapter chapter2 = new Chapter(db, "Breaking bad 1");
+        videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_3).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_3).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_3).element3);
-        subtitleFile = new SubtitleFile(db);
+        subtitleFile = new SubtitleFile(db, namePathAndHash(File.SUB_3).element3);
         subtitleFile.setName(namePathAndHash(File.SUB_3).element1);
-        subtitleFile.setHash(namePathAndHash(File.SUB_3).element3);
         videoFile.addSubtitleFile(subtitleFile);
         chapter2.addVideoFile(videoFile);
         peerEngineClient.localItemModified(subtitleFile);
         peerEngineClient.localItemModified(videoFile);
         peerEngineClient.localItemModified(chapter2);
 
-        // unnamed movie
-        movie = new Movie(db);
-        videoFile = new VideoFile(db);
+        // unnamed movie (blank title!!)
+        movie = new Movie(db, "");
+        videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_4).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_4).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_4).element3);
         movie.addVideoFile(videoFile);
         peerEngineClient.localItemModified(videoFile);
         peerEngineClient.localItemModified(movie);
 
         // named movie, shared with other peers
-        movie = new Movie(db);
-        movie.setTitle("Alien");
+        movie = new Movie(db, "Alien");
         movie.setOriginalTitle("Alien");
         movie.setMinutes(100);
         movie.setYear(1990);
-        videoFile = new VideoFile(db);
+        videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_5).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_5).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_5).element3);
         movie.addVideoFile(videoFile);
         peerEngineClient.localItemModified(videoFile);
         peerEngineClient.localItemModified(movie);
@@ -389,26 +377,24 @@ public class FileDownloadIT {
     }
 
     private static void addFiles2(PeerEngineClient peerEngineClient) throws IOException {
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_1).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.SUB_1).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_2).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.SUB_2).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_3).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.SUB_3).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_4).element2);
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_5).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_1).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.SUB_1).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_2).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.SUB_2).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_3).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.SUB_3).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_4).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_5).element2);
     }
 
     private static void setupDB3(String db, PeerEngineClient peerEngineClient) throws IOException {
         // named movie, shared with other peers
-        Movie movie = new Movie(db);
-        movie.setTitle("Alien");
+        Movie movie = new Movie(db, "Alien");
         movie.setOriginalTitle("Alien");
         movie.setMinutes(100);
         movie.setYear(1990);
-        VideoFile videoFile = new VideoFile(db);
+        VideoFile videoFile = new VideoFile(db, namePathAndHash(File.VIDEO_5).element3);
         videoFile.setName(namePathAndHash(File.VIDEO_5).element1);
-        videoFile.setHash(namePathAndHash(File.VIDEO_5).element3);
         movie.addVideoFile(videoFile);
         peerEngineClient.localItemModified(videoFile);
         peerEngineClient.localItemModified(movie);
@@ -417,7 +403,7 @@ public class FileDownloadIT {
     }
 
     private static void addFiles3(PeerEngineClient peerEngineClient) throws IOException {
-        peerEngineClient.addLocalFile(namePathAndHash(File.VIDEO_5).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_5).element2);
     }
 
     private static void assertIntegrated(String db, int phase) {
@@ -460,7 +446,7 @@ public class FileDownloadIT {
         Assert.assertEquals(1, chapter1.getTVSeries().size());
         Assert.assertEquals("Friends", chapter1.getTVSeries().get(0).getTitle());
 
-        Assert.assertEquals(null, movie2.getTitle());
+        Assert.assertEquals("", movie2.getTitle());
         Assert.assertEquals(null, movie2.getOriginalTitle());
         Assert.assertEquals(1, movie2.getVideoFiles().size());
         videoFile = movie2.getVideoFiles().get(0);

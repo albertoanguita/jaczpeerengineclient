@@ -2,6 +2,7 @@ package jacz.peerengineclient;
 
 import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
+import jacz.peerengineclient.data.synch.TempFilesAccessor;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.synch.DatabaseAccessor;
 import jacz.peerengineservice.PeerID;
@@ -42,6 +43,9 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
 
             case FileHashDatabaseAccessor.NAME:
                 return peerShareManager.requestForLocalHashSynch(peerID);
+
+            case TempFilesAccessor.NAME:
+                return peerShareManager.requestForLocalTempFilesSynch(peerID);
 
             default:
                 // todo error

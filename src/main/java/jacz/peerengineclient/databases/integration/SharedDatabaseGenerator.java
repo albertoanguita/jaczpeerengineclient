@@ -82,10 +82,6 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
         updateSharedDatabase();
     }
 
-    public synchronized void requestUpdate() {
-        timer.reset();
-    }
-
     @Override
     public Long wakeUp(Timer timer) {
         updateSharedDatabase();

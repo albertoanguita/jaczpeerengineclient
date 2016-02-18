@@ -3,15 +3,14 @@ package jacz.peerengineclient.databases.synch;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
+import jacz.peerengineclient.util.synch.DataAccessorController;
 import jacz.peerengineclient.util.synch.SynchMode;
-import jacz.peerengineclient.util.synch.SynchRecord;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
+import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-
-import java.util.HashSet;
-import java.util.Set;
+import jacz.util.notification.ProgressNotificationWithError;
 
 /**
  * This class manages all the ongoing synch processes, maintaining a table with the active synch processes
@@ -22,8 +21,58 @@ import java.util.Set;
  */
 public class DatabaseSynchManager {
 
-    private static final long RECENTLY_THRESHOLD = 30000;
 
+    private static class DatabaseSynchAccessorController extends DataAccessorController<DatabaseAccessor, DatabaseAccessor> {
+
+        private final DatabaseSynchManager databaseSynchManager;
+
+        private final DatabaseManager databaseManager;
+
+        private final Databases databases;
+
+
+        public DatabaseSynchAccessorController(
+                PeerEngineClient peerEngineClient,
+                DatabaseSynchManager databaseSynchManager,
+                DatabaseManager databaseManager,
+                Databases databases) {
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, DATABASE_SYNCH_TIMEOUT, MAX_DATABASE_SYNCH_TASKS, peerEngineClient);
+            this.databaseSynchManager = databaseSynchManager;
+            this.databaseManager = databaseManager;
+            this.databases = databases;
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+            return new DatabaseSynchProgress(databaseSynchManager, SynchMode.LOCAL, peerID);
+        }
+
+        @Override
+        public DatabaseAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+            return new DatabaseAccessor(
+                    databaseManager,
+                    peerID,
+                    databases.getSharedDB(),
+                    progress);
+        }
+
+        @Override
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+            return new DummyProgress();
+        }
+
+        @Override
+        public DatabaseAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+            return new DatabaseAccessor(
+                    databaseManager,
+                    peerID,
+                    databases.getRemoteDB(peerID),
+                    new DatabaseSynchProgress(databaseSynchManager, SynchMode.REMOTE, peerID));
+        }
+    }
+
+
+    private static final long RECENTLY_THRESHOLD = 30000;
 
     private static final int LARGE_SHARED_SYNCH_COUNT = 5;
 
@@ -31,35 +80,19 @@ public class DatabaseSynchManager {
 
     private static final long DATABASE_SYNCH_TIMEOUT = 15000L;
 
-    private final DatabaseManager databaseManager;
+    private static final int MAX_DATABASE_SYNCH_TASKS = 10;
 
     private final DatabaseSynchEvents databaseSynchEvents;
 
-    private final PeerEngineClient peerEngineClient;
-
-    private final Databases databases;
-
-    private final Set<PeerID> activeSharedSynchs;
-
-    private final Set<PeerID> activeRemoteSynchs;
-
-    private final SynchRecord sharedSynchRecord;
-
-    private final SynchRecord remoteSynchRecord;
+    private final DatabaseSynchAccessorController databaseSynchAccessorController;
 
     public DatabaseSynchManager(
             DatabaseManager databaseManager,
             DatabaseSynchEvents databaseSynchEvents,
             PeerEngineClient peerEngineClient,
             Databases databases) {
-        this.databaseManager = databaseManager;
         this.databaseSynchEvents = databaseSynchEvents;
-        this.peerEngineClient = peerEngineClient;
-        this.databases = databases;
-        activeSharedSynchs = new HashSet<>();
-        activeRemoteSynchs = new HashSet<>();
-        sharedSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
-        remoteSynchRecord = new SynchRecord(RECENTLY_THRESHOLD);
+        databaseSynchAccessorController = new DatabaseSynchAccessorController(peerEngineClient, this, databaseManager, databases);
     }
 
     /**
@@ -73,81 +106,11 @@ public class DatabaseSynchManager {
      * and we would be waisting bandwidth
      */
     public DatabaseAccessor requestForSharedDatabaseSynch(PeerID peerID) throws ServerBusyException {
-        synchronized (activeSharedSynchs) {
-            if (activeSharedSynchs.contains(peerID) ||
-                    activeSharedSynchs.size() > VERY_LARGE_SHARED_SYNCH_COUNT ||
-                    (activeSharedSynchs.size() > LARGE_SHARED_SYNCH_COUNT && sharedSynchRecord.lastSynchIsRecent(peerID))) {
-                // if we are already synching with this peer, or there are many ongoing synchs, deny
-                throw new ServerBusyException();
-            } else {
-                // synch process can proceed
-                activeSharedSynchs.add(peerID);
-                sharedSynchRecord.newSynchWithPeer(peerID);
-                return new DatabaseAccessor(
-                        databaseManager,
-                        peerID,
-                        databases.getSharedDB(),
-                        new DatabaseSynchProgress(this, SynchMode.SHARED, peerID));
-            }
-        }
+        return databaseSynchAccessorController.requestForLocalHashSynch(peerID);
     }
 
-    //    /**
-//     * A remote peer is requesting to get access to the shared database for synchronizing it with us
-//     * <p>
-//     * This process can happen along with any other process*. We just must take care that the retrieval of index and hash lists is properly
-//     * synchronized with other operations. A local or remote item integration might of course break the synchronization, but that is a risk that
-//     * we must assume, and the other peer will be notified of this.
-//     * <p>
-//     * The database manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
-//     * and we would be waisting bandwidth
-//     */
-//    public ServerSynchRequestAnswer requestForSharedDatabaseSynch(PeerID peerID) {
-//        synchronized (activeSharedSynchs) {
-//            if (activeSharedSynchs.contains(peerID) ||
-//                    activeSharedSynchs.size() > VERY_LARGE_SHARED_SYNCH_COUNT ||
-//                    (activeSharedSynchs.size() > LARGE_SHARED_SYNCH_COUNT && sharedSynchRecord.lastSynchIsRecent(peerID))) {
-//                // if we are already synching with this peer, or there are many ongoing synchs, deny
-//                return new ServerSynchRequestAnswer(ServerSynchRequestAnswer.Type.SERVER_BUSY, null);
-//            } else {
-//                // synch process can proceed
-//                activeSharedSynchs.add(peerID);
-//                sharedSynchRecord.newSynchWithPeer(peerID);
-//                return new ServerSynchRequestAnswer(
-//                        ServerSynchRequestAnswer.Type.OK,
-//                        new DatabaseSynchProgress(this, DatabaseSynchProgress.Mode.SHARED, peerID));
-//            }
-//        }
-//    }
-//
     public void synchRemoteDatabase(PeerID peerID) {
-        synchronized (activeRemoteSynchs) {
-            // we only consider this request if we are not currently synching with this peer and
-            // we did not recently synched with this peer
-            if (!activeRemoteSynchs.contains(peerID) &&
-                    !remoteSynchRecord.lastSynchIsRecent(peerID)) {
-                try {
-                    DatabaseAccessor databaseAccessor = new DatabaseAccessor(
-                            databaseManager,
-                            peerID,
-                            databases.getRemoteDB(peerID),
-                            new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
-                    boolean success = peerEngineClient.synchronizeList(
-                            peerID,
-                            databaseAccessor,
-                            DATABASE_SYNCH_TIMEOUT,
-                            new DatabaseSynchProgress(this, SynchMode.REMOTE, peerID));
-
-                    if (success) {
-                        // synch process has been successfully registered
-                        activeRemoteSynchs.add(peerID);
-                        remoteSynchRecord.newSynchWithPeer(peerID);
-                    }
-                } catch (UnavailablePeerException e) {
-                    // peer is no longer connected, ignore request
-                }
-            }
-        }
+        databaseSynchAccessorController.synchRemoteShare(peerID);
     }
 
     void sharedDatabaseSynchBegins(PeerID remotePeerID) {
@@ -159,24 +122,15 @@ public class DatabaseSynchManager {
     }
 
     void sharedDatabaseSynchComplete(PeerID remotePeerID) {
-        synchronized (activeSharedSynchs) {
-            activeSharedSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.sharedSynchCompleted(remotePeerID);
     }
 
     void sharedDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
-        synchronized (activeSharedSynchs) {
-            activeSharedSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.sharedSynchError(remotePeerID, error);
     }
 
     void sharedDatabaseSynchTimedOut(PeerID remotePeerID) {
-        synchronized (activeSharedSynchs) {
-            activeSharedSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.sharedSynchTimeout(remotePeerID);
     }
 
@@ -189,24 +143,19 @@ public class DatabaseSynchManager {
     }
 
     void remoteDatabaseSynchComplete(PeerID remotePeerID) {
-        synchronized (activeRemoteSynchs) {
-            activeRemoteSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.remoteSynchCompleted(remotePeerID);
     }
 
     void remoteDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
-        synchronized (activeRemoteSynchs) {
-            activeRemoteSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.remoteSynchError(remotePeerID, error);
     }
 
     void remoteDatabaseSynchTimedOut(PeerID remotePeerID) {
-        synchronized (activeRemoteSynchs) {
-            activeRemoteSynchs.remove(remotePeerID);
-        }
         databaseSynchEvents.remoteSynchTimeout(remotePeerID);
+    }
+
+    public void stop() {
+        databaseSynchAccessorController.stop();
     }
 }

@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Accessor implementation for databases
+ * Accessor implementation for databases. Works both in client and server mode
+ * - Client: synch the remote database corresponding to the other peer
+ * - Server: synch our shared database with the other peer
  */
 public class DatabaseAccessor implements DataAccessor {
 
@@ -31,9 +33,9 @@ public class DatabaseAccessor implements DataAccessor {
 
     private final String dbPath;
 
-    private final DatabaseSynchProgress databaseSynchProgress;
+    private final ProgressNotificationWithError<Integer, SynchError> databaseSynchProgress;
 
-    public DatabaseAccessor(DatabaseManager databaseManager, PeerID remotePeerID, String dbPath, DatabaseSynchProgress databaseSynchProgress) {
+    public DatabaseAccessor(DatabaseManager databaseManager, PeerID remotePeerID, String dbPath, ProgressNotificationWithError<Integer, SynchError> databaseSynchProgress) {
         this.databaseManager = databaseManager;
         this.remotePeerID = remotePeerID;
         this.dbPath = dbPath;

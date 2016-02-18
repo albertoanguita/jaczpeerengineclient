@@ -1,6 +1,7 @@
 package jacz.peerengineclient.util.synch;
 
 import jacz.peerengineservice.PeerID;
+import jacz.util.date_time.TimedEventRecord;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,7 @@ public class SynchRecord {
     /**
      * For each peer, stores the last time that we synched the shared library with him
      */
-    private final Map<PeerID, Long> peerSharedSynchEvents;
+    private final Map<PeerID, TimedEventRecord> peerSharedSynchEvents;
 
     /**
      * events occurred more recently than this period of time are considered as recent (in ms)
@@ -27,11 +28,42 @@ public class SynchRecord {
     }
 
     public boolean lastSynchIsRecent(PeerID peerID) {
-        return peerSharedSynchEvents.containsKey(peerID) &&
-                peerSharedSynchEvents.get(peerID) > System.currentTimeMillis() - threshold;
+        return peerSharedSynchEvents.containsKey(peerID) && peerSharedSynchEvents.get(peerID).lastEventIsRecent();
     }
 
     public void newSynchWithPeer(PeerID peerID) {
-        peerSharedSynchEvents.put(peerID, System.currentTimeMillis());
+        if (!peerSharedSynchEvents.containsKey(peerID)) {
+            peerSharedSynchEvents.put(peerID, new TimedEventRecord(threshold, true));
+        } else {
+            peerSharedSynchEvents.get(peerID).newEvent();
+        }
     }
+
+
+
+
+//
+//    /**
+//     * For each peer, stores the last time that we synched the shared library with him
+//     */
+//    private final Map<PeerID, Long> peerSharedSynchEvents;
+//
+//    /**
+//     * events occurred more recently than this period of time are considered as recent (in ms)
+//     */
+//    private final long threshold;
+//
+//    public SynchRecord(long threshold) {
+//        peerSharedSynchEvents = new HashMap<>();
+//        this.threshold = threshold;
+//    }
+//
+//    public boolean lastSynchIsRecent(PeerID peerID) {
+//        return peerSharedSynchEvents.containsKey(peerID) &&
+//                peerSharedSynchEvents.get(peerID) > System.currentTimeMillis() - threshold;
+//    }
+//
+//    public void newSynchWithPeer(PeerID peerID) {
+//        peerSharedSynchEvents.put(peerID, System.currentTimeMillis());
+//    }
 }

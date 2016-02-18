@@ -5,6 +5,8 @@ import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.ForeignStoreShare;
 
+import java.util.Set;
+
 /**
  * This class stores the two foreign shares used and corresponding to the two resource stores defined in the API.
  * One is for video and subtitle files, and the other is for image files.
@@ -40,6 +42,11 @@ public class ForeignShares {
     public synchronized void removeResourceProvider(String resourceID, PeerID peerID) {
         videosShare.removeResourceProvider(resourceID, peerID);
         imagesShare.removeResourceProvider(resourceID, peerID);
+    }
+
+    public synchronized void reportVolatileResources(PeerID peerID, Set<String> resources) {
+        videosShare.reportVolatileResources(peerID, resources);
+        imagesShare.reportVolatileResources(peerID, resources);
     }
 
     public synchronized void removeResourceProvider(PeerID peerID) {

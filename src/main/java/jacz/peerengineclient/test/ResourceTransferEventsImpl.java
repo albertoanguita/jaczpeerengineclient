@@ -2,6 +2,7 @@ package jacz.peerengineclient.test;
 
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.datatransfer.*;
+import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 
 /**
  * todo
@@ -90,7 +91,17 @@ public class ResourceTransferEventsImpl implements ResourceTransferEvents {
 
     @Override
     public void periodicDownloadsNotification(DownloadsManager downloadsManager) {
-
+        for (DownloadManager downloadManager : downloadsManager.getAllDownloads()) {
+            Double speed = downloadManager.getStatistics().getSpeed();
+            speed /= 1024d;
+            long size = downloadManager.getStatistics().getDownloadedSizeThisResource();
+            Long length = downloadManager.getLength();
+            Double part = null;
+            if (length != null) {
+                part = (double) size / (double) length * 100d;
+            }
+            System.out.println("Speed for " + downloadManager.getResourceID() + " (store " + downloadManager.getStoreName() + "): " + speed + "KB, downloaded part: " + part);
+        }
     }
 
     @Override
