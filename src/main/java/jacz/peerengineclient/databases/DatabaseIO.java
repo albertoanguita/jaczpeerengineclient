@@ -2,10 +2,9 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
-import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
+import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerID;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
@@ -22,8 +21,6 @@ import java.util.Set;
  * <p>
  * This IO requires a directory path for managing all the saved and restored information.
  * Each peer uses a different sub-directory, and the integrated database uses its own sub-directory
- * <p>
- * todo store the db version
  */
 public class DatabaseIO {
 
@@ -35,7 +32,6 @@ public class DatabaseIO {
             String basePath,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp,
             PeerEngineClient peerEngineClient,
             Set<PeerID> friendPeers
     ) throws IOException, VersionedSerializationException {
@@ -43,7 +39,6 @@ public class DatabaseIO {
                 new Databases(basePath),
                 databaseSynchEvents,
                 integrationEvents,
-                fileHashDatabaseWithTimestamp,
                 peerEngineClient,
                 basePath,
                 friendPeers);

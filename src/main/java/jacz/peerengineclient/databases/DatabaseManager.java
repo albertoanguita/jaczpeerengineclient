@@ -2,7 +2,6 @@ package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseItem;
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.databases.integration.IntegrationConcurrencyController;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.ItemIntegrator;
@@ -23,6 +22,8 @@ import java.util.Set;
  */
 public class DatabaseManager {
 
+    private final PeerEngineClient peerEngineClient;
+
     private final Databases databases;
 
     /**
@@ -42,19 +43,24 @@ public class DatabaseManager {
             Databases databases,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp,
             PeerEngineClient peerEngineClient,
             String basePath,
             Set<PeerID> friendPeers) throws IOException {
+        this.peerEngineClient = peerEngineClient;
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
         dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
-        sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, fileHashDatabaseWithTimestamp, peerEngineClient, dataIntegrationConcurrencyController);
+        sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
         // just in case, try to add databases for all registered friend peers
         for (PeerID friendPeer : friendPeers) {
             addPeer(basePath, friendPeer);
         }
+    }
+
+    public void start() {
+        sharedDatabaseGenerator.start(peerEngineClient.getFileAPI());
+        itemIntegrator.setImageDownloader(peerEngineClient.getImageDownloader());
     }
 
     public DatabaseSynchManager getDatabaseSynchManager() {
@@ -79,6 +85,11 @@ public class DatabaseManager {
      */
     public synchronized void localItemModified(DatabaseItem item) {
         itemIntegrator.integrateLocalItem(databases, item);
+    }
+
+    public synchronized void removeLocalItem(DatabaseItem item) {
+        itemIntegrator.removeLocalContent(databases, item);
+        item.delete();
     }
 
     /**

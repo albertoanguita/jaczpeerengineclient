@@ -1,9 +1,11 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.util.hash.HashFunction;
 import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.serialization.*;
+import jacz.util.io.serialization.UnrecognizedVersionException;
+import jacz.util.io.serialization.VersionStack;
+import jacz.util.io.serialization.VersionedObjectSerializer;
+import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.maps.DoubleMap;
 
 import java.io.IOException;

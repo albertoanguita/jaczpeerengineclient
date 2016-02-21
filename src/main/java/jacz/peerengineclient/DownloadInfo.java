@@ -27,12 +27,12 @@ public class DownloadInfo {
     public final Type type;
 
     /**
-     * The type of container of this file (MOVIE or CHAPTER)
+     * The type of container of this file (MOVIE or CHAPTER). Null for images
      */
     public final DatabaseMediator.ItemType containerType;
 
     /**
-     * Id of the contained in the integrated database
+     * Id of the container in the integrated database. Null for images
      */
     public final Integer containerId;
 

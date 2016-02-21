@@ -1,12 +1,9 @@
 package jacz.peerengineclient.databases.integration;
 
 import jacz.database.*;
-import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
-import jacz.peerengineservice.client.PeerClient;
-import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
+import jacz.peerengineclient.util.FileAPI;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
 import jacz.util.concurrency.timer.SimpleTimerAction;
@@ -14,7 +11,6 @@ import jacz.util.concurrency.timer.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,17 +41,12 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
      * <p>
      * Before re-calculating the shared db, we must load this variable with the available hashes
      */
-    private final Set<String> availableHashes;
+    private Set<String> availableHashes;
 
     /**
-     * This object contains the files that we currently offer
+     * Through the FileAPI, we can gather the files that we are currently downloading
      */
-    private final FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp;
-
-    /**
-     * Through the peer engine client, we can gather the files that we are currently downloading
-     */
-    private final PeerEngineClient peerEngineClient;
+    private FileAPI fileAPI;
 
     private final SequentialTaskExecutor sequentialTaskExecutor;
 
@@ -68,16 +59,18 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
      */
     private final Timer timer;
 
-    public SharedDatabaseGenerator(Databases databases, FileHashDatabaseWithTimestamp fileHashDatabaseWithTimestamp, PeerEngineClient peerEngineClient, ConcurrencyController concurrencyController) {
+    public SharedDatabaseGenerator(Databases databases, ConcurrencyController concurrencyController) {
         this.integratedPath = databases.getIntegratedDB();
         this.sharedPath = databases.getSharedDB();
         this.integratedToShared = databases.getItemRelations().getIntegratedToShared();
-        this.availableHashes = new HashSet<>();
-        this.fileHashDatabaseWithTimestamp = fileHashDatabaseWithTimestamp;
-        this.peerEngineClient = peerEngineClient;
         sequentialTaskExecutor = new SequentialTaskExecutor();
         this.concurrencyController = concurrencyController;
-        timer = new Timer(UPDATE_DELAY, this, true, this.getClass().getName());
+        timer = new Timer(UPDATE_DELAY, this, false, this.getClass().getName());
+    }
+
+    public void start(FileAPI fileAPI) {
+        this.fileAPI = fileAPI;
+        timer.reset();
         // perform an initial update
         updateSharedDatabase();
     }
@@ -124,14 +117,7 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
     }
 
     private void updateAvailableHashes() {
-        availableHashes.clear();
-        availableHashes.addAll(fileHashDatabaseWithTimestamp.getActiveHashesSetCopy());
-        PeerClient peerClient = peerEngineClient.getPeerClient();
-        if (peerClient != null) {
-            for (DownloadManager downloadManager : peerEngineClient.getPeerClient().getAllDownloads()) {
-                availableHashes.add(downloadManager.getResourceID());
-            }
-        }
+        availableHashes = fileAPI.getAvailableHashes();
     }
 
     private boolean checkChapters(List<Chapter> chapters) {

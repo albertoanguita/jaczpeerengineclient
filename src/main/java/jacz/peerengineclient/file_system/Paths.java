@@ -281,9 +281,13 @@ public class Paths {
     }
 
     public static Triple<String, String, String> imageFilePath(String downloadsDir, String filePath) throws IOException {
-        createDir(imagesDir(downloadsDir));
         String hash = PeerEngineClient.getHashFunction().digestAsHex(new File(filePath));
-        return new Triple<>(imagesDir(downloadsDir), hash, FileUtil.getFileExtension(FileUtil.getFileName(filePath)));
+        return imageFilePath(downloadsDir, FileUtil.getFileName(filePath), hash);
+    }
+
+    public static Triple<String, String, String> imageFilePath(String downloadsDir, String fileName, String hash) throws IOException {
+        createDir(imagesDir(downloadsDir));
+        return new Triple<>(imagesDir(downloadsDir), hash, FileUtil.getFileExtension(fileName));
     }
 
     public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {

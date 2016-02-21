@@ -3,6 +3,7 @@ package jacz.peerengineclient.databases.integration;
 import jacz.database.*;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
+import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
@@ -27,17 +28,23 @@ public class ItemIntegrator {
     }
 
 
-    private static final float MATCH_THRESHOLD = 0.9f;
-
     private static final CreationDateComparator creationDateComparator = new CreationDateComparator();
 
     private final ConcurrencyController concurrencyController;
 
     private final IntegrationEventsBridge integrationEvents;
 
-    public ItemIntegrator(ConcurrencyController concurrencyController, IntegrationEvents integrationEvents) {
+    private ImageDownloader imageDownloader;
+
+    public ItemIntegrator(
+            ConcurrencyController concurrencyController,
+            IntegrationEvents integrationEvents) {
         this.concurrencyController = concurrencyController;
         this.integrationEvents = new IntegrationEventsBridge(integrationEvents);
+    }
+
+    public void setImageDownloader(ImageDownloader imageDownloader) {
+        this.imageDownloader = imageDownloader;
     }
 
     public void stop() {
@@ -200,9 +207,10 @@ public class ItemIntegrator {
     }
 
     private void processIntegratedItem(Databases databases, DatabaseItem integratedItem, boolean isNew) {
-        Duple<Boolean, Boolean> isAliveAndHasNewContent = inflateIntegratedItem(databases, integratedItem);
+        Duple<Boolean, Boolean> isAliveAndHasNewContent = inflateIntegratedItem(databases, integratedItem, imageDownloader);
         if (isAliveAndHasNewContent.element1) {
             // the integrated item is alive
+            // check if it has to be merged with another integrated item
             DatabaseItem matchedIntegratedItem = checkIntegratedItemMatches(databases, integratedItem);
             if (matchedIntegratedItem != null) {
                 // we have a match -> merge with the match
@@ -238,7 +246,8 @@ public class ItemIntegrator {
      */
     private static Duple<Boolean, Boolean> inflateIntegratedItem(
             Databases databases,
-            DatabaseItem integratedItem) {
+            DatabaseItem integratedItem,
+            ImageDownloader imageDownloader) {
         // copy the information from the composers. First, the local item (if any).
         // Then, the remote items by order of creation date (older to newer)
         // Finally, the deleted remote item (if any)
@@ -258,7 +267,6 @@ public class ItemIntegrator {
                     type,
                     databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
             integratedItem.mergeBasicPostponed(localItem);
-            // todo references: map and merge
             DatabaseMediator.ReferencedElements referencedElements = localItem.getReferencedElements();
             referencedElements.mapIds(databases.getItemRelations().getLocalToIntegrated().getTypeMappings());
             integratedItem.mergeReferencedElementsPostponed(referencedElements);
@@ -307,6 +315,12 @@ public class ItemIntegrator {
 
         // if there have been changes in media content, notify them
         String newVideoFilesHash = getMediaContentHash(integratedItem, type);
+
+        // if the integrated item has an image hash, check if we have to download the image
+        if (integratedItem.getItemType().hasImageHash()) {
+            ProducedCreationItem producedCreationItem = (ProducedCreationItem) integratedItem;
+            imageDownloader.checkImageHash(producedCreationItem.getImageHash());
+        }
         return new Duple<>(isAlive, !newVideoFilesHash.equals(oldVideoFilesHash));
 
         // the modification date of the integrated item is modified regardless of whether there have been changes or not. This way, this value
@@ -409,6 +423,6 @@ public class ItemIntegrator {
             databases.getItemRelations().getIntegratedToRemote().add(type, toItem.getId(), peerID, remoteId);
             databases.getItemRelations().getRemoteToIntegrated(peerID).put(type, remoteId, toItem.getId());
         }
-        return inflateIntegratedItem(databases, toItem);
+        return inflateIntegratedItem(databases, toItem, imageDownloader);
     }
 }

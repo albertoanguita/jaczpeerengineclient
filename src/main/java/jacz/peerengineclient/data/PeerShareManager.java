@@ -84,7 +84,7 @@ public class PeerShareManager {
 
         @Override
         public TempFilesAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
-            return new TempFilesAccessor(peerEngineClient, progress);
+            return new TempFilesAccessor(peerEngineClient.getFileAPI(), progress);
         }
 
         @Override

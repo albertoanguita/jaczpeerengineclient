@@ -5,25 +5,6 @@ import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 
 /**
  * This interface contains methods that are invoked upon events during a download
- * <p>
- * todo cuantos stores pongo, como gestiono el foreign share?
- * <p>
- * un store general para descargas de grupo, con un foreign share asociado
- * los permisos especificos a cada fichero se tendran que gestionar a un nivel superior
- * un store para ficheros compartidos con usuarios especificos
- * <p>
- * y un unico store y el se apagna?
- * <p>
- * mejor dar aqui tb la funcionalidad de stores, y que el decida como lo usa
- * <p>
- * poder agnadir y eliminar stores locales y foraneos, y especificar el store en la descarga
- * <p>
- * A lo mejor podria dar hecho uno general, y si al descargar no especifica store, tira de ese. SI
- * <p>
- * Al descargar, dejar que especifica path final (si null, lo escojo yo y se lo doy en el informe final)
- * <p>
- * <p>
- * lo guay seria poder compartir ficheros con todos, con grupos, o con uno
  */
 public interface DownloadEvents {
 

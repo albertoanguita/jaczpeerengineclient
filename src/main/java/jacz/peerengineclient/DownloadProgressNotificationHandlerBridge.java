@@ -111,10 +111,10 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
     public synchronized void completed(String resourceID, String storeName, ResourceWriter resourceWriter, DownloadManager downloadManager) {
         String finalPath = null;
         DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
-        if (downloadInfo.type.isMedia()) {
-            // move file to required location
-            try {
-                Triple<String, String, String> location;
+        try {
+            Triple<String, String, String> location;
+            if (downloadInfo.type.isMedia()) {
+                // move file to required location
                 if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
                     Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
                     location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
@@ -127,19 +127,22 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     // todo sanitize fileName
                     location = Paths.seriesFilePath(downloadsPath, tvSeriesID, tvSeriesTitle, chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
                 } else {
-                    // todo error
+                    // todo fatal error
                     return;
                 }
-                finalPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
-                FileUtil.move(resourceWriter.getPath(), finalPath);
-
-                // finally, add this file to the file hash database
-                peerEngineClient.getFileHashDatabase().put(finalPath);
-            } catch (IOException e) {
-                e.printStackTrace();
+            } else {
+                // image file -> move to correct location
+                location = Paths.imageFilePath(downloadsPath, downloadInfo.fileName, downloadInfo.fileHash);
             }
+            finalPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+            FileUtil.move(resourceWriter.getPath(), finalPath);
+            // finally, add this file to the file hash database
+            peerEngineClient.getFileHashDatabase().put(finalPath);
+        } catch (IOException e) {
+            // todo what here??
+            e.printStackTrace();
         }
-        downloadEvents.completed(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), finalPath, downloadManager);
+        downloadEvents.completed(downloadInfo, finalPath, downloadManager);
     }
 
     @Override

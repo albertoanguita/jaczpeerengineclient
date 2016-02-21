@@ -1,12 +1,11 @@
 package jacz.peerengineclient.data.synch;
 
-import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.RemotePeerTempShare;
+import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineservice.PeerID;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.Serializable;
@@ -31,9 +30,9 @@ public class TempFilesAccessor implements DataAccessor {
     private final RemotePeerTempShare remotePeerTempShare;
 
     /**
-     * When in server mode, the peer engine client allows retrieving the current temp files
+     * When in server mode, the fileAPI allows retrieving the current temp files
      */
-    private final PeerEngineClient peerEngineClient;
+    private final FileAPI fileAPI;
 
     private final ProgressNotificationWithError<Integer, SynchError> progress;
 
@@ -44,18 +43,18 @@ public class TempFilesAccessor implements DataAccessor {
      */
     public TempFilesAccessor(RemotePeerTempShare remotePeerTempShare) {
         this.remotePeerTempShare = remotePeerTempShare;
-        this.peerEngineClient = null;
+        this.fileAPI = null;
         this.progress = null;
     }
 
     /**
      * Constructor for server mode
      *
-     * @param peerEngineClient
+     * @param fileAPI
      */
-    public TempFilesAccessor(PeerEngineClient peerEngineClient, ProgressNotificationWithError<Integer, SynchError> progress) {
+    public TempFilesAccessor(FileAPI fileAPI, ProgressNotificationWithError<Integer, SynchError> progress) {
         this.remotePeerTempShare = null;
-        this.peerEngineClient = peerEngineClient;
+        this.fileAPI = fileAPI;
         this.progress = progress;
     }
 
@@ -90,11 +89,7 @@ public class TempFilesAccessor implements DataAccessor {
 
     @Override
     public List<? extends Serializable> getElementsFrom(long fromTimestamp) throws DataAccessException {
-        List<String> tempHashes = new ArrayList<>();
-        for (DownloadManager downloadManager : peerEngineClient.getPeerClient().getAllDownloads()) {
-            tempHashes.add(downloadManager.getResourceID());
-        }
-        return tempHashes;
+        return new ArrayList<>(fileAPI.getTempHashes());
     }
 
     @Override

@@ -12,7 +12,7 @@ import jacz.peerengineservice.util.data_synchronization.DataAccessorContainer;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 
 /**
- * todo complete
+ * Data Accessor container implementation for the peer client
  */
 public class DataAccessorContainerImpl implements DataAccessorContainer {
 
@@ -48,7 +48,7 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
                 return peerShareManager.requestForLocalTempFilesSynch(peerID);
 
             default:
-                // todo error
+                // todo fatal error
                 throw new AccessorNotFoundException();
         }
     }
