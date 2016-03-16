@@ -1,6 +1,6 @@
 package jacz.peerengineclient.data;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.*;
 import jacz.util.maps.DoubleMap;
 
@@ -18,7 +18,7 @@ public class RemotePeerShare implements VersionedObject {
 
     private static final String CURRENT_VERSION = VERSION_0_1;
 
-    private PeerID remotePeerID;
+    private PeerId remotePeerId;
 
     private String id;
 
@@ -28,8 +28,8 @@ public class RemotePeerShare implements VersionedObject {
 
     private final ForeignShares foreignShares;
 
-    public RemotePeerShare(PeerID remotePeerID, ForeignShares foreignShares) {
-        this.remotePeerID = remotePeerID;
+    public RemotePeerShare(PeerId remotePeerId, ForeignShares foreignShares) {
+        this.remotePeerId = remotePeerId;
         this.id = "";
         this.foreignShares = foreignShares;
         clear();
@@ -38,18 +38,18 @@ public class RemotePeerShare implements VersionedObject {
     public void clear() {
         activeHashes = new DoubleMap<>();
         maxStoredTimestamp = -1;
-        foreignShares.removeResourceProvider(remotePeerID);
+        foreignShares.removeResourceProvider(remotePeerId);
     }
 
     public void notifyPeerDisconnected() {
-        foreignShares.removeResourceProvider(remotePeerID);
+        foreignShares.removeResourceProvider(remotePeerId);
     }
 
     public RemotePeerShare(ForeignShares foreignShares, String path, String... backupPaths) throws VersionedSerializationException, IOException {
         VersionedObjectSerializer.deserialize(this, path, backupPaths);
         this.foreignShares = foreignShares;
         for (String resourceId : activeHashes.values()) {
-            foreignShares.addResourceProvider(resourceId, remotePeerID);
+            foreignShares.addResourceProvider(resourceId, remotePeerId);
         }
     }
 
@@ -74,13 +74,13 @@ public class RemotePeerShare implements VersionedObject {
     public void addHash(long timestamp, String hash) {
         activeHashes.put(timestamp, hash);
         updateTimestamp(timestamp);
-        foreignShares.addResourceProvider(hash, remotePeerID);
+        foreignShares.addResourceProvider(hash, remotePeerId);
     }
 
     public void removeHash(long timestamp, String hash) {
         activeHashes.removeReverse(hash);
         updateTimestamp(timestamp);
-        foreignShares.removeResourceProvider(hash, remotePeerID);
+        foreignShares.removeResourceProvider(hash, remotePeerId);
     }
 
     void updateTimestamp(long timestamp) {
@@ -95,7 +95,7 @@ public class RemotePeerShare implements VersionedObject {
     @Override
     public Map<String, Serializable> serialize() {
         Map<String, Serializable> attributes = new HashMap<>();
-        attributes.put("remotePeerID", remotePeerID);
+        attributes.put("remotePeerId", remotePeerId);
         attributes.put("id", id);
         attributes.put("activeHashes", activeHashes);
         attributes.put("maxStoredTimestamp", maxStoredTimestamp);
@@ -105,7 +105,7 @@ public class RemotePeerShare implements VersionedObject {
     @Override
     public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
         if (version.equals(CURRENT_VERSION)) {
-            remotePeerID = (PeerID) attributes.get("remotePeerID");
+            remotePeerId = (PeerId) attributes.get("remotePeerId");
             id = (String) attributes.get("id");
             activeHashes = (DoubleMap<Long, String>) attributes.get("activeHashes");
             maxStoredTimestamp = (Long) attributes.get("maxStoredTimestamp");

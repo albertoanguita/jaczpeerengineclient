@@ -1,12 +1,8 @@
 package jacz.peerengineclient.test.synch_db;
 
 import jacz.database.Movie;
-import jacz.database.util.GenreCode;
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.SessionManager;
-import jacz.peerengineclient.test.*;
-import jacz.peerengineservice.test.ResourceTransferEventsImpl;
-import jacz.peerengineservice.test.TempFileManagerEventsImpl;
+import jacz.peerengineclient.test.Client;
 import jacz.util.concurrency.ThreadUtil;
 
 import javax.xml.stream.XMLStreamException;

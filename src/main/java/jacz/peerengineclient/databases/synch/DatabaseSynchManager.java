@@ -5,7 +5,7 @@ import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.util.synch.DataAccessorController;
 import jacz.peerengineclient.util.synch.SynchMode;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
@@ -43,12 +43,12 @@ public class DatabaseSynchManager {
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerId peerID) {
             return new DatabaseSynchProgress(databaseSynchManager, SynchMode.LOCAL, peerID);
         }
 
         @Override
-        public DatabaseAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+        public DatabaseAccessor getLocalDataAccessor(PeerId peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
             return new DatabaseAccessor(
                     databaseManager,
                     peerID,
@@ -57,12 +57,12 @@ public class DatabaseSynchManager {
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerId peerID) throws UnavailablePeerException {
             return new DummyProgress();
         }
 
         @Override
-        public DatabaseAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+        public DatabaseAccessor getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException {
             return new DatabaseAccessor(
                     databaseManager,
                     peerID,
@@ -105,54 +105,54 @@ public class DatabaseSynchManager {
      * The database manager will reject these requests if a remote integration is taking place, because it would most certainly break the synch
      * and we would be waisting bandwidth
      */
-    public DatabaseAccessor requestForSharedDatabaseSynch(PeerID peerID) throws ServerBusyException {
+    public DatabaseAccessor requestForSharedDatabaseSynch(PeerId peerID) throws ServerBusyException {
         return databaseSynchAccessorController.requestForLocalHashSynch(peerID);
     }
 
-    public void synchRemoteDatabase(PeerID peerID) {
+    public void synchRemoteDatabase(PeerId peerID) {
         databaseSynchAccessorController.synchRemoteShare(peerID);
     }
 
-    void sharedDatabaseSynchBegins(PeerID remotePeerID) {
-        databaseSynchEvents.sharedSynchStarted(remotePeerID);
+    void sharedDatabaseSynchBegins(PeerId remotePeerId) {
+        databaseSynchEvents.sharedSynchStarted(remotePeerId);
     }
 
-    void sharedDatabaseSynchProgress(PeerID remotePeerID, Integer progress) {
-        databaseSynchEvents.sharedSynchProgress(remotePeerID, progress);
+    void sharedDatabaseSynchProgress(PeerId remotePeerId, Integer progress) {
+        databaseSynchEvents.sharedSynchProgress(remotePeerId, progress);
     }
 
-    void sharedDatabaseSynchComplete(PeerID remotePeerID) {
-        databaseSynchEvents.sharedSynchCompleted(remotePeerID);
+    void sharedDatabaseSynchComplete(PeerId remotePeerId) {
+        databaseSynchEvents.sharedSynchCompleted(remotePeerId);
     }
 
-    void sharedDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
+    void sharedDatabaseSynchFailed(PeerId remotePeerId, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
-        databaseSynchEvents.sharedSynchError(remotePeerID, error);
+        databaseSynchEvents.sharedSynchError(remotePeerId, error);
     }
 
-    void sharedDatabaseSynchTimedOut(PeerID remotePeerID) {
-        databaseSynchEvents.sharedSynchTimeout(remotePeerID);
+    void sharedDatabaseSynchTimedOut(PeerId remotePeerId) {
+        databaseSynchEvents.sharedSynchTimeout(remotePeerId);
     }
 
-    void remoteDatabaseSynchBegins(PeerID remotePeerID) {
-        databaseSynchEvents.remoteSynchStarted(remotePeerID);
+    void remoteDatabaseSynchBegins(PeerId remotePeerId) {
+        databaseSynchEvents.remoteSynchStarted(remotePeerId);
     }
 
-    void remoteDatabaseSynchProgress(PeerID remotePeerID, Integer progress) {
-        databaseSynchEvents.remoteSynchProgress(remotePeerID, progress);
+    void remoteDatabaseSynchProgress(PeerId remotePeerId, Integer progress) {
+        databaseSynchEvents.remoteSynchProgress(remotePeerId, progress);
     }
 
-    void remoteDatabaseSynchComplete(PeerID remotePeerID) {
-        databaseSynchEvents.remoteSynchCompleted(remotePeerID);
+    void remoteDatabaseSynchComplete(PeerId remotePeerId) {
+        databaseSynchEvents.remoteSynchCompleted(remotePeerId);
     }
 
-    void remoteDatabaseSynchFailed(PeerID remotePeerID, SynchError error) {
+    void remoteDatabaseSynchFailed(PeerId remotePeerId, SynchError error) {
         // todo check errors (fatal with DATA_ACCESS_ERROR)
-        databaseSynchEvents.remoteSynchError(remotePeerID, error);
+        databaseSynchEvents.remoteSynchError(remotePeerId, error);
     }
 
-    void remoteDatabaseSynchTimedOut(PeerID remotePeerID) {
-        databaseSynchEvents.remoteSynchTimeout(remotePeerID);
+    void remoteDatabaseSynchTimedOut(PeerId remotePeerId) {
+        databaseSynchEvents.remoteSynchTimeout(remotePeerId);
     }
 
     public void stop() {

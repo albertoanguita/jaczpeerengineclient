@@ -1,7 +1,6 @@
 package jacz.peerengineclient.databases.integration;
 
 import jacz.database.DatabaseMediator;
-import jacz.util.concurrency.task_executor.ParallelTask;
 import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
 
 /**

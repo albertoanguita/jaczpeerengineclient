@@ -1,7 +1,7 @@
 package jacz.peerengineclient.util.synch;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
@@ -30,9 +30,9 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
 
     protected final PeerEngineClient peerEngineClient;
 
-    private final Set<PeerID> activeLocalHashSynchs;
+    private final Set<PeerId> activeLocalHashSynchs;
 
-    private final Set<PeerID> activeRemoteShareSynchs;
+    private final Set<PeerId> activeRemoteShareSynchs;
 
     private final SynchRecord sharedSynchRecord;
 
@@ -53,7 +53,7 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
         concurrencyController = new ConcurrencyControllerMaxActivities(maxConcurrentSynchs);
     }
 
-    public LOCAL requestForLocalHashSynch(PeerID peerID) throws ServerBusyException {
+    public LOCAL requestForLocalHashSynch(PeerId peerID) throws ServerBusyException {
         synchronized (activeLocalHashSynchs) {
             if (activeLocalHashSynchs.contains(peerID) ||
                     activeLocalHashSynchs.size() > veryLargeSharedSynchCount ||
@@ -70,11 +70,11 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
         }
     }
 
-    public abstract ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID);
+    public abstract ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerId peerID);
 
-    public abstract LOCAL getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress);
+    public abstract LOCAL getLocalDataAccessor(PeerId peerID, ProgressNotificationWithError<Integer, SynchError> progress);
 
-    public void synchRemoteShare(PeerID peerID) {
+    public void synchRemoteShare(PeerId peerID) {
         synchronized (activeRemoteShareSynchs) {
             // we only consider this request if we are not currently synching with this peer and
             // we did not recently synched with this peer
@@ -104,19 +104,19 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
         }
     }
 
-    public abstract ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException;
+    public abstract ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerId peerID) throws UnavailablePeerException;
 
-    public abstract REMOTE getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException;
+    public abstract REMOTE getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException;
 
-    public void localHashSynchFinished(PeerID remotePeerID) {
+    public void localHashSynchFinished(PeerId remotePeerId) {
         synchronized (activeLocalHashSynchs) {
-            activeLocalHashSynchs.remove(remotePeerID);
+            activeLocalHashSynchs.remove(remotePeerId);
         }
     }
 
-    public void remoteShareSynchFinished(PeerID remotePeerID) {
+    public void remoteShareSynchFinished(PeerId remotePeerId) {
         synchronized (activeRemoteShareSynchs) {
-            activeRemoteShareSynchs.remove(remotePeerID);
+            activeRemoteShareSynchs.remove(remotePeerId);
         }
         concurrencyController.endActivity(SYNCH_ACTIVITY);
     }

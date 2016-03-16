@@ -1,7 +1,7 @@
 package jacz.peerengineclient.test;
 
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 
 /**
@@ -10,52 +10,52 @@ import jacz.peerengineservice.util.data_synchronization.SynchError;
 public class DatabaseSynchEventsImpl implements DatabaseSynchEvents {
 
     @Override
-    public void remoteSynchStarted(PeerID remotePeerID) {
-        System.out.println("Remote synch started with " + TestUtil.formatPeer(remotePeerID));
+    public void remoteSynchStarted(PeerId remotePeerId) {
+        System.out.println("Remote synch started with " + TestUtil.formatPeer(remotePeerId));
     }
 
     @Override
-    public void remoteSynchProgress(PeerID remotePeerID, int progress) {
-        System.out.println("Remote synch progress with " + TestUtil.formatPeer(remotePeerID) + ", progress: " + progress);
+    public void remoteSynchProgress(PeerId remotePeerId, int progress) {
+        System.out.println("Remote synch progress with " + TestUtil.formatPeer(remotePeerId) + ", progress: " + progress);
     }
 
     @Override
-    public void remoteSynchError(PeerID remotePeerID, SynchError error) {
-        System.out.println("Remote synch error with " + TestUtil.formatPeer(remotePeerID) + ", error: " + error);
+    public void remoteSynchError(PeerId remotePeerId, SynchError error) {
+        System.out.println("Remote synch error with " + TestUtil.formatPeer(remotePeerId) + ", error: " + error);
     }
 
     @Override
-    public void remoteSynchTimeout(PeerID remotePeerID) {
-        System.out.println("Remote synch timeout with " + TestUtil.formatPeer(remotePeerID));
+    public void remoteSynchTimeout(PeerId remotePeerId) {
+        System.out.println("Remote synch timeout with " + TestUtil.formatPeer(remotePeerId));
     }
 
     @Override
-    public void remoteSynchCompleted(PeerID remotePeerID) {
-        System.out.println("Remote synch complete with " + TestUtil.formatPeer(remotePeerID));
+    public void remoteSynchCompleted(PeerId remotePeerId) {
+        System.out.println("Remote synch complete with " + TestUtil.formatPeer(remotePeerId));
     }
 
     @Override
-    public void sharedSynchStarted(PeerID remotePeerID) {
-        System.out.println("Shared synch started with " + TestUtil.formatPeer(remotePeerID));
+    public void sharedSynchStarted(PeerId remotePeerId) {
+        System.out.println("Shared synch started with " + TestUtil.formatPeer(remotePeerId));
     }
 
     @Override
-    public void sharedSynchProgress(PeerID remotePeerID, int progress) {
-        System.out.println("Shared synch progress with " + TestUtil.formatPeer(remotePeerID) + ", progress: " + progress);
+    public void sharedSynchProgress(PeerId remotePeerId, int progress) {
+        System.out.println("Shared synch progress with " + TestUtil.formatPeer(remotePeerId) + ", progress: " + progress);
     }
 
     @Override
-    public void sharedSynchError(PeerID remotePeerID, SynchError error) {
-        System.out.println("Shared synch error with " + TestUtil.formatPeer(remotePeerID) + ", progress: " + error);
+    public void sharedSynchError(PeerId remotePeerId, SynchError error) {
+        System.out.println("Shared synch error with " + TestUtil.formatPeer(remotePeerId) + ", progress: " + error);
     }
 
     @Override
-    public void sharedSynchTimeout(PeerID remotePeerID) {
-        System.out.println("Shared synch timeout with " + TestUtil.formatPeer(remotePeerID));
+    public void sharedSynchTimeout(PeerId remotePeerId) {
+        System.out.println("Shared synch timeout with " + TestUtil.formatPeer(remotePeerId));
     }
 
     @Override
-    public void sharedSynchCompleted(PeerID remotePeerID) {
-        System.out.println("Shared synch complete with " + TestUtil.formatPeer(remotePeerID));
+    public void sharedSynchCompleted(PeerId remotePeerId) {
+        System.out.println("Shared synch complete with " + TestUtil.formatPeer(remotePeerId));
     }
 }

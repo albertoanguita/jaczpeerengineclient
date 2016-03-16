@@ -10,7 +10,7 @@ import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.test.Client;
 import jacz.peerengineclient.test.IntegrationTest;
 import jacz.peerengineclient.test.TestUtil;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.ThreadUtil;
 import junitx.framework.ListAssert;
@@ -47,11 +47,11 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("2"));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
         setupLocal(localDB, peerEngineClient);
         // connect and warm up
@@ -68,35 +68,35 @@ public class SynchAndIntegrateIT {
         ThreadUtil.safeSleep(2 * CYCLE_LENGTH);
 
         announceEvent(2);
-        assertDB2(peerEngineClient.getDatabases().getRemoteDB(PeerID.buildTestPeerID("2")), 0);
+        assertDB2(peerEngineClient.getDatabases().getRemoteDB(PeerId.buildTestPeerId("2")), 0);
         assertIntegrated(integratedDB, 1);
 
         // wait 2 cycles
         ThreadUtil.safeSleep(2 * CYCLE_LENGTH);
 
         announceEvent(4);
-        assertDB2(peerEngineClient.getDatabases().getRemoteDB(PeerID.buildTestPeerID("2")), 1);
+        assertDB2(peerEngineClient.getDatabases().getRemoteDB(PeerId.buildTestPeerId("2")), 1);
         assertIntegrated(integratedDB, 2);
 
         // wait 2 cycles
         ThreadUtil.safeSleep(2 * CYCLE_LENGTH);
 
         announceEvent(6);
-        assertDB3(peerEngineClient.getDatabases().getRemoteDB(PeerID.buildTestPeerID("3")), 0);
+        assertDB3(peerEngineClient.getDatabases().getRemoteDB(PeerId.buildTestPeerId("3")), 0);
         assertIntegrated(integratedDB, 3);
 
         // wait 2 cycles
         ThreadUtil.safeSleep(2 * CYCLE_LENGTH);
 
         announceEvent(8);
-        assertDB3(peerEngineClient.getDatabases().getRemoteDB(PeerID.buildTestPeerID("3")), 1);
+        assertDB3(peerEngineClient.getDatabases().getRemoteDB(PeerId.buildTestPeerId("3")), 1);
         assertIntegrated(integratedDB, 4);
 
         ThreadUtil.safeSleep(5000);
 
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("2"));
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
         peerEngineClient.stop();
     }
 
@@ -108,8 +108,8 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("1"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB2(sharedDB);
@@ -136,7 +136,7 @@ public class SynchAndIntegrateIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("1"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -148,8 +148,8 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("1"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB3(sharedDB);
@@ -175,7 +175,7 @@ public class SynchAndIntegrateIT {
 
         announceEvent(8);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("1"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 

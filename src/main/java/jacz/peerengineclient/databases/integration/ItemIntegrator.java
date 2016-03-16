@@ -4,7 +4,7 @@ import jacz.database.*;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.images.ImageDownloader;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.hash.SHA_1;
@@ -20,9 +20,9 @@ import java.util.List;
  */
 public class ItemIntegrator {
 
-    private static class CreationDateComparator implements Comparator<Duple<PeerID, DatabaseItem>> {
+    private static class CreationDateComparator implements Comparator<Duple<PeerId, DatabaseItem>> {
         @Override
-        public int compare(Duple<PeerID, DatabaseItem> o1, Duple<PeerID, DatabaseItem> o2) {
+        public int compare(Duple<PeerId, DatabaseItem> o1, Duple<PeerId, DatabaseItem> o2) {
             return o1.element2.getCreationDate().compareTo(o2.element2.getCreationDate());
         }
     }
@@ -113,14 +113,14 @@ public class ItemIntegrator {
 
     public void integrateRemoteItem(
             Databases databases,
-            PeerID remotePeerID,
+            PeerId remotePeerId,
             DatabaseItem remoteItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
 
         DatabaseMediator.ItemType type = remoteItem.getItemType();
         DatabaseItem integratedItem;
         boolean isNewIntegratedItem = false;
-        ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerID);
+        ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
         if (!remoteToIntegratedItems.contains(type, remoteItem.getId())) {
             // the given external item is not mapped to any integrated item
             // (the remote item is new and it is not linked to any integrated item)
@@ -147,7 +147,7 @@ public class ItemIntegrator {
             databases.getItemRelations().getIntegratedToRemote().add(
                     type,
                     integratedItem.getId(),
-                    remotePeerID,
+                    remotePeerId,
                     remoteItem.getId());
         } else {
             // we have a matching integrated item -> use it
@@ -163,13 +163,13 @@ public class ItemIntegrator {
 
     public void removeRemoteItem(
             Databases databases,
-            PeerID remotePeerID,
+            PeerId remotePeerId,
             DatabaseItem remoteItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
 
         DatabaseMediator.ItemType type = remoteItem.getItemType();
         DatabaseItem integratedItem;
-        ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerID);
+        ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
         if (remoteToIntegratedItems.contains(type, remoteItem.getId())) {
             // we have a matching integrated item -> move the contents of the removed item to a deleted item
             // and re-inflate the integrated item
@@ -197,8 +197,8 @@ public class ItemIntegrator {
             deletedItem.merge(remoteItem);
 
             // remove the links from the remote item to the integrated item
-            databases.getItemRelations().getIntegratedToRemote().remove(type, integratedItem.getId(), remotePeerID);
-            databases.getItemRelations().getRemoteToIntegrated(remotePeerID).remove(type, remoteItem.getId());
+            databases.getItemRelations().getIntegratedToRemote().remove(type, integratedItem.getId(), remotePeerId);
+            databases.getItemRelations().getRemoteToIntegrated(remotePeerId).remove(type, remoteItem.getId());
 
             processIntegratedItem(databases, integratedItem, false);
         }
@@ -274,8 +274,8 @@ public class ItemIntegrator {
         }
 
         // remote items
-        List<Duple<PeerID, DatabaseItem>> remoteItems = new ArrayList<>();
-        for (Duple<PeerID, Integer> peerAndId : databases.getItemRelations().getIntegratedToRemote().get(type, integratedItem.getId())) {
+        List<Duple<PeerId, DatabaseItem>> remoteItems = new ArrayList<>();
+        for (Duple<PeerId, Integer> peerAndId : databases.getItemRelations().getIntegratedToRemote().get(type, integratedItem.getId())) {
             DatabaseItem remoteItem;
             try {
                 remoteItem = DatabaseMediator.getItem(
@@ -290,7 +290,7 @@ public class ItemIntegrator {
             isAlive = true;
         }
         Collections.sort(remoteItems, creationDateComparator);
-        for (Duple<PeerID, DatabaseItem> peerAndRemoteItem : remoteItems) {
+        for (Duple<PeerId, DatabaseItem> peerAndRemoteItem : remoteItems) {
             integratedItem.mergeBasicPostponed(peerAndRemoteItem.element2);
             DatabaseMediator.ReferencedElements referencedElements = peerAndRemoteItem.element2.getReferencedElements();
             referencedElements.mapIds(databases.getItemRelations().getRemoteToIntegrated(peerAndRemoteItem.element1).getTypeMappings());
@@ -395,10 +395,10 @@ public class ItemIntegrator {
             // they both have local source -> cannot match
             return true;
         }
-        List<Duple<PeerID, Integer>> sources1 = integratedToRemote.get(type, integratedItem.getId());
-        List<Duple<PeerID, Integer>> sources2 = integratedToRemote.get(type, anotherIntegratedItem.getId());
-        for (Duple<PeerID, Integer> aSource1 : sources1) {
-            for (Duple<PeerID, Integer> aSource2 : sources2) {
+        List<Duple<PeerId, Integer>> sources1 = integratedToRemote.get(type, integratedItem.getId());
+        List<Duple<PeerId, Integer>> sources2 = integratedToRemote.get(type, anotherIntegratedItem.getId());
+        for (Duple<PeerId, Integer> aSource1 : sources1) {
+            for (Duple<PeerId, Integer> aSource2 : sources2) {
                 if (aSource1.element1.equals(aSource2.element1)) {
                     return true;
                 }
@@ -416,9 +416,9 @@ public class ItemIntegrator {
             databases.getItemRelations().getIntegratedToLocal().put(type, toItem.getId(), localId);
             databases.getItemRelations().getLocalToIntegrated().put(type, localId, toItem.getId());
         }
-        List<Duple<PeerID, Integer>> remoteSources = databases.getItemRelations().getIntegratedToRemote().get(type, fromItem.getId());
-        for (Duple<PeerID, Integer> remoteSource : remoteSources) {
-            PeerID peerID = remoteSource.element1;
+        List<Duple<PeerId, Integer>> remoteSources = databases.getItemRelations().getIntegratedToRemote().get(type, fromItem.getId());
+        for (Duple<PeerId, Integer> remoteSource : remoteSources) {
+            PeerId peerID = remoteSource.element1;
             int remoteId = remoteSource.element2;
             databases.getItemRelations().getIntegratedToRemote().add(type, toItem.getId(), peerID, remoteId);
             databases.getItemRelations().getRemoteToIntegrated(peerID).put(type, remoteId, toItem.getId());

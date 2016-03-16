@@ -31,17 +31,17 @@ public class ItemSerializer {
         return item;
     }
 
-    static SerializedItem serializePerson(Person person) {
-        SerializedItem item = setupSerializeItem(person, true);
-        serializeNamedItem(item, person);
-        return item;
-    }
-
-    static SerializedItem serializeCompany(Company company) {
-        SerializedItem item = setupSerializeItem(company, true);
-        serializeNamedItem(item, company);
-        return item;
-    }
+//    static SerializedItem serializePerson(Person person) {
+//        SerializedItem item = setupSerializeItem(person, true);
+//        serializeNamedItem(item, person);
+//        return item;
+//    }
+//
+//    static SerializedItem serializeCompany(Company company) {
+//        SerializedItem item = setupSerializeItem(company, true);
+//        serializeNamedItem(item, company);
+//        return item;
+//    }
 
     static SerializedItem serializeVideoFile(VideoFile videoFile) {
         SerializedItem item = setupSerializeItem(videoFile, true);
@@ -65,7 +65,8 @@ public class ItemSerializer {
 
     static void serializeProducedCreationItem(SerializedItem item, ProducedCreationItem producedCreationItem) {
         serializeCreationItem(item, producedCreationItem);
-        item.addIntegerList(DatabaseMediator.Field.COMPANY_LIST, producedCreationItem.getProductionCompaniesIds());
+        item.addStringList(DatabaseMediator.Field.COMPANY_LIST, producedCreationItem.getProductionCompanies());
+//        item.addIntegerList(DatabaseMediator.Field.COMPANY_LIST, producedCreationItem.getProductionCompaniesIds());
         item.addGenreList(DatabaseMediator.Field.GENRES, producedCreationItem.getGenres());
         item.addImageHash(DatabaseMediator.Field.IMAGE_HASH, producedCreationItem.getImageHash());
     }
@@ -77,8 +78,10 @@ public class ItemSerializer {
         item.addString(DatabaseMediator.Field.SYNOPSIS, creationItem.getSynopsis());
         item.addCountryList(DatabaseMediator.Field.COUNTRIES, creationItem.getCountries());
         item.addStringList(DatabaseMediator.Field.EXTERNAL_URLS, creationItem.getExternalURLs());
-        item.addIntegerList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreatorsIds());
-        item.addIntegerList(DatabaseMediator.Field.ACTOR_LIST, creationItem.getActorsIds());
+        item.addStringList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreators());
+        item.addStringList(DatabaseMediator.Field.ACTOR_LIST, creationItem.getActors());
+//        item.addIntegerList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreatorsIds());
+//        item.addIntegerList(DatabaseMediator.Field.ACTOR_LIST, creationItem.getActorsIds());
     }
 
     static void serializeNamedItem(SerializedItem item, NamedItem namedItem) {
@@ -127,15 +130,15 @@ public class ItemSerializer {
         finishDeserialization(chapter);
     }
 
-    static void deserializePerson(SerializedItem item, Person person) {
-        deserializeNamedItem(item, person);
-        finishDeserialization(person);
-    }
-
-    static void deserializeCompany(SerializedItem item, Company company) {
-        deserializeNamedItem(item, company);
-        finishDeserialization(company);
-    }
+//    static void deserializePerson(SerializedItem item, Person person) {
+//        deserializeNamedItem(item, person);
+//        finishDeserialization(person);
+//    }
+//
+//    static void deserializeCompany(SerializedItem item, Company company) {
+//        deserializeNamedItem(item, company);
+//        finishDeserialization(company);
+//    }
 
     static void deserializeVideoFile(SerializedItem item, VideoFile videoFile) {
         deserializeFileWithLanguages(item, videoFile);
@@ -153,7 +156,8 @@ public class ItemSerializer {
 
     static void deserializeProducedCreationItem(SerializedItem item, ProducedCreationItem producedCreationItem) {
         deserializeCreationItem(item, producedCreationItem);
-        producedCreationItem.setProductionCompaniesIdsPostponed(item.getIntegerList(DatabaseMediator.Field.COMPANY_LIST));
+        producedCreationItem.setProductionCompaniesPostponed(item.getStringList(DatabaseMediator.Field.COMPANY_LIST));
+//        producedCreationItem.setProductionCompaniesIdsPostponed(item.getIntegerList(DatabaseMediator.Field.COMPANY_LIST));
         producedCreationItem.setGenresPostponed(item.getGenreList(DatabaseMediator.Field.GENRES));
         producedCreationItem.setImageHashPostponed(item.getImageHash(DatabaseMediator.Field.IMAGE_HASH));
     }
@@ -166,8 +170,10 @@ public class ItemSerializer {
         creationItem.setSynopsisPostponed(item.getString(DatabaseMediator.Field.SYNOPSIS));
         creationItem.setCountriesPostponed(item.getCountryList(DatabaseMediator.Field.COUNTRIES));
         creationItem.setExternalURLsPostponed(item.getStringList(DatabaseMediator.Field.EXTERNAL_URLS));
-        creationItem.setCreatorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.CREATOR_LIST));
-        creationItem.setActorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.ACTOR_LIST));
+        creationItem.setCreatorsPostponed(item.getStringList(DatabaseMediator.Field.CREATOR_LIST));
+        creationItem.setActorsPostponed(item.getStringList(DatabaseMediator.Field.ACTOR_LIST));
+//        creationItem.setCreatorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.CREATOR_LIST));
+//        creationItem.setActorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.ACTOR_LIST));
     }
 
     static void deserializeNamedItem(SerializedItem item, NamedItem namedItem) {

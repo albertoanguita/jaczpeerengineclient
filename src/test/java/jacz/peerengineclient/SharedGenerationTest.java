@@ -43,8 +43,8 @@ public class SharedGenerationTest {
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
         FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-//        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("2"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+//        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
 

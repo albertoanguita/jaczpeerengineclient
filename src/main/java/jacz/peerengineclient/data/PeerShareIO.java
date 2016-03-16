@@ -2,14 +2,13 @@ package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,7 +34,7 @@ public class PeerShareIO {
         return new PeerShareManager(peerEngineClient, fileHash);
     }
 
-    static RemotePeerShare loadRemoteShare(String basePath, PeerID peerID, ForeignShares foreignShares) throws IOException, VersionedSerializationException {
+    static RemotePeerShare loadRemoteShare(String basePath, PeerId peerID, ForeignShares foreignShares) throws IOException, VersionedSerializationException {
         return new RemotePeerShare(
                 foreignShares,
                 Paths.remoteSharePath(basePath, peerID),
@@ -44,7 +43,7 @@ public class PeerShareIO {
 
     public static void save(String basePath, PeerShareManager peerShareManager) throws IOException {
         saveLocalHash(basePath, peerShareManager.getFileHash());
-        for (Map.Entry<PeerID, RemotePeerShare> entry : peerShareManager.getRemotePeerShares()) {
+        for (Map.Entry<PeerId, RemotePeerShare> entry : peerShareManager.getRemotePeerShares()) {
             saveRemotePeerShare(basePath, entry.getKey(), entry.getValue());
         }
     }
@@ -53,7 +52,7 @@ public class PeerShareIO {
         VersionedObjectSerializer.serialize(fileHash, CRCBytes, Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
     }
 
-    static void saveRemotePeerShare(String basePath, PeerID peerID, RemotePeerShare remotePeerShare) throws IOException {
+    static void saveRemotePeerShare(String basePath, PeerId peerID, RemotePeerShare remotePeerShare) throws IOException {
         VersionedObjectSerializer.serialize(
                 remotePeerShare,
                 CRCBytes,
@@ -61,7 +60,7 @@ public class PeerShareIO {
                 Paths.remoteShareBackupPath(basePath, peerID));
     }
 
-    static void removeRemotePeerShare(String basePath, PeerID peerID) {
+    static void removeRemotePeerShare(String basePath, PeerId peerID) {
         //noinspection ResultOfMethodCallIgnored
         new File(Paths.remoteSharePath(basePath, peerID)).delete();
         //noinspection ResultOfMethodCallIgnored

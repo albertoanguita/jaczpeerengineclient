@@ -8,7 +8,7 @@ import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineclient.test.Client;
 import jacz.peerengineclient.test.TestUtil;
 import jacz.peerengineservice.NotAliveException;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.DownloadState;
@@ -69,9 +69,9 @@ public class FileDownloadIncompleteIT {
         FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
         // download at 40 kB/s
         peerEngineClient.setMaxDesiredDownloadSpeed(40);
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("2"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
         // connect and warm up
         peerEngineClient.connect();
@@ -101,8 +101,8 @@ public class FileDownloadIncompleteIT {
 
         ThreadUtil.safeSleep(5000);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("2"));
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }
@@ -121,9 +121,9 @@ public class FileDownloadIncompleteIT {
         FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
         // download at 10 kB/s
         peerEngineClient.setMaxDesiredDownloadSpeed(10);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("1"));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("3"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
 
         // connect and warm up
@@ -161,8 +161,8 @@ public class FileDownloadIncompleteIT {
 
         ThreadUtil.safeSleep(CYCLE_LENGTH);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("1"));
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }
@@ -177,8 +177,8 @@ public class FileDownloadIncompleteIT {
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
         FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("2"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB3(localDB, peerEngineClient);
@@ -199,7 +199,7 @@ public class FileDownloadIncompleteIT {
 
         announceEvent(10);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("2"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }

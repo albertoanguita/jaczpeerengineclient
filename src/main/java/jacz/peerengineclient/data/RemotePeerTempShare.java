@@ -1,6 +1,6 @@
 package jacz.peerengineclient.data;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,14 +16,14 @@ import java.util.Set;
  */
 public class RemotePeerTempShare {
 
-    private final PeerID remotePeerID;
+    private final PeerId remotePeerId;
 
     private final ForeignShares foreignShares;
 
     private final Set<String> tempResources;
 
-    public RemotePeerTempShare(PeerID remotePeerID, ForeignShares foreignShares) {
-        this.remotePeerID = remotePeerID;
+    public RemotePeerTempShare(PeerId remotePeerId, ForeignShares foreignShares) {
+        this.remotePeerId = remotePeerId;
         this.foreignShares = foreignShares;
         this.tempResources = new HashSet<>();
     }
@@ -37,6 +37,6 @@ public class RemotePeerTempShare {
     }
 
     public void completeSynch() {
-        foreignShares.reportVolatileResources(remotePeerID, tempResources);
+        foreignShares.reportVolatileResources(remotePeerId, tempResources);
     }
 }

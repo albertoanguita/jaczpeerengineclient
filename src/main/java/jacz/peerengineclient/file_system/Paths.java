@@ -2,7 +2,7 @@ package jacz.peerengineclient.file_system;
 
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.files.FileUtil;
 import jacz.util.lists.tuple.Triple;
 
@@ -23,6 +23,7 @@ public class Paths {
      * directory paths
      **********************/
 
+    // todo remove
     private static final String CONFIG_DIR = "config";
 
     private static final String ENCRYPTION_DIR = "encryption";
@@ -56,6 +57,16 @@ public class Paths {
 
     private static final String CONFIG_FILE = "config";
 
+    private static final String PEER_ID_CONFIG_FILE = "id";
+
+    private static final String NETWORK_CONFIG_FILE = "network";
+
+    private static final String NICK_CONFIG_FILE = "nick";
+
+    private static final String ENGINE_CONFIG_FILE = "limits";
+
+    private static final String PATHS_CONFIG_FILE = "paths";
+
     private static final String ENCRYPTION_KEYS_FILE = "keys";
 
     private static final String STATISTICS_FILE = "statistics";
@@ -71,6 +82,8 @@ public class Paths {
     private static final String ITEM_RELATIONS_FILE = "item-relations";
 
     private static final String FILE_HASH_DATABASE_FILE = "hash-db";
+
+    private static final String PEER_KNOWLEDGE_BASE_DATABASE_FILE = "peer-kb";
 
     /**********************
      * file extensions
@@ -158,6 +171,46 @@ public class Paths {
         return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_BACKUP);
     }
 
+    public static String peerIdConfigPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, PEER_ID_CONFIG_FILE, EXT_XML);
+    }
+
+    public static String peerIdConfigBackupPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, PEER_ID_CONFIG_FILE, EXT_BACKUP);
+    }
+
+    public static String networkConfigPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, NETWORK_CONFIG_FILE, EXT_XML);
+    }
+
+    public static String networkConfigBackupPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, NETWORK_CONFIG_FILE, EXT_BACKUP);
+    }
+
+    public static String nickConfigPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, NICK_CONFIG_FILE, EXT_XML);
+    }
+
+    public static String nickConfigBackupPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, NICK_CONFIG_FILE, EXT_BACKUP);
+    }
+
+    public static String engineConfigPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_XML);
+    }
+
+    public static String engineConfigBackupPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_BACKUP);
+    }
+
+    public static String pathsConfigPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, PATHS_CONFIG_FILE, EXT_XML);
+    }
+
+    public static String pathsConfigBackupPath(String basePath) {
+        return getFilePath(basePath, CONFIG_DIR, PATHS_CONFIG_FILE, EXT_BACKUP);
+    }
+
     /************************
      * encryption
      ***********************/
@@ -194,16 +247,16 @@ public class Paths {
         return getFilePath(basePath, DATABASES_DIR, LOCAL_DB_FILE, EXT_DB);
     }
 
-    public static Set<PeerID> listRemoteDBPeers(String basePath) throws FileNotFoundException {
+    public static Set<PeerId> listRemoteDBPeers(String basePath) throws FileNotFoundException {
         String[] filesInRemoteDir = FileUtil.getDirectoryContents(getRemoteDatabasesDir(basePath));
-        Set<PeerID> remoteDatabasePeers = new HashSet<>();
+        Set<PeerId> remoteDatabasePeers = new HashSet<>();
         for (String file : filesInRemoteDir) {
-            remoteDatabasePeers.add(new PeerID(FileUtil.getFileNameWithoutExtension(file)));
+            remoteDatabasePeers.add(new PeerId(FileUtil.getFileNameWithoutExtension(file)));
         }
         return remoteDatabasePeers;
     }
 
-    public static String remoteDBPath(String basePath, PeerID peerID) {
+    public static String remoteDBPath(String basePath, PeerId peerID) {
         return getFilePath(basePath, REMOTE_DATABASES_DIR, peerID.toString(), EXT_DB);
     }
 
@@ -236,14 +289,22 @@ public class Paths {
     }
 
     /************************
+     * peer knowledge base database
+     ***********************/
+
+    public static String peerKBPath(String basePath) {
+        return getFilePath(basePath, DATA_DIR, PEER_KNOWLEDGE_BASE_DATABASE_FILE, EXT_DB);
+    }
+
+    /************************
      * peer shares
      ***********************/
 
-    public static String remoteSharePath(String basePath, PeerID peerID) {
+    public static String remoteSharePath(String basePath, PeerId peerID) {
         return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_VERSIONED);
     }
 
-    public static String remoteShareBackupPath(String basePath, PeerID peerID) {
+    public static String remoteShareBackupPath(String basePath, PeerId peerID) {
         return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
     }
 

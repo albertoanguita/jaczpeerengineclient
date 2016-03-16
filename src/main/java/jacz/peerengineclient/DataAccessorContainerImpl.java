@@ -5,7 +5,7 @@ import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.data.synch.TempFilesAccessor;
 import jacz.peerengineclient.databases.DatabaseManager;
 import jacz.peerengineclient.databases.synch.DatabaseAccessor;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.AccessorNotFoundException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.DataAccessorContainer;
@@ -26,17 +26,17 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
     }
 
     @Override
-    public void peerConnected(PeerID peerID) {
+    public void peerConnected(PeerId peerId) {
 
     }
 
     @Override
-    public void peerDisconnected(PeerID peerID) {
+    public void peerDisconnected(PeerId peerID) {
 
     }
 
     @Override
-    public DataAccessor getAccessorForTransmitting(PeerID peerID, String dataAccessorName) throws AccessorNotFoundException, ServerBusyException {
+    public DataAccessor getAccessorForTransmitting(PeerId peerID, String dataAccessorName) throws AccessorNotFoundException, ServerBusyException {
         switch (dataAccessorName) {
             case DatabaseAccessor.NAME:
                 return databaseManager.requestForSharedDatabaseSynchFromRemotePeer(peerID);

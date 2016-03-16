@@ -5,7 +5,7 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -33,7 +33,7 @@ public class DatabaseIO {
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
             PeerEngineClient peerEngineClient,
-            Set<PeerID> friendPeers
+            Set<PeerId> friendPeers
     ) throws IOException, VersionedSerializationException {
         return new DatabaseManager(
                 new Databases(basePath),
@@ -61,14 +61,14 @@ public class DatabaseIO {
         saveItemRelations(basePath, itemRelations);
     }
 
-    static String createNewRemoteDatabase(String basePath, PeerID peerID) throws IOException {
+    static String createNewRemoteDatabase(String basePath, PeerId peerID) throws IOException {
         // set up a temporary database with a pre-fixed identifier. This database will be re-created in the first synch
         String dbPath = Paths.remoteDBPath(basePath, peerID);
         DatabaseMediator.dropAndCreate(dbPath, "temp-id");
         return dbPath;
     }
 
-    public static void removeRemoteDatabase(String basePath, PeerID peerID) {
+    public static void removeRemoteDatabase(String basePath, PeerId peerID) {
         //noinspection ResultOfMethodCallIgnored
         new File(Paths.remoteDBPath(basePath, peerID)).delete();
     }

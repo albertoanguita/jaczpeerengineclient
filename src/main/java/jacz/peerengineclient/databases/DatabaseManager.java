@@ -9,7 +9,7 @@ import jacz.peerengineclient.databases.integration.SharedDatabaseGenerator;
 import jacz.peerengineclient.databases.synch.DatabaseAccessor;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 
@@ -45,7 +45,7 @@ public class DatabaseManager {
             IntegrationEvents integrationEvents,
             PeerEngineClient peerEngineClient,
             String basePath,
-            Set<PeerID> friendPeers) throws IOException {
+            Set<PeerId> friendPeers) throws IOException {
         this.peerEngineClient = peerEngineClient;
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
@@ -53,7 +53,7 @@ public class DatabaseManager {
         sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
         // just in case, try to add databases for all registered friend peers
-        for (PeerID friendPeer : friendPeers) {
+        for (PeerId friendPeer : friendPeers) {
             addPeer(basePath, friendPeer);
         }
     }
@@ -100,7 +100,7 @@ public class DatabaseManager {
      *
      * @param peerID peer whose library must be synched
      */
-    public synchronized void remoteItemModified(PeerID peerID, DatabaseItem item) {
+    public synchronized void remoteItemModified(PeerId peerID, DatabaseItem item) {
         itemIntegrator.integrateRemoteItem(databases, peerID, item);
     }
 
@@ -109,14 +109,14 @@ public class DatabaseManager {
      *
      * @param peerID
      */
-    public synchronized void remoteItemWillBeRemoved(PeerID peerID, DatabaseItem item) {
+    public synchronized void remoteItemWillBeRemoved(PeerId peerID, DatabaseItem item) {
         itemIntegrator.removeRemoteItem(databases, peerID, item);
     }
 
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
      */
-    public synchronized DatabaseAccessor requestForSharedDatabaseSynchFromRemotePeer(PeerID peerID) throws ServerBusyException {
+    public synchronized DatabaseAccessor requestForSharedDatabaseSynchFromRemotePeer(PeerId peerID) throws ServerBusyException {
         return databaseSynchManager.requestForSharedDatabaseSynch(peerID);
     }
 
@@ -126,7 +126,7 @@ public class DatabaseManager {
      *
      * @param peerID new friend peer
      */
-    public synchronized void addPeer(String path, PeerID peerID) throws IOException {
+    public synchronized void addPeer(String path, PeerId peerID) throws IOException {
         if (!databases.containsRemoteDB(peerID)) {
             String dbPath = DatabaseIO.createNewRemoteDatabase(path, peerID);
             databases.addRemoteDB(peerID, dbPath);
@@ -139,7 +139,7 @@ public class DatabaseManager {
      *
      * @param peerID peer which is no longer friend.
      */
-    public synchronized void removePeer(String path, PeerID peerID) {
+    public synchronized void removePeer(String path, PeerId peerID) {
         databases.removeRemoteDB(peerID);
         // todo to avoid problems with other pieces of code that access remote dbs, we postpone the actual deletion
         // of the db file until the next startup

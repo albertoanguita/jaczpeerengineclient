@@ -1,6 +1,6 @@
 package jacz.peerengineclient.test;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.datatransfer.*;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 
@@ -45,17 +45,7 @@ public class ResourceTransferEventsImpl implements ResourceTransferEvents {
     }
 
     @Override
-    public void globalDownloadDenied(String resourceStoreName, String resourceID, double streamingNeed, String totalHash, String totalHashAlgorithm) {
-
-    }
-
-    @Override
-    public void peerDownloadInitiated(PeerID serverPeerID, String resourceStoreName, String resourceID, double streamingNeed, String totalHash, String totalHashAlgorithm) {
-
-    }
-
-    @Override
-    public void peerDownloadDenied(PeerID serverPeerID, String resourceStoreName, String resourceID, double streamingNeed, String totalHash, String totalHashAlgorithm) {
+    public void peerDownloadInitiated(PeerId serverPeerId, String resourceStoreName, String resourceID, double streamingNeed, String totalHash, String totalHashAlgorithm) {
 
     }
 

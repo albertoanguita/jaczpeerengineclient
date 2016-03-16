@@ -1,25 +1,27 @@
 package jacz.peerengineclient.file_system;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 
 import java.util.Date;
 
 /**
- * PeerID value and related information (creation date...)
+ * PeerId value and related information (creation date...)
+ *
+ * todo remove
  */
 public class PeerIDInfo {
 
-    public final PeerID peerID;
+    public final PeerId peerID;
 
     public final int keySizeForPeerGeneration;
 
     public final Date creationDate;
 
-    public PeerIDInfo(PeerID peerID, int keySizeForPeerGeneration) {
+    public PeerIDInfo(PeerId peerID, int keySizeForPeerGeneration) {
         this(peerID, keySizeForPeerGeneration, new Date());
     }
 
-    public PeerIDInfo(PeerID peerID, int keySizeForPeerGeneration, Date creationDate) {
+    public PeerIDInfo(PeerId peerID, int keySizeForPeerGeneration, Date creationDate) {
         this.peerID = peerID;
         this.keySizeForPeerGeneration = keySizeForPeerGeneration;
         this.creationDate = creationDate;

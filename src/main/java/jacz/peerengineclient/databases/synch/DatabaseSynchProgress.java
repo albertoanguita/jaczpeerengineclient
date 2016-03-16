@@ -1,7 +1,7 @@
 package jacz.peerengineclient.databases.synch;
 
 import jacz.peerengineclient.util.synch.SynchMode;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
 
@@ -14,56 +14,56 @@ public class DatabaseSynchProgress implements ProgressNotificationWithError<Inte
 
     private final SynchMode mode;
 
-    private final PeerID otherPeerID;
+    private final PeerId otherPeerId;
 
-    public DatabaseSynchProgress(DatabaseSynchManager databaseSynchManager, SynchMode mode, PeerID otherPeerID) {
+    public DatabaseSynchProgress(DatabaseSynchManager databaseSynchManager, SynchMode mode, PeerId otherPeerId) {
         this.databaseSynchManager = databaseSynchManager;
         this.mode = mode;
-        this.otherPeerID = otherPeerID;
+        this.otherPeerId = otherPeerId;
     }
 
     @Override
     public void beginTask() {
         if (mode.isShared()) {
-            databaseSynchManager.sharedDatabaseSynchBegins(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchBegins(otherPeerId);
         } else {
-            databaseSynchManager.remoteDatabaseSynchBegins(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchBegins(otherPeerId);
         }
     }
 
     @Override
     public void addNotification(Integer message) {
         if (mode.isShared()) {
-            databaseSynchManager.sharedDatabaseSynchProgress(otherPeerID, message);
+            databaseSynchManager.sharedDatabaseSynchProgress(otherPeerId, message);
         } else {
-            databaseSynchManager.remoteDatabaseSynchProgress(otherPeerID, message);
+            databaseSynchManager.remoteDatabaseSynchProgress(otherPeerId, message);
         }
     }
 
     @Override
     public void completeTask() {
         if (mode.isShared()) {
-            databaseSynchManager.sharedDatabaseSynchComplete(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchComplete(otherPeerId);
         } else {
-            databaseSynchManager.remoteDatabaseSynchComplete(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchComplete(otherPeerId);
         }
     }
 
     @Override
     public void error(SynchError error) {
         if (mode.isShared()) {
-            databaseSynchManager.sharedDatabaseSynchFailed(otherPeerID, error);
+            databaseSynchManager.sharedDatabaseSynchFailed(otherPeerId, error);
         } else {
-            databaseSynchManager.remoteDatabaseSynchFailed(otherPeerID, error);
+            databaseSynchManager.remoteDatabaseSynchFailed(otherPeerId, error);
         }
     }
 
     @Override
     public void timeout() {
         if (mode.isShared()) {
-            databaseSynchManager.sharedDatabaseSynchTimedOut(otherPeerID);
+            databaseSynchManager.sharedDatabaseSynchTimedOut(otherPeerId);
         } else {
-            databaseSynchManager.remoteDatabaseSynchTimedOut(otherPeerID);
+            databaseSynchManager.remoteDatabaseSynchTimedOut(otherPeerId);
         }
     }
 }

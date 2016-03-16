@@ -5,7 +5,7 @@ import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.data.synch.RemotePeerShareAccessor;
 import jacz.peerengineclient.data.synch.TempFilesAccessor;
 import jacz.peerengineclient.util.synch.DataAccessorController;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.data_synchronization.DummyProgress;
@@ -28,34 +28,34 @@ public class PeerShareManager {
 
         private final FileHashDatabaseWithTimestamp fileHash;
 
-        private final Map<PeerID, RemotePeerShare> remotePeerShares;
+        private final Map<PeerId, RemotePeerShare> remotePeerShares;
 
         public FileHashDataAccessorController(
                 PeerEngineClient peerEngineClient,
                 FileHashDatabaseWithTimestamp fileHash,
-                Map<PeerID, RemotePeerShare> remotePeerShares) {
+                Map<PeerId, RemotePeerShare> remotePeerShares) {
             super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient);
             this.fileHash = fileHash;
             this.remotePeerShares = remotePeerShares;
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerId peerID) {
             return new DummyProgress();
         }
 
         @Override
-        public FileHashDatabaseAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+        public FileHashDatabaseAccessor getLocalDataAccessor(PeerId peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
             return new FileHashDatabaseAccessor(fileHash, progress);
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerId peerID) throws UnavailablePeerException {
             return new DummyProgress();
         }
 
         @Override
-        public RemotePeerShareAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+        public RemotePeerShareAccessor getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException {
             RemotePeerShare remotePeerShare = remotePeerShares.get(peerID);
             if (remotePeerShare != null) {
                 return new RemotePeerShareAccessor(remotePeerShare);
@@ -78,22 +78,22 @@ public class PeerShareManager {
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerID peerID) {
+        public ProgressNotificationWithError<Integer, SynchError> getLocalSynchProgress(PeerId peerID) {
             return new DummyProgress();
         }
 
         @Override
-        public TempFilesAccessor getLocalDataAccessor(PeerID peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
+        public TempFilesAccessor getLocalDataAccessor(PeerId peerID, ProgressNotificationWithError<Integer, SynchError> progress) {
             return new TempFilesAccessor(peerEngineClient.getFileAPI(), progress);
         }
 
         @Override
-        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerID peerID) throws UnavailablePeerException {
+        public ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerId peerID) throws UnavailablePeerException {
             return new DummyProgress();
         }
 
         @Override
-        public TempFilesAccessor getRemoteDataAccessor(PeerID peerID) throws UnavailablePeerException {
+        public TempFilesAccessor getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException {
             return new TempFilesAccessor(new RemotePeerTempShare(peerID, foreignShares));
         }
     }
@@ -114,7 +114,7 @@ public class PeerShareManager {
 
     private ForeignShares foreignShares;
 
-    private final Map<PeerID, RemotePeerShare> remotePeerShares;
+    private final Map<PeerId, RemotePeerShare> remotePeerShares;
 
     private final FileHashDataAccessorController fileHashDataAccessorController;
 
@@ -139,11 +139,11 @@ public class PeerShareManager {
         return fileHash;
     }
 
-    public synchronized Set<Map.Entry<PeerID, RemotePeerShare>> getRemotePeerShares() {
+    public synchronized Set<Map.Entry<PeerId, RemotePeerShare>> getRemotePeerShares() {
         return remotePeerShares.entrySet();
     }
 
-    public synchronized void peerConnected(String basePath, PeerID peerID) {
+    public synchronized void peerConnected(String basePath, PeerId peerID) {
         RemotePeerShare remotePeerShare;
         try {
             remotePeerShare = PeerShareIO.loadRemoteShare(basePath, peerID, foreignShares);
@@ -154,7 +154,7 @@ public class PeerShareManager {
         remotePeerShares.put(peerID, remotePeerShare);
     }
 
-    public synchronized void peerDisconnected(String basePath, PeerID peerID) {
+    public synchronized void peerDisconnected(String basePath, PeerId peerID) {
         RemotePeerShare remotePeerShare = remotePeerShares.remove(peerID);
         if (remotePeerShare != null) {
             remotePeerShare.notifyPeerDisconnected();
@@ -168,27 +168,27 @@ public class PeerShareManager {
         }
     }
 
-    public synchronized void removeRemotePeer(String basePath, PeerID remotePeerID) {
-        if (remotePeerShares.containsKey(remotePeerID)) {
-//            remotePeerShares.get(remotePeerID).clear();
-            remotePeerShares.remove(remotePeerID);
+    public synchronized void removeRemotePeer(String basePath, PeerId remotePeerId) {
+        if (remotePeerShares.containsKey(remotePeerId)) {
+//            remotePeerShares.get(remotePeerId).clear();
+            remotePeerShares.remove(remotePeerId);
         }
-        PeerShareIO.removeRemotePeerShare(basePath, remotePeerID);
+        PeerShareIO.removeRemotePeerShare(basePath, remotePeerId);
     }
 
-    public FileHashDatabaseAccessor requestForLocalHashSynch(PeerID peerID) throws ServerBusyException {
+    public FileHashDatabaseAccessor requestForLocalHashSynch(PeerId peerID) throws ServerBusyException {
         return fileHashDataAccessorController.requestForLocalHashSynch(peerID);
     }
 
-    public TempFilesAccessor requestForLocalTempFilesSynch(PeerID peerID) throws ServerBusyException {
+    public TempFilesAccessor requestForLocalTempFilesSynch(PeerId peerID) throws ServerBusyException {
         return tempFilesDataAccessorController.requestForLocalHashSynch(peerID);
     }
 
-    public void synchRemoteShare(PeerID peerID) {
+    public void synchRemoteShare(PeerId peerID) {
         fileHashDataAccessorController.synchRemoteShare(peerID);
     }
 
-    public void synchRemoteTempFiles(PeerID peerID) {
+    public void synchRemoteTempFiles(PeerId peerID) {
         tempFilesDataAccessorController.synchRemoteShare(peerID);
     }
 

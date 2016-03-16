@@ -4,11 +4,11 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineclient.images.ImageDownloader;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.concurrency.daemon.Daemon;
 import jacz.util.concurrency.daemon.DaemonAction;
 import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
-import jacz.util.concurrency.timer.SimpleTimerAction;
+import jacz.util.concurrency.timer.TimerAction;
 import jacz.util.concurrency.timer.Timer;
 
 import java.util.NoSuchElementException;
@@ -18,11 +18,11 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * Reminder for remote synch processes
  */
-public class PeriodicTaskReminder implements SimpleTimerAction {
+public class PeriodicTaskReminder implements TimerAction {
 
     private abstract static class PeerSpecificTask implements DaemonAction {
 
-        private final Queue<PeerID> peersToSynch;
+        private final Queue<PeerId> peersToSynch;
 
         private final Daemon daemon;
 
@@ -31,7 +31,7 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
             daemon = new Daemon(this);
         }
 
-        public void addTaskForPeer(PeerID peerID) {
+        public void addTaskForPeer(PeerId peerID) {
             peersToSynch.add(peerID);
             daemon.stateChange();
         }
@@ -39,7 +39,7 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
         @Override
         public boolean solveState() {
             try {
-                PeerID peerID = peersToSynch.remove();
+                PeerId peerID = peersToSynch.remove();
                 performTask(peerID);
                 return false;
             } catch (NoSuchElementException e) {
@@ -47,7 +47,7 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
             }
         }
 
-        public abstract void performTask(PeerID peerID);
+        public abstract void performTask(PeerId peerID);
 
         public void stop() {
             daemon.blockUntilStateIsSolved();
@@ -58,7 +58,7 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
 
     private final PeerEngineClient peerEngineClient;
 
-    private PeerID lastSynchedPeerID;
+    private PeerId lastSynchedPeerId;
 
     private final ImageDownloader imageDownloader;
 
@@ -81,24 +81,24 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
             PeerShareManager peerShareManager,
             ImageDownloader imageDownloader) {
         this.peerEngineClient = peerEngineClient;
-        lastSynchedPeerID = null;
+        lastSynchedPeerId = null;
         this.imageDownloader = imageDownloader;
         timer = new Timer(REMOTE_SYNCH_DELAY, this, false, "PeriodicTaskReminder");
         databaseSynchManagerTask = new PeerSpecificTask() {
             @Override
-            public void performTask(PeerID peerID) {
+            public void performTask(PeerId peerID) {
                 databaseSynchManager.synchRemoteDatabase(peerID);
             }
         };
         peerShareManagerRemoteShareTask = new PeerSpecificTask() {
             @Override
-            public void performTask(PeerID peerID) {
+            public void performTask(PeerId peerID) {
                 peerShareManager.synchRemoteShare(peerID);
             }
         };
         peerShareManagerTempFilesTask = new PeerSpecificTask() {
             @Override
-            public void performTask(PeerID peerID) {
+            public void performTask(PeerId peerID) {
                 peerShareManager.synchRemoteTempFiles(peerID);
             }
         };
@@ -111,11 +111,11 @@ public class PeriodicTaskReminder implements SimpleTimerAction {
 
     @Override
     public Long wakeUp(Timer timer) {
-        lastSynchedPeerID = peerEngineClient.getNextConnectedPeer(lastSynchedPeerID);
-        if (lastSynchedPeerID != null) {
-            databaseSynchManagerTask.addTaskForPeer(lastSynchedPeerID);
-            peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerID);
-            peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerID);
+        lastSynchedPeerId = peerEngineClient.getNextConnectedPeer(lastSynchedPeerId);
+        if (lastSynchedPeerId != null) {
+            databaseSynchManagerTask.addTaskForPeer(lastSynchedPeerId);
+            peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerId);
+            peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
         }
         imageDownloaderTask.executeTask(imageDownloader::downloadMissingImages);
         return null;

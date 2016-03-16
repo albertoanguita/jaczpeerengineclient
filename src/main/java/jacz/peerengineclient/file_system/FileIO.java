@@ -1,7 +1,7 @@
 package jacz.peerengineclient.file_system;
 
 import jacz.peerengineclient.SessionManager;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.PeerRelations;
 import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
@@ -20,12 +20,12 @@ import java.io.IOException;
  */
 public class FileIO {
 
-    public static EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> readConfig(
+    public static EightTuple<PeerId, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> readConfig(
             String basePath,
             String defaultNick) throws FileNotFoundException, XMLStreamException, IllegalArgumentException, CRCMismatchException {
         XMLReader xmlReader = new XMLReader(Paths.configPath(basePath), true, Paths.configBackupPath(basePath));
 
-        PeerID ownPeerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+        PeerId ownPeerId = new PeerId(xmlReader.getFieldValue("peer-id"));
         NetworkConfiguration networkConfiguration = new NetworkConfiguration(
                 StrCast.asInteger(xmlReader.getFieldValue("port")),
                 StrCast.asInteger(xmlReader.getFieldValue("external-port")));
@@ -35,7 +35,7 @@ public class FileIO {
         xmlReader.getStruct("friend-peers");
         while (xmlReader.hasMoreChildren()) {
             xmlReader.getNextStruct();
-            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            PeerId peerID = new PeerId(xmlReader.getFieldValue("peer-id"));
             String nick = xmlReader.getFieldValue("nick");
             peersPersonalData.setPeersNicks(peerID, nick);
             peerRelations.addFriendPeer(peerID);
@@ -44,7 +44,7 @@ public class FileIO {
         xmlReader.getStruct("blocked-peers");
         while (xmlReader.hasMoreChildren()) {
             xmlReader.getNextStruct();
-            PeerID peerID = new PeerID(xmlReader.getFieldValue("peer-id"));
+            PeerId peerID = new PeerId(xmlReader.getFieldValue("peer-id"));
             String nick = xmlReader.getFieldValue("nick");
             peersPersonalData.setPeersNicks(peerID, nick);
             peerRelations.addBlockedPeer(peerID);
@@ -58,7 +58,7 @@ public class FileIO {
         String baseDataPath = xmlReader.getFieldValue("base-data-path");
 
         return new EightTuple<>(
-                ownPeerID,
+                ownPeerId,
                 networkConfiguration,
                 peersPersonalData,
                 peerRelations,
@@ -70,7 +70,7 @@ public class FileIO {
 
     public static void writeConfig(
             String basePath,
-            PeerID peerID,
+            PeerId peerID,
             NetworkConfiguration networkConfiguration,
             PeersPersonalData peersPersonalData,
             PeerRelations peerRelations,
@@ -85,18 +85,18 @@ public class FileIO {
         xmlWriter.addField("nick", peersPersonalData.getOwnNick());
 
         xmlWriter.beginStruct("friend-peers");
-        for (PeerID friendPeerID : peerRelations.getFriendPeers()) {
+        for (PeerId friendPeerId : peerRelations.getFriendPeers()) {
             xmlWriter.beginStruct();
-            xmlWriter.addField("peer-id", friendPeerID.toString());
-            xmlWriter.addField("nick", peersPersonalData.getPeerNick(friendPeerID));
+            xmlWriter.addField("peer-id", friendPeerId.toString());
+            xmlWriter.addField("nick", peersPersonalData.getPeerNick(friendPeerId));
             xmlWriter.endStruct();
         }
         xmlWriter.endStruct();
         xmlWriter.beginStruct("blocked-peers");
-        for (PeerID blockedPeerID : peerRelations.getBlockedPeers()) {
+        for (PeerId blockedPeerId : peerRelations.getBlockedPeers()) {
             xmlWriter.beginStruct();
-            xmlWriter.addField("peer-id", blockedPeerID.toString());
-            xmlWriter.addField("nick", peersPersonalData.getPeerNick(blockedPeerID));
+            xmlWriter.addField("peer-id", blockedPeerId.toString());
+            xmlWriter.addField("nick", peersPersonalData.getPeerNick(blockedPeerId));
             xmlWriter.endStruct();
         }
         xmlWriter.endStruct();

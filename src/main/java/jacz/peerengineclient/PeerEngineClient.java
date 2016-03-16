@@ -17,12 +17,10 @@ import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineclient.util.PeriodicTaskReminder;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.GeneralEvents;
 import jacz.peerengineservice.client.PeerClient;
-import jacz.peerengineservice.client.PeerRelations;
-import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.State;
@@ -57,12 +55,12 @@ import java.util.Set;
 
 /**
  * PeerEngine client adapted for Jacuzzi
- * <p>
- * todo recover temp files in constructor and put them in paused mode
- * <p>
- * todo si no tiene conexion, no deberia sacar la ip publica
+ *
+ * todo write files upon parameter changes
  */
 public class PeerEngineClient {
+
+    private static final String SERVER_URL = "https://testserver01-1100.appspot.com/_ah/api/server/v1/";
 
     public static final String DEFAULT_STORE = "@J_PEER_ENGINE_CLIENT_DEFAULT_RESOURCE_STORE";
 
@@ -77,7 +75,7 @@ public class PeerEngineClient {
 
     private final String basePath;
 
-    private final PeersPersonalData peersPersonalData;
+//    private final PeersPersonalData peersPersonalData;
 
     private final TransferStatistics transferStatistics;
 
@@ -104,12 +102,13 @@ public class PeerEngineClient {
 
     public PeerEngineClient(
             String basePath,
-            PeerID ownPeerID,
+            PeerId ownPeerId,
             PeerEncryption peerEncryption,
+            String ownNick,
             NetworkConfiguration networkConfiguration,
-            PeersPersonalData peersPersonalData,
+//            PeersPersonalData peersPersonalData,
             TransferStatistics transferStatistics,
-            PeerRelations peerRelations,
+//            PeerRelations peerRelations,
             String tempDownloadsPath,
             String baseMediaPath,
             GeneralEvents generalEvents,
@@ -121,7 +120,7 @@ public class PeerEngineClient {
             IntegrationEvents integrationEvents,
             ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
-        this.peersPersonalData = peersPersonalData;
+//        this.peersPersonalData = peersPersonalData;
         this.transferStatistics = transferStatistics;
         peerShareManager = PeerShareIO.load(basePath, this);
         databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this, peerRelations.getFriendPeers());
@@ -131,15 +130,18 @@ public class PeerEngineClient {
             // other threads will try to get the peerClient while it has not yet been created. We avoid concurrency
             // issues by synchronizing its creation and its getter
             peerClient = new PeerClient(
-                    ownPeerID,
+                    ownPeerId,
+                    ownNick,
+                    SERVER_URL,
                     peerEncryption,
                     networkConfiguration,
+                    Paths.peerKBPath(basePath),
                     new GeneralEventsBridge(this, generalEvents),
                     connectionEvents,
                     resourceTransferEvents,
-                    peersPersonalData,
+//                    peersPersonalData,
                     transferStatistics,
-                    peerRelations,
+//                    peerRelations,
                     new HashMap<>(),
                     dataAccessorContainer,
                     errorHandlerBridge);
@@ -224,10 +226,10 @@ public class PeerEngineClient {
             // only if we managed to create a peer client, save all data
             SessionManager.stopAndSave(
                     basePath,
-                    peerClient.getOwnPeerID(),
+                    peerClient.getOwnPeerId(),
                     peerClient.getNetworkConfiguration(),
-                    peerClient.getPeersPersonalData(),
-                    peerClient.getPeerRelations(),
+//                    peerClient.getPeersPersonalData(),
+//                    peerClient.getPeerRelations(),
                     getMaxDesiredDownloadSpeed(),
                     getMaxDesiredUploadSpeed(),
                     tempDownloadsPath,
@@ -266,44 +268,44 @@ public class PeerEngineClient {
         peerClient.setListeningPort(port);
     }
 
-    public boolean isFriendPeer(PeerID peerID) {
+    public boolean isFriendPeer(PeerId peerID) {
         return peerClient.isFriendPeer(peerID);
     }
 
-    public boolean isBlockedPeer(PeerID peerID) {
+    public boolean isBlockedPeer(PeerId peerID) {
         return peerClient.isBlockedPeer(peerID);
     }
 
-    public boolean isNonRegisteredPeer(PeerID peerID) {
+    public boolean isNonRegisteredPeer(PeerId peerID) {
         return peerClient.isNonRegisteredPeer(peerID);
     }
 
-    public Set<PeerID> getFriendPeers() {
+    public Set<PeerId> getFriendPeers() {
         return peerClient.getFriendPeers();
     }
 
-    public void addFriendPeer(PeerID peerID) {
+    public void addFriendPeer(PeerId peerID) {
         // add personal data so its data can be saved
         peerClient.addFriendPeer(peerID);
     }
 
-    public void removeFriendPeer(PeerID peerID) {
+    public void removeFriendPeer(PeerId peerID) {
         peerClient.removeFriendPeer(peerID);
     }
 
-    public Set<PeerID> getBlockedPeers() {
+    public Set<PeerId> getBlockedPeers() {
         return peerClient.getBlockedPeers();
     }
 
-    public void addBlockedPeer(PeerID peerID) {
+    public void addBlockedPeer(PeerId peerID) {
         peerClient.addBlockedPeer(peerID);
     }
 
-    public void removeBlockedPeer(PeerID peerID) {
+    public void removeBlockedPeer(PeerId peerID) {
         peerClient.removeBlockedPeer(peerID);
     }
 
-    synchronized void peerIsNowFriend(PeerID peerID) {
+    synchronized void peerIsNowFriend(PeerId peerID) {
         try {
             databaseManager.addPeer(basePath, peerID);
         } catch (IOException e) {
@@ -312,17 +314,17 @@ public class PeerEngineClient {
         }
     }
 
-    synchronized void peerIsNoLongerFriend(PeerID peerID) {
+    synchronized void peerIsNoLongerFriend(PeerId peerID) {
         System.out.println("Peer is no longer friend: " + peerID);
         databaseManager.removePeer(basePath, peerID);
         peerShareManager.removeRemotePeer(basePath, peerID);
     }
 
-    synchronized void peerConnected(PeerID peerID) {
+    synchronized void peerConnected(PeerId peerID) {
         peerShareManager.peerConnected(basePath, peerID);
     }
 
-    synchronized void peerDisconnected(PeerID peerID) {
+    synchronized void peerDisconnected(PeerId peerID) {
         peerShareManager.peerDisconnected(basePath, peerID);
     }
 
@@ -334,7 +336,7 @@ public class PeerEngineClient {
         return peersPersonalData.getOwnNick();
     }
 
-    public String getNick(PeerID peerID) {
+    public String getNick(PeerId peerID) {
         return peersPersonalData.getPeerNick(peerID);
     }
 
@@ -526,7 +528,7 @@ public class PeerEngineClient {
         return peerClient.getVisibleUploads(resourceStore);
     }
 
-    public PeerID getNextConnectedPeer(PeerID peerID) {
+    public PeerId getNextConnectedPeer(PeerId peerID) {
         return peerClient.getNextConnectedPeer(peerID);
     }
 
@@ -539,7 +541,7 @@ public class PeerEngineClient {
     }
 
 
-    public boolean synchronizeList(PeerID peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
+    public boolean synchronizeList(PeerId peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
         return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessor, timeout, progress);
     }
 

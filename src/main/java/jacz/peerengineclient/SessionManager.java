@@ -1,17 +1,13 @@
 package jacz.peerengineclient;
 
-import jacz.peerengineclient.data.FileHashDatabaseWithTimestamp;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
-import jacz.peerengineclient.file_system.FileIO;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.file_system.*;
 import jacz.peerengineservice.PeerEncryption;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.GeneralEvents;
-import jacz.peerengineservice.client.PeerRelations;
-import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
@@ -20,9 +16,7 @@ import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileUtil;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
-import jacz.util.lists.tuple.EightTuple;
 import jacz.util.log.ErrorHandler;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -69,13 +63,17 @@ public class SessionManager {
             // database files
             DatabaseIO.createNewDatabaseFileStructure(userPath);
 
-            Duple<PeerID, PeerEncryption> peerIDAndEncryption = PeerID.generateIdAndEncryptionKeys(randomBytes);
+            // peer knowledge base
+            // todo drop and create database
+
+            Duple<PeerId, PeerEncryption> peerIDAndEncryption = PeerId.generateIdAndEncryptionKeys(randomBytes);
             stopAndSave(
                     userPath,
                     peerIDAndEncryption.element1,
+                    DEFAULT_NICK,
                     new NetworkConfiguration(0, DEFAULT_EXTERNAL_PORT),
-                    new PeersPersonalData(DEFAULT_NICK, nick),
-                    new PeerRelations(),
+//                    new PeersPersonalData(DEFAULT_NICK, nick),
+//                    new PeerRelations(),
                     null,
                     null,
                     tempPath,
@@ -120,27 +118,37 @@ public class SessionManager {
             ErrorHandler errorHandler) throws IOException {
 
         try {
-            EightTuple<PeerID, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> config =
-                    FileIO.readConfig(userPath, DEFAULT_NICK);
-            PeerID ownPeerID = config.element1;
-            NetworkConfiguration networkConfiguration = config.element2;
-            PeersPersonalData peersPersonalData = config.element3;
-            PeerRelations peerRelations = config.element4;
-            Integer maxDownloadSpeed = config.element5;
-            Integer maxUploadSpeed = config.element6;
-            String tempDownloadsPath = config.element7;
-            String baseMediaPath = config.element8;
+//            EightTuple<PeerId, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> config =
+//                    FileIO.readConfig(userPath, DEFAULT_NICK);
+//            PeerId ownPeerId = config.element1;
+//            NetworkConfiguration networkConfiguration = config.element2;
+//            PeersPersonalData peersPersonalData = config.element3;
+//            PeerRelations peerRelations = config.element4;
+//            Integer maxDownloadSpeed = config.element5;
+//            Integer maxUploadSpeed = config.element6;
+//            String tempDownloadsPath = config.element7;
+//            String baseMediaPath = config.element8;
+            PeerId ownPeerId = PeerIdConfig.readPeerId(userPath);
+            String ownNick = NickConfig.readNick(userPath);
+            NetworkConfiguration networkConfiguration = NetworkConfig.readNetworkConfig(userPath);
+            Duple<Integer, Integer> speedLimits = EngineConfig.readSpeedLimitsConfig(userPath);
+            Integer maxDownloadSpeed = speedLimits.element1;
+            Integer maxUploadSpeed = speedLimits.element2;
+            Duple<String, String> paths = PathsConfig.readPathsConfig(userPath);
+            String tempDownloadsPath = paths.element1;
+            String baseMediaPath = paths.element2;
             PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
             TransferStatistics transferStatistics = new TransferStatistics(Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
 
             PeerEngineClient peerEngineClient = new PeerEngineClient(
                     userPath,
-                    ownPeerID,
+                    ownPeerId,
                     peerEncryption,
+                    ownNick,
                     networkConfiguration,
-                    peersPersonalData,
+//                    peersPersonalData,
                     transferStatistics,
-                    peerRelations,
+//                    peerRelations,
                     tempDownloadsPath,
                     baseMediaPath,
                     generalEvents,
@@ -161,10 +169,11 @@ public class SessionManager {
 
     public static synchronized void stopAndSave(
             String userPath,
-            PeerID ownPeerID,
+            PeerId ownPeerId,
+            String ownNick,
             NetworkConfiguration networkConfiguration,
-            PeersPersonalData peersPersonalData,
-            PeerRelations peerRelations,
+//            PeersPersonalData peersPersonalData,
+//            PeerRelations peerRelations,
             Integer maxDownloadSpeed,
             Integer maxUploadSpeed,
             String tempDownloadsPath,
@@ -172,7 +181,12 @@ public class SessionManager {
             PeerEncryption peerEncryption,
             TransferStatistics transferStatistics) throws IOException, XMLStreamException {
         transferStatistics.stop();
-        FileIO.writeConfig(userPath, ownPeerID, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
+//        FileIO.writeConfig(userPath, ownPeerId, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
+        PeerIdConfig.writePeerIdConfig(userPath, ownPeerId);
+        NickConfig.writeNickConfig(userPath, ownNick);
+        NetworkConfig.writeNetworkConfig(userPath, networkConfiguration);
+        EngineConfig.writeSpeedLimitsConfig(userPath, maxDownloadSpeed, maxUploadSpeed);
+        PathsConfig.writePathsConfig(userPath, tempDownloadsPath, baseMediaPath);
         VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
         VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
     }

@@ -5,7 +5,7 @@ import jacz.database.DatabaseMediator;
 import jacz.database.Movie;
 import jacz.database.TVSeries;
 import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.datatransfer.DownloadProgressNotificationHandler;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
@@ -48,12 +48,12 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
     }
 
     @Override
-    public void providerAdded(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
+    public void providerAdded(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerId provider) {
         // ignore
     }
 
     @Override
-    public void providerRemoved(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerID provider) {
+    public void providerRemoved(String resourceID, String storeName, ProviderStatistics providerStatistics, DownloadManager downloadManager, PeerId provider) {
         // ignore
     }
 

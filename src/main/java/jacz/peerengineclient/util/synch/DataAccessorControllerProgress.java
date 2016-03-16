@@ -1,6 +1,6 @@
 package jacz.peerengineclient.util.synch;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
 
@@ -13,18 +13,18 @@ public class DataAccessorControllerProgress implements ProgressNotificationWithE
 
     private final SynchMode mode;
 
-    private final PeerID remotePeerID;
+    private final PeerId remotePeerId;
 
     private final ProgressNotificationWithError<Integer, SynchError> synchProgress;
 
     public DataAccessorControllerProgress(
             DataAccessorController dataAccessorController,
             SynchMode mode,
-            PeerID remotePeerID,
+            PeerId remotePeerId,
             ProgressNotificationWithError<Integer, SynchError> synchProgress) {
         this.dataAccessorController = dataAccessorController;
         this.mode = mode;
-        this.remotePeerID = remotePeerID;
+        this.remotePeerId = remotePeerId;
         this.synchProgress = synchProgress;
     }
 
@@ -60,9 +60,9 @@ public class DataAccessorControllerProgress implements ProgressNotificationWithE
 
     private void notifyFinish() {
         if (mode.isShared()) {
-            dataAccessorController.localHashSynchFinished(remotePeerID);
+            dataAccessorController.localHashSynchFinished(remotePeerId);
         } else {
-            dataAccessorController.remoteShareSynchFinished(remotePeerID);
+            dataAccessorController.remoteShareSynchFinished(remotePeerId);
         }
     }
 }

@@ -2,7 +2,7 @@ package jacz.peerengineclient.data.synch;
 
 import jacz.peerengineclient.data.RemotePeerShare;
 import jacz.peerengineclient.data.SerializedHashItem;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
@@ -81,7 +81,7 @@ public class RemotePeerShareAccessor implements DataAccessor {
     }
 
     @Override
-    public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
+    public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerId clientPeerId) {
         // ignore, cannot happen
         return null;
     }

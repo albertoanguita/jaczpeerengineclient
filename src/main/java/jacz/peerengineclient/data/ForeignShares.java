@@ -1,7 +1,7 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.ForeignStoreShare;
 
@@ -34,22 +34,22 @@ public class ForeignShares {
         return imagesShare;
     }
 
-    public synchronized void addResourceProvider(String resourceID, PeerID peerID) {
+    public synchronized void addResourceProvider(String resourceID, PeerId peerID) {
         videosShare.addResourceProvider(resourceID, peerID);
         imagesShare.addResourceProvider(resourceID, peerID);
     }
 
-    public synchronized void removeResourceProvider(String resourceID, PeerID peerID) {
+    public synchronized void removeResourceProvider(String resourceID, PeerId peerID) {
         videosShare.removeResourceProvider(resourceID, peerID);
         imagesShare.removeResourceProvider(resourceID, peerID);
     }
 
-    public synchronized void reportVolatileResources(PeerID peerID, Set<String> resources) {
+    public synchronized void reportVolatileResources(PeerId peerID, Set<String> resources) {
         videosShare.reportVolatileResources(peerID, resources);
         imagesShare.reportVolatileResources(peerID, resources);
     }
 
-    public synchronized void removeResourceProvider(PeerID peerID) {
+    public synchronized void removeResourceProvider(PeerId peerID) {
         videosShare.removeResourceProvider(peerID);
         imagesShare.removeResourceProvider(peerID);
     }

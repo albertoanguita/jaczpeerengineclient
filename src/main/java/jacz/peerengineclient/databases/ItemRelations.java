@@ -1,7 +1,7 @@
 package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseMediator;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.*;
 import jacz.util.lists.tuple.Duple;
 
@@ -90,7 +90,7 @@ public class ItemRelations implements VersionedObject {
 
         private static final String CURRENT_VERSION = VERSION_0_1;
 
-        private HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerID, Integer>>>> itemRelations;
+        private HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> itemRelations;
 
         public ItemToPeerListRelationsMap() {
             itemRelations = new HashMap<>();
@@ -100,7 +100,7 @@ public class ItemRelations implements VersionedObject {
             VersionedObjectSerializer.deserialize(this, data);
         }
 
-        public synchronized void add(DatabaseMediator.ItemType type, int from, PeerID peerID, int to) {
+        public synchronized void add(DatabaseMediator.ItemType type, int from, PeerId peerID, int to) {
             if (!itemRelations.containsKey(type)) {
                 itemRelations.put(type, new HashMap<>());
             }
@@ -110,15 +110,15 @@ public class ItemRelations implements VersionedObject {
             itemRelations.get(type).get(from).add(new Duple<>(peerID, to));
         }
 
-        public synchronized List<Duple<PeerID, Integer>> get(DatabaseMediator.ItemType type, int from) {
+        public synchronized List<Duple<PeerId, Integer>> get(DatabaseMediator.ItemType type, int from) {
             if (!itemRelations.containsKey(type) || !itemRelations.get(type).containsKey(from)) {
                 return new ArrayList<>();
             }
             return itemRelations.get(type).get(from);
         }
 
-        public synchronized void remove(DatabaseMediator.ItemType type, int from, PeerID peerID) {
-            List<Duple<PeerID, Integer>> list = get(type, from);
+        public synchronized void remove(DatabaseMediator.ItemType type, int from, PeerId peerID) {
+            List<Duple<PeerId, Integer>> list = get(type, from);
             for (int i = 0; i < list.size(); i++) {
                 if (list.get(i).element1.equals(peerID)) {
                     list.remove(i);
@@ -142,7 +142,7 @@ public class ItemRelations implements VersionedObject {
         @Override
         public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
             if (version.equals(CURRENT_VERSION)) {
-                itemRelations = (HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerID, Integer>>>>) attributes.get("itemRelations");
+                itemRelations = (HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>>) attributes.get("itemRelations");
             } else {
                 throw new UnrecognizedVersionException();
             }
@@ -165,7 +165,7 @@ public class ItemRelations implements VersionedObject {
 
     private ItemRelationsMap localToIntegrated;
 
-    private Map<PeerID, ItemRelationsMap> remoteToIntegrated;
+    private Map<PeerId, ItemRelationsMap> remoteToIntegrated;
 
     public ItemRelations() {
         integratedToLocal = new ItemRelationsMap();
@@ -205,7 +205,7 @@ public class ItemRelations implements VersionedObject {
         return localToIntegrated;
     }
 
-    public ItemRelationsMap getRemoteToIntegrated(PeerID peerID) {
+    public ItemRelationsMap getRemoteToIntegrated(PeerId peerID) {
         if (!remoteToIntegrated.containsKey(peerID)) {
             remoteToIntegrated.put(peerID, new ItemRelationsMap());
         }
@@ -254,11 +254,11 @@ public class ItemRelations implements VersionedObject {
         }
     }
 
-    private static byte[] serializeRemoteToIntegrated(Map<PeerID, ItemRelationsMap> remoteToIntegrated) {
+    private static byte[] serializeRemoteToIntegrated(Map<PeerId, ItemRelationsMap> remoteToIntegrated) {
         FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(remoteToIntegrated.size()));
         try {
-            for (Map.Entry<PeerID, ItemRelationsMap> entry : remoteToIntegrated.entrySet()) {
-                PeerID peerID = entry.getKey();
+            for (Map.Entry<PeerId, ItemRelationsMap> entry : remoteToIntegrated.entrySet()) {
+                PeerId peerID = entry.getKey();
                 ItemRelationsMap itemRelationsMap = entry.getValue();
                 data.add(peerID.toByteArray(), VersionedObjectSerializer.serialize(itemRelationsMap));
             }
@@ -269,13 +269,13 @@ public class ItemRelations implements VersionedObject {
         }
     }
 
-    private static Map<PeerID, ItemRelationsMap> deserializeRemoteToIntegrated(byte[] data) {
+    private static Map<PeerId, ItemRelationsMap> deserializeRemoteToIntegrated(byte[] data) {
         MutableOffset offset = new MutableOffset();
         int mapSize = Serializer.deserializeIntValue(data, offset);
-        Map<PeerID, ItemRelationsMap> remoteToIntegrated = new HashMap<>();
+        Map<PeerId, ItemRelationsMap> remoteToIntegrated = new HashMap<>();
         try {
             for (int i = 0; i < mapSize; i++) {
-                PeerID peerID = new PeerID(Serializer.deserializeBytes(data, offset));
+                PeerId peerID = new PeerId(Serializer.deserializeBytes(data, offset));
                 ItemRelationsMap itemRelationsMap = new ItemRelationsMap(Serializer.deserializeBytes(data, offset));
                 remoteToIntegrated.put(peerID, itemRelationsMap);
             }

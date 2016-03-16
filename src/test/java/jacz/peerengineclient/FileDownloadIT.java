@@ -7,7 +7,7 @@ import jacz.peerengineclient.test.Client;
 import jacz.peerengineclient.test.IntegrationTest;
 import jacz.peerengineclient.test.TestUtil;
 import jacz.peerengineservice.NotAliveException;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.DownloadState;
@@ -138,10 +138,10 @@ public class FileDownloadIT {
         FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
         // download at 25 kB/s
         peerEngineClient.setMaxDesiredDownloadSpeed(250);
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("2"));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
         // connect and warm up
         peerEngineClient.connect();
@@ -216,8 +216,8 @@ public class FileDownloadIT {
 
         ThreadUtil.safeSleep(5000);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("2"));
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("3"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
         peerEngineClient.stop();
     }
 
@@ -232,8 +232,8 @@ public class FileDownloadIT {
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
         FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("1"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB2(localDB, peerEngineClient);
@@ -253,7 +253,7 @@ public class FileDownloadIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("1"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -267,8 +267,8 @@ public class FileDownloadIT {
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
         FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerID()));
-        peerEngineClient.addFriendPeer(PeerID.buildTestPeerID("1"));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB3(localDB, peerEngineClient);
@@ -291,7 +291,7 @@ public class FileDownloadIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerID.buildTestPeerID("1"));
+        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 

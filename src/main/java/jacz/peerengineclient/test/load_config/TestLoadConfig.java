@@ -2,9 +2,7 @@ package jacz.peerengineclient.test.load_config;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
-import jacz.peerengineclient.test.*;
-import jacz.peerengineservice.test.ResourceTransferEventsImpl;
-import jacz.peerengineservice.test.TempFileManagerEventsImpl;
+import jacz.peerengineclient.test.Client;
 import jacz.util.concurrency.ThreadUtil;
 
 import javax.xml.stream.XMLStreamException;

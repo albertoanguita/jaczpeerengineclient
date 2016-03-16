@@ -1,6 +1,6 @@
 package jacz.peerengineclient;
 
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.datatransfer.GeneralResourceStore;
 import jacz.peerengineservice.util.datatransfer.ResourceStoreResponse;
 import jacz.peerengineservice.util.datatransfer.resource_accession.BasicFileReader;
@@ -28,7 +28,7 @@ public class GeneralResourceStoreImpl implements GeneralResourceStore {
     }
 
     @Override
-    public ResourceStoreResponse requestResource(String resourceStore, PeerID peerID, String resourceID) {
+    public ResourceStoreResponse requestResource(String resourceStore, PeerId peerID, String resourceID) {
         try {
             // first check in the file hash database
             if (fileHashDatabase.containsKey(resourceID)) {

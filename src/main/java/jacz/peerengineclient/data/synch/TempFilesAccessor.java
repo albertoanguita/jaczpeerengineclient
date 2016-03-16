@@ -2,7 +2,7 @@ package jacz.peerengineclient.data.synch;
 
 import jacz.peerengineclient.data.RemotePeerTempShare;
 import jacz.peerengineclient.util.FileAPI;
-import jacz.peerengineservice.PeerID;
+import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
@@ -116,7 +116,7 @@ public class TempFilesAccessor implements DataAccessor {
     }
 
     @Override
-    public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerID clientPeerID) {
+    public ProgressNotificationWithError<Integer, SynchError> getServerSynchProgress(PeerId clientPeerId) {
         return progress;
     }
 }

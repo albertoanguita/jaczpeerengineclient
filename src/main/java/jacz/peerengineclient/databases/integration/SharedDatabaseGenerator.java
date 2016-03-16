@@ -6,8 +6,8 @@ import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
-import jacz.util.concurrency.timer.SimpleTimerAction;
 import jacz.util.concurrency.timer.Timer;
+import jacz.util.concurrency.timer.TimerAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ import java.util.Set;
  * many places that should produce this update (integrated db changes, new downloads, download cancelled...). It would
  * be hard to track all this places, so we just do it automatically and periodically
  */
-public class SharedDatabaseGenerator implements SimpleTimerAction {
+public class SharedDatabaseGenerator implements TimerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(SharedDatabaseGenerator.class);
 
@@ -168,39 +168,39 @@ public class SharedDatabaseGenerator implements SimpleTimerAction {
 
     private void addCreationItem(CreationItem item) {
         // add creators and actors, and then the item itself
-        for (Person creator : item.getCreators()) {
-            addItem(creator);
-        }
-        for (Person actor : item.getActors()) {
-            addItem(actor);
-        }
+//        for (Person creator : item.getCreators()) {
+//            addItem(creator);
+//        }
+//        for (Person actor : item.getActors()) {
+//            addItem(actor);
+//        }
         addItem(item);
     }
 
     private void removeCreationItem(CreationItem item) {
         // add creators and actors, and then the item itself
-        for (Person creator : item.getCreators()) {
-            removeItem(creator);
-        }
-        for (Person actor : item.getActors()) {
-            removeItem(actor);
-        }
+//        for (Person creator : item.getCreators()) {
+//            removeItem(creator);
+//        }
+//        for (Person actor : item.getActors()) {
+//            removeItem(actor);
+//        }
         removeItem(item);
     }
 
     private void addProducedCreationItem(ProducedCreationItem item) {
         // add production companies, and then the rest of the creation item
-        for (Company company : item.getProductionCompanies()) {
-            addItem(company);
-        }
+//        for (Company company : item.getProductionCompanies()) {
+//            addItem(company);
+//        }
         addCreationItem(item);
     }
 
     private void removeProducedCreationItem(ProducedCreationItem item) {
         // add production companies, and then the rest of the creation item
-        for (Company company : item.getProductionCompanies()) {
-            removeItem(company);
-        }
+//        for (Company company : item.getProductionCompanies()) {
+//            removeItem(company);
+//        }
         removeCreationItem(item);
     }
 
