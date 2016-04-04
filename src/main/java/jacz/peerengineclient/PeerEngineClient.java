@@ -35,7 +35,7 @@ import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWrite
 import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
-import jacz.util.files.FileUtil;
+import jacz.util.files.FileGenerator;
 import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
 import jacz.util.hash.hashdb.FileHashDatabase;
@@ -43,6 +43,8 @@ import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.lists.tuple.Triple;
 import jacz.util.log.ErrorHandler;
 import jacz.util.notification.ProgressNotificationWithError;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -377,18 +379,18 @@ public class PeerEngineClient {
             Triple<String, String, String> location;
             if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
                 if (movie != null) {
-                    location = Paths.movieFilePath(baseMediaPath, movie.getId(), movie.getTitle(), FileUtil.getFileName(path));
+                    location = Paths.movieFilePath(baseMediaPath, movie.getId(), movie.getTitle(), FilenameUtils.getName(path));
                 } else {
-                    location = Paths.seriesFilePath(baseMediaPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FileUtil.getFileName(path));
+                    location = Paths.seriesFilePath(baseMediaPath, tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FilenameUtils.getName(path));
                 }
             } else {
                 // to images repo
                 location = Paths.imageFilePath(baseMediaPath, path);
             }
-            newPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+            newPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
             if (!new File(path).getAbsolutePath().equals(new File(newPath).getAbsolutePath())) {
                 // if necessary, move or copy the file to its corresponding place in the media directory
-                FileUtil.move(path, newPath);
+                FileUtils.moveFile(new File(path), new File(newPath));
             }
             return addLocalFileFixedPath(newPath);
         } else {

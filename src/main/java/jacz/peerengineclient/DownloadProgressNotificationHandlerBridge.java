@@ -11,10 +11,12 @@ import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
-import jacz.util.files.FileUtil;
+import jacz.util.files.FileGenerator;
 import jacz.util.lists.tuple.Triple;
 import jacz.util.numeric.range.LongRange;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -134,8 +136,8 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                 // image file -> move to correct location
                 location = Paths.imageFilePath(downloadsPath, downloadInfo.fileName, downloadInfo.fileHash);
             }
-            finalPath = FileUtil.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
-            FileUtil.move(resourceWriter.getPath(), finalPath);
+            finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+            FileUtils.moveFile(new File(resourceWriter.getPath()), new File(finalPath));
             // finally, add this file to the file hash database
             peerEngineClient.getFileHashDatabase().put(finalPath);
         } catch (IOException e) {

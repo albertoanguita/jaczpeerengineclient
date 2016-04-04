@@ -3,16 +3,15 @@ package jacz.peerengineclient.file_system;
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerId;
-import jacz.util.files.FileUtil;
 import jacz.util.lists.tuple.Triple;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * API hard-coded paths
@@ -32,11 +31,11 @@ public class Paths {
 
     private static final String DATA_DIR = "data";
 
-    private static final String DATABASES_DIR = FileUtil.joinPaths(DATA_DIR, "databases");
+    private static final String DATABASES_DIR = FileUtils.getFile(DATA_DIR, "databases").getName();
 
-    private static final String REMOTE_DATABASES_DIR = FileUtil.joinPaths(DATABASES_DIR, "remote");
+    private static final String REMOTE_DATABASES_DIR = FileUtils.getFile(DATABASES_DIR, "remote").getName();
 
-    private static final String REMOTE_SHARES_DIR = FileUtil.joinPaths(DATA_DIR, "remote-shares");
+    private static final String REMOTE_SHARES_DIR = FileUtils.getFile(DATA_DIR, "remote-shares").getName();
 
     private static final String DEFAULT_TEMP_DIR = "temp";
 
@@ -99,51 +98,51 @@ public class Paths {
 
 
     private static String getFilePath(String basePath, String dir, String fileName, String extension) {
-        return FileUtil.joinPaths(basePath, dir, fileName) + extension;
+        return FileUtils.getFile(basePath, dir, fileName + extension).getName();
     }
 
     /**********************
      * directories
      **********************/
 
-    public static String getConfigDir(String basePath) {
-        return FileUtil.joinPaths(basePath, CONFIG_DIR);
+    public static File getConfigDir(String basePath) {
+        return FileUtils.getFile(basePath, CONFIG_DIR);
     }
 
-    public static String getEncryptionDir(String basePath) {
-        return FileUtil.joinPaths(basePath, ENCRYPTION_DIR);
+    public static File getEncryptionDir(String basePath) {
+        return FileUtils.getFile(basePath, ENCRYPTION_DIR);
     }
 
-    public static String getStatisticsDir(String basePath) {
-        return FileUtil.joinPaths(basePath, STATISTICS_DIR);
+    public static File getStatisticsDir(String basePath) {
+        return FileUtils.getFile(basePath, STATISTICS_DIR);
     }
 
-    public static String getDataDir(String basePath) {
-        return FileUtil.joinPaths(basePath, DATA_DIR);
+    public static File getDataDir(String basePath) {
+        return FileUtils.getFile(basePath, DATA_DIR);
     }
 
-    public static String getDatabasesDir(String basePath) {
-        return FileUtil.joinPaths(basePath, DATABASES_DIR);
+    public static File getDatabasesDir(String basePath) {
+        return FileUtils.getFile(basePath, DATABASES_DIR);
     }
 
-    public static String getRemoteDatabasesDir(String basePath) {
-        return FileUtil.joinPaths(basePath, REMOTE_DATABASES_DIR);
+    public static File getRemoteDatabasesDir(String basePath) {
+        return FileUtils.getFile(basePath, REMOTE_DATABASES_DIR);
     }
 
-    public static String getRemoteSharesDir(String basePath) {
-        return FileUtil.joinPaths(basePath, REMOTE_SHARES_DIR);
+    public static File getRemoteSharesDir(String basePath) {
+        return FileUtils.getFile(basePath, REMOTE_SHARES_DIR);
     }
 
-    public static String getDefaultTempDir(String basePath) {
-        return FileUtil.joinPaths(basePath, DEFAULT_TEMP_DIR);
+    public static File getDefaultTempDir(String basePath) {
+        return FileUtils.getFile(basePath, DEFAULT_TEMP_DIR);
     }
 
-    public static String getDefaultMediaDir(String basePath) {
-        return FileUtil.joinPaths(basePath, DEFAULT_MEDIA_DIR);
+    public static File getDefaultMediaDir(String basePath) {
+        return FileUtils.getFile(basePath, DEFAULT_MEDIA_DIR);
     }
 
-    public static List<String> getOrderedDirectories(String basePath) {
-        List<String> directories = new ArrayList<>();
+    public static List<File> getOrderedDirectories(String basePath) {
+        List<File> directories = new ArrayList<>();
         directories.add(getConfigDir(basePath));
         directories.add(getEncryptionDir(basePath));
         directories.add(getStatisticsDir(basePath));
@@ -248,10 +247,20 @@ public class Paths {
     }
 
     public static Set<PeerId> listRemoteDBPeers(String basePath) throws FileNotFoundException {
-        String[] filesInRemoteDir = FileUtil.getDirectoryContents(getRemoteDatabasesDir(basePath));
+        Collection<File> filesInRemoteDir = FileUtils.listFiles(getRemoteDatabasesDir(basePath), new IOFileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return true;
+            }
+
+            @Override
+            public boolean accept(File file, String s) {
+                return true;
+            }
+        }, null);
         Set<PeerId> remoteDatabasePeers = new HashSet<>();
-        for (String file : filesInRemoteDir) {
-            remoteDatabasePeers.add(new PeerId(FileUtil.getFileNameWithoutExtension(file)));
+        for (File file : filesInRemoteDir) {
+            remoteDatabasePeers.add(new PeerId(FilenameUtils.getBaseName(file.getName())));
         }
         return remoteDatabasePeers;
     }
@@ -312,63 +321,54 @@ public class Paths {
      * downloads
      ***********************/
 
-    public static String imagesDir(String downloadsDir) {
-        return FileUtil.joinPaths(downloadsDir, IMAGES_DIR);
+    public static File imagesDir(String downloadsDir) {
+        return FileUtils.getFile(downloadsDir, IMAGES_DIR);
     }
 
-    public static String moviesDir(String downloadsDir) {
-        return FileUtil.joinPaths(downloadsDir, MOVIES_DIR);
+    public static File moviesDir(String downloadsDir) {
+        return FileUtils.getFile(downloadsDir, MOVIES_DIR);
     }
 
-    public static String seriesDir(String downloadsDir) {
-        return FileUtil.joinPaths(downloadsDir, TV_SERIES_DIR);
+    public static File seriesDir(String downloadsDir) {
+        return FileUtils.getFile(downloadsDir, TV_SERIES_DIR);
     }
 
-    private static String generateTitleDir(String baseDir, Integer itemId, String itemTitle) {
+    private static File generateTitleDir(File baseDir, Integer itemId, String itemTitle) {
         String dir = (itemTitle != null && !itemTitle.isEmpty()) ? itemTitle : UNKNOWN_TITLE_DIR;
         if (itemId != null) {
             dir += "_" + itemId;
         }
-        return FileUtil.joinPaths(baseDir, dir);
-    }
-
-    private static void createDir(String dir) throws IOException {
-        File file = new File(dir);
-        if (!file.isDirectory()) {
-            if (!file.mkdir()) {
-                throw new IOException("Could not create directory: " + dir);
-            }
-        }
+        return FileUtils.getFile(baseDir, dir);
     }
 
     public static Triple<String, String, String> imageFilePath(String downloadsDir, String filePath) throws IOException {
         String hash = PeerEngineClient.getHashFunction().digestAsHex(new File(filePath));
-        return imageFilePath(downloadsDir, FileUtil.getFileName(filePath), hash);
+        return imageFilePath(downloadsDir, FilenameUtils.getName(filePath), hash);
     }
 
     public static Triple<String, String, String> imageFilePath(String downloadsDir, String fileName, String hash) throws IOException {
-        createDir(imagesDir(downloadsDir));
-        return new Triple<>(imagesDir(downloadsDir), hash, FileUtil.getFileExtension(fileName));
+        FileUtils.forceMkdir(imagesDir(downloadsDir));
+        return new Triple<>(imagesDir(downloadsDir).getName(), hash, FilenameUtils.getExtension(fileName));
     }
 
     public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {
-        createDir(imagesDir(downloadsDir));
+        FileUtils.forceMkdir(imagesDir(downloadsDir));
         return imageHash.getHash() + "." + imageHash.getExtension();
     }
 
     public static Triple<String, String, String> movieFilePath(String downloadsDir, int movieId, String movieTitle, String fileName) throws IOException {
-        createDir(moviesDir(downloadsDir));
-        String titleDir = generateTitleDir(moviesDir(downloadsDir), movieId, movieTitle);
-        createDir(titleDir);
-        return new Triple<>(titleDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
+        FileUtils.forceMkdir(moviesDir(downloadsDir));
+        File titleDir = generateTitleDir(moviesDir(downloadsDir), movieId, movieTitle);
+        FileUtils.forceMkdir(titleDir);
+        return new Triple<>(titleDir.getName(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
     }
 
     public static Triple<String, String, String> seriesFilePath(String downloadsDir, Integer seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
-        createDir(seriesDir(downloadsDir));
-        String seriesTitledDir = generateTitleDir(seriesDir(downloadsDir), seriesId, seriesTitle);
-        createDir(seriesTitledDir);
-        String chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
-        createDir(chapterTitledDir);
-        return new Triple<>(chapterTitledDir, FileUtil.getFileNameWithoutExtension(fileName), FileUtil.getFileExtension(fileName));
+        FileUtils.forceMkdir(seriesDir(downloadsDir));
+        File seriesTitledDir = generateTitleDir(seriesDir(downloadsDir), seriesId, seriesTitle);
+        FileUtils.forceMkdir(seriesTitledDir);
+        File chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
+        FileUtils.forceMkdir(chapterTitledDir);
+        return new Triple<>(chapterTitledDir.getName(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
     }
 }

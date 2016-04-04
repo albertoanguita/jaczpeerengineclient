@@ -13,10 +13,11 @@ import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
-import jacz.util.files.FileUtil;
+import jacz.util.files.FileGenerator;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.log.ErrorHandler;
+import org.apache.commons.io.FileUtils;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -46,18 +47,18 @@ public class SessionManager {
         // first find a free user directory, then create all initial config files in it and return it
         // base path is created if needed
 
-        if (!FileUtil.isDirectory(basePath)) {
-            FileUtil.createDirectory(basePath);
+        if (!new File(basePath).isDirectory()) {
+            FileUtils.forceMkdir(new File(basePath));
         }
         try {
-            Duple<String, String> newUserDirectory = FileUtil.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
+            Duple<String, String> newUserDirectory = FileGenerator.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
             String userPath = newUserDirectory.element1;
-            String tempPath = Paths.getDefaultTempDir(userPath);
-            String mediaPath = Paths.getDefaultMediaDir(userPath);
+            String tempPath = Paths.getDefaultTempDir(userPath).getName();
+            String mediaPath = Paths.getDefaultMediaDir(userPath).getName();
 
             // create sub-directories
-            for (String dir : Paths.getOrderedDirectories(userPath)) {
-                FileUtil.createDirectory(dir);
+            for (File dir : Paths.getOrderedDirectories(userPath)) {
+                FileUtils.forceMkdir(dir);
             }
 
             // database files
