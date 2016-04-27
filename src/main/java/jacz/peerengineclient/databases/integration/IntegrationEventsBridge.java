@@ -1,7 +1,9 @@
 package jacz.peerengineclient.databases.integration;
 
 import jacz.database.DatabaseMediator;
-import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Alberto on 28/12/2015.
@@ -11,29 +13,29 @@ public class IntegrationEventsBridge implements IntegrationEvents {
 
     private final IntegrationEvents integrationEvents;
 
-    private final SequentialTaskExecutor sequentialTaskExecutor;
+    private final ExecutorService sequentialTaskExecutor;
 
     public IntegrationEventsBridge(IntegrationEvents integrationEvents) {
         this.integrationEvents = integrationEvents;
-        this.sequentialTaskExecutor = new SequentialTaskExecutor();
+        this.sequentialTaskExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Override
     public void newIntegratedItem(DatabaseMediator.ItemType type, Integer id) {
-        sequentialTaskExecutor.executeTask(() -> integrationEvents.newIntegratedItem(type, id));
+        sequentialTaskExecutor.submit(() -> integrationEvents.newIntegratedItem(type, id));
     }
 
     @Override
     public void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id) {
-        sequentialTaskExecutor.executeTask(() -> integrationEvents.integratedItemHasNewMediaContent(type, id));
+        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasNewMediaContent(type, id));
     }
 
     @Override
     public void integratedItemsRemoved() {
-        sequentialTaskExecutor.executeTask(integrationEvents::integratedItemsRemoved);
+        sequentialTaskExecutor.submit(integrationEvents::integratedItemsRemoved);
     }
 
     public void stop() {
-        sequentialTaskExecutor.stopAndWaitForFinalization();
+        sequentialTaskExecutor.shutdown();
     }
 }

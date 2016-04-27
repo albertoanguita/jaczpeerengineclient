@@ -5,7 +5,6 @@ import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
-import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
 import jacz.util.concurrency.timer.Timer;
 import jacz.util.concurrency.timer.TimerAction;
 import org.slf4j.Logger;
@@ -13,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Handles the shared database, and its population with items from the integrated database
@@ -48,7 +49,7 @@ public class SharedDatabaseGenerator implements TimerAction {
      */
     private FileAPI fileAPI;
 
-    private final SequentialTaskExecutor sequentialTaskExecutor;
+    private final ExecutorService sequentialTaskExecutor;
 
     private final ConcurrencyController concurrencyController;
 
@@ -63,7 +64,7 @@ public class SharedDatabaseGenerator implements TimerAction {
         this.integratedPath = databases.getIntegratedDB();
         this.sharedPath = databases.getSharedDB();
         this.integratedToShared = databases.getItemRelations().getIntegratedToShared();
-        sequentialTaskExecutor = new SequentialTaskExecutor();
+        sequentialTaskExecutor = Executors.newSingleThreadExecutor();
         this.concurrencyController = concurrencyController;
         timer = new Timer(UPDATE_DELAY, this, false, this.getClass().getName());
     }
@@ -84,7 +85,7 @@ public class SharedDatabaseGenerator implements TimerAction {
     public void updateSharedDatabase() {
 
         // we use the sequential task executor so there cannot be concurrent processes
-        sequentialTaskExecutor.executeTask(() -> {
+        sequentialTaskExecutor.submit(() -> {
             updateAvailableHashes();
             // go through all movies and series
             logger.info("Starting shared database generation...");
@@ -244,6 +245,6 @@ public class SharedDatabaseGenerator implements TimerAction {
 
     public synchronized void stop() {
         timer.stop();
-        sequentialTaskExecutor.stopAndWaitForFinalization();
+        sequentialTaskExecutor.shutdown();
     }
 }

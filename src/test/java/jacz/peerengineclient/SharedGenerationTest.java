@@ -6,10 +6,11 @@ import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.test.Client;
 import jacz.peerengineclient.test.TestUtil;
 import jacz.util.concurrency.ThreadUtil;
-import jacz.util.files.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -42,7 +43,7 @@ public class SharedGenerationTest {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 //        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();

@@ -14,6 +14,7 @@ import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.ThreadUtil;
 import junitx.framework.ListAssert;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 

@@ -1,5 +1,6 @@
 package jacz.peerengineclient;
 
+import com.neovisionaries.i18n.CountryCode;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
@@ -8,8 +9,11 @@ import jacz.peerengineclient.file_system.*;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.GeneralEvents;
+import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
+import jacz.peerengineservice.client.connection.peers.PeerConnectionConfig;
+import jacz.peerengineservice.client.connection.peers.kb.PeerKnowledgeBase;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
@@ -36,13 +40,15 @@ public class SessionManager {
 
     private static final String DEFAULT_NICK = "user";
 
+    private static final int DEFAULT_LOCAL_PORT = 0;
+
     private static final int DEFAULT_EXTERNAL_PORT = 37720;
 
     public static final int CRC_LENGTH = 8;
 
     // todo allow changing temp and downloads dir. Store old downloads dir to be able to automatically detect files requiring move in old dirs
 
-    public static synchronized String createUserConfig(String basePath, byte[] randomBytes, String nick) throws IOException {
+    public static synchronized String createUserConfig(String basePath, byte[] randomBytes, String nick, CountryCode mainCountry) throws IOException {
         // creates a new user account
         // first find a free user directory, then create all initial config files in it and return it
         // base path is created if needed
@@ -53,35 +59,55 @@ public class SessionManager {
         try {
             Duple<String, String> newUserDirectory = FileGenerator.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
             String userPath = newUserDirectory.element1;
-            String tempPath = Paths.getDefaultTempDir(userPath).getName();
             String mediaPath = Paths.getDefaultMediaDir(userPath).getName();
+            String tempPath = Paths.getDefaultTempDir(userPath).getName();
 
             // create sub-directories
             for (File dir : Paths.getOrderedDirectories(userPath)) {
                 FileUtils.forceMkdir(dir);
             }
 
+            // id and encryption files
+            Duple<PeerId, PeerEncryption> peerIDAndEncryption = PeerId.generateIdAndEncryptionKeys(randomBytes);
+            PeerIdConfig.writePeerIdConfig(userPath, peerIDAndEncryption.element1);
+            VersionedObjectSerializer.serialize(peerIDAndEncryption.element2, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
+
+            // config files
+            new PeerConnectionConfig(Paths.connectionConfigPath(userPath), mainCountry);
+            new NetworkConfiguration(Paths.networkConfigPath(basePath), DEFAULT_LOCAL_PORT, DEFAULT_EXTERNAL_PORT);
+
             // database files
             DatabaseIO.createNewDatabaseFileStructure(userPath);
 
             // peer knowledge base
-            // todo drop and create database
+            PeerKnowledgeBase.createNew(Paths.peerKBPath(userPath));
 
-            Duple<PeerId, PeerEncryption> peerIDAndEncryption = PeerId.generateIdAndEncryptionKeys(randomBytes);
-            stopAndSave(
-                    userPath,
-                    peerIDAndEncryption.element1,
+            // personal data file
+            PeersPersonalData peersPersonalData = new PeersPersonalData(
+                    Paths.personalDataPath(userPath),
                     DEFAULT_NICK,
-                    new NetworkConfiguration(0, DEFAULT_EXTERNAL_PORT),
-//                    new PeersPersonalData(DEFAULT_NICK, nick),
-//                    new PeerRelations(),
-                    null,
-                    null,
-                    tempPath,
-                    mediaPath,
-                    peerIDAndEncryption.element2,
-                    new TransferStatistics()
-                    );
+                    nick);
+
+            // user media paths
+            new MediaPaths(Paths.mediaPathsConfigPath(userPath), mediaPath, tempPath);
+
+            // statistics file
+            TransferStatistics.createNew(Paths.statisticsPath(userPath));
+
+//            stopAndSave(
+//                    userPath,
+//                    peerIDAndEncryption.element1,
+//                    DEFAULT_NICK,
+//                    new NetworkConfiguration(0, DEFAULT_EXTERNAL_PORT),
+////                    new PeersPersonalData(DEFAULT_NICK, nick),
+////                    new PeerRelations(),
+//                    null,
+//                    null,
+//                    tempPath,
+//                    mediaPath,
+//                    peerIDAndEncryption.element2,
+//                    new TransferStatistics()
+//            );
 
             PeerShareIO.createNewFileStructure(userPath);
 //            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
@@ -130,28 +156,16 @@ public class SessionManager {
 //            String tempDownloadsPath = config.element7;
 //            String baseMediaPath = config.element8;
             PeerId ownPeerId = PeerIdConfig.readPeerId(userPath);
-            String ownNick = NickConfig.readNick(userPath);
-            NetworkConfiguration networkConfiguration = NetworkConfig.readNetworkConfig(userPath);
             Duple<Integer, Integer> speedLimits = EngineConfig.readSpeedLimitsConfig(userPath);
             Integer maxDownloadSpeed = speedLimits.element1;
             Integer maxUploadSpeed = speedLimits.element2;
-            Duple<String, String> paths = PathsConfig.readPathsConfig(userPath);
-            String tempDownloadsPath = paths.element1;
-            String baseMediaPath = paths.element2;
             PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
-            TransferStatistics transferStatistics = new TransferStatistics(Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
 
             PeerEngineClient peerEngineClient = new PeerEngineClient(
                     userPath,
                     ownPeerId,
                     peerEncryption,
-                    ownNick,
-                    networkConfiguration,
-//                    peersPersonalData,
-                    transferStatistics,
-//                    peerRelations,
-                    tempDownloadsPath,
-                    baseMediaPath,
+                    new MediaPaths(Paths.mediaPathsConfigPath(userPath)),
                     generalEvents,
                     connectionEvents,
                     resourceTransferEvents,
@@ -168,27 +182,27 @@ public class SessionManager {
         }
     }
 
-    public static synchronized void stopAndSave(
-            String userPath,
-            PeerId ownPeerId,
-            String ownNick,
-            NetworkConfiguration networkConfiguration,
-//            PeersPersonalData peersPersonalData,
-//            PeerRelations peerRelations,
-            Integer maxDownloadSpeed,
-            Integer maxUploadSpeed,
-            String tempDownloadsPath,
-            String baseMediaPath,
-            PeerEncryption peerEncryption,
-            TransferStatistics transferStatistics) throws IOException, XMLStreamException {
-        transferStatistics.stop();
-//        FileIO.writeConfig(userPath, ownPeerId, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
-        PeerIdConfig.writePeerIdConfig(userPath, ownPeerId);
-        NickConfig.writeNickConfig(userPath, ownNick);
-        NetworkConfig.writeNetworkConfig(userPath, networkConfiguration);
-        EngineConfig.writeSpeedLimitsConfig(userPath, maxDownloadSpeed, maxUploadSpeed);
-        PathsConfig.writePathsConfig(userPath, tempDownloadsPath, baseMediaPath);
-        VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
-        VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
-    }
+//    public static synchronized void stopAndSave(
+//            String userPath,
+//            PeerId ownPeerId,
+//            String ownNick,
+//            NetworkConfiguration networkConfiguration,
+////            PeersPersonalData peersPersonalData,
+////            PeerRelations peerRelations,
+//            Integer maxDownloadSpeed,
+//            Integer maxUploadSpeed,
+//            String tempDownloadsPath,
+//            String baseMediaPath,
+//            PeerEncryption peerEncryption,
+//            TransferStatistics transferStatistics) throws IOException, XMLStreamException {
+//        transferStatistics.stop();
+////        FileIO.writeConfig(userPath, ownPeerId, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
+//        PeerIdConfig.writePeerIdConfig(userPath, ownPeerId);
+//        NickConfig.writeNickConfig(userPath, ownNick);
+//        NetworkConfig.writeNetworkConfig(userPath, networkConfiguration);
+//        EngineConfig.writeSpeedLimitsConfig(userPath, maxDownloadSpeed, maxUploadSpeed);
+//        PathsConfig.writePathsConfig(userPath, tempDownloadsPath, baseMediaPath);
+//        VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
+//        VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
+//    }
 }

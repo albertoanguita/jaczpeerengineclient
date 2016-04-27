@@ -12,8 +12,8 @@ import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.DownloadState;
 import jacz.util.concurrency.ThreadUtil;
-import jacz.util.files.FileUtil;
 import jacz.util.lists.tuple.Triple;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 
@@ -134,8 +134,8 @@ public class FileDownloadIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
+        FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
+        FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getTempDownloadsPath()));
         // download at 25 kB/s
         peerEngineClient.setMaxDesiredDownloadSpeed(250);
         peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
@@ -205,12 +205,13 @@ public class FileDownloadIT {
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(namePathAndHash(File.VIDEO_4).element3));
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(namePathAndHash(File.VIDEO_5).element3));
 
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie0.getTitle() + "_" + movie0.getId(), videoFile.getName())));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie0.getTitle() + "_" + movie0.getId(), subtitleFile.getName())));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.seriesDir(peerEngineClient.getMediaPath()), tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), videoFile2.getName())));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.seriesDir(peerEngineClient.getMediaPath()), tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), subtitleFile2.getName())));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), "untitled_item" + "_" + movie1.getId(), videoFile4.getName())));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie2.getTitle() + "_" + movie2.getId(), videoFile5.getName())));
+        //.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie0.getTitle() + "_" + movie0.getId(), videoFile.getName())));
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie0.getTitle() + "_" + movie0.getId(), videoFile.getName()).isFile());
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie0.getTitle() + "_" + movie0.getId(), subtitleFile.getName()).isFile());
+        Assert.assertTrue(FileUtils.getFile(Paths.seriesDir(peerEngineClient.getMediaPath()), tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), videoFile2.getName()).isFile());
+        Assert.assertTrue(FileUtils.getFile(Paths.seriesDir(peerEngineClient.getMediaPath()), tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), subtitleFile2.getName()).isFile());
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), "untitled_item" + "_" + movie1.getId(), videoFile4.getName()).isFile());
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie2.getTitle() + "_" + movie2.getId(), videoFile5.getName()).isFile());
 
 
 
@@ -231,7 +232,7 @@ public class FileDownloadIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
+        FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
         peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
@@ -266,7 +267,7 @@ public class FileDownloadIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
+        FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
         peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();

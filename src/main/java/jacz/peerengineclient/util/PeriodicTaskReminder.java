@@ -7,13 +7,14 @@ import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
 import jacz.util.concurrency.daemon.Daemon;
 import jacz.util.concurrency.daemon.DaemonAction;
-import jacz.util.concurrency.task_executor.SequentialTaskExecutor;
-import jacz.util.concurrency.timer.TimerAction;
 import jacz.util.concurrency.timer.Timer;
+import jacz.util.concurrency.timer.TimerAction;
 
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Reminder for remote synch processes
@@ -70,7 +71,7 @@ public class PeriodicTaskReminder implements TimerAction {
     private final PeerSpecificTask peerShareManagerRemoteShareTask;
     private final PeerSpecificTask peerShareManagerTempFilesTask;
 
-    private final SequentialTaskExecutor imageDownloaderTask;
+    private final ExecutorService imageDownloaderTask;
 
     // todo 3 daemons and 3 queues -> new inner class
     // for image downloader, a sequential task executor
@@ -102,7 +103,7 @@ public class PeriodicTaskReminder implements TimerAction {
                 peerShareManager.synchRemoteTempFiles(peerID);
             }
         };
-        imageDownloaderTask = new SequentialTaskExecutor();
+        imageDownloaderTask = Executors.newSingleThreadExecutor();
     }
 
     public void start() {
@@ -117,7 +118,7 @@ public class PeriodicTaskReminder implements TimerAction {
             peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerId);
             peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
         }
-        imageDownloaderTask.executeTask(imageDownloader::downloadMissingImages);
+        imageDownloaderTask.submit(imageDownloader::downloadMissingImages);
         return null;
     }
 
@@ -126,6 +127,6 @@ public class PeriodicTaskReminder implements TimerAction {
         databaseSynchManagerTask.stop();
         peerShareManagerRemoteShareTask.stop();
         peerShareManagerTempFilesTask.stop();
-        imageDownloaderTask.stopAndWaitForFinalization();
+        imageDownloaderTask.shutdown();
     }
 }
