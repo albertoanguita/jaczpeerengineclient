@@ -137,9 +137,9 @@ public class FileDownloadIT {
         FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
         FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getTempDownloadsPath()));
         // download at 25 kB/s
-        peerEngineClient.setMaxDesiredDownloadSpeed(250);
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.setMaxDownloadSpeed(250);
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("3"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
@@ -217,8 +217,8 @@ public class FileDownloadIT {
 
         ThreadUtil.safeSleep(5000);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("3"));
         peerEngineClient.stop();
     }
 
@@ -234,7 +234,7 @@ public class FileDownloadIT {
         peerEngineClient.getFileHashDatabase().clear();
         FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB2(localDB, peerEngineClient);
@@ -254,7 +254,7 @@ public class FileDownloadIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -269,7 +269,7 @@ public class FileDownloadIT {
         peerEngineClient.getFileHashDatabase().clear();
         FileUtils.cleanDirectory(new java.io.File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB3(localDB, peerEngineClient);
@@ -292,7 +292,7 @@ public class FileDownloadIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 

@@ -12,6 +12,8 @@ import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
 
+import java.io.IOException;
+
 /**
  * This class manages all the ongoing synch processes, maintaining a table with the active synch processes
  * <p>
@@ -62,7 +64,7 @@ public class DatabaseSynchManager {
         }
 
         @Override
-        public DatabaseAccessor getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException {
+        public DatabaseAccessor getRemoteDataAccessor(PeerId peerID) throws IOException {
             return new DatabaseAccessor(
                     databaseManager,
                     peerID,

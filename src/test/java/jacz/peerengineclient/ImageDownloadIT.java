@@ -10,11 +10,12 @@ import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.ThreadUtil;
-import jacz.util.files.FileUtil;
 import jacz.util.lists.tuple.Triple;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -22,7 +23,7 @@ import java.io.IOException;
  */
 public class ImageDownloadIT {
 
-    public enum File {
+    public enum TestFile {
         VIDEO_1,
         SUB_1,
         VIDEO_2,
@@ -38,11 +39,11 @@ public class ImageDownloadIT {
     }
 
     // paths and MD5 hashes of the files above:
-    private static Triple<String, String, String> namePathAndHash(File file) {
+    private static Triple<String, String, String> namePathAndHash(TestFile testFile) {
         String name;
         String path = "./etc/test-files-cp/";
         String hash;
-        switch (file) {
+        switch (testFile) {
             case SUB_1:
                 name = "file1.srt";
                 hash = "572976d9712dc9bafbcdd68f5945b25d".toUpperCase();
@@ -126,11 +127,11 @@ public class ImageDownloadIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
+        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
         // download at 25 kB/s
-        peerEngineClient.setMaxDesiredDownloadSpeed(250);
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.setMaxDownloadSpeed(250);
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
@@ -146,17 +147,17 @@ public class ImageDownloadIT {
 
         announceEvent(1);
 
-        assertFile(peerEngineClient, FileUtil.joinPaths(peerEngineClient.getMediaPath(), "images", namePathAndHash(File.GRAMOS).element3 + ".jpg"), namePathAndHash(File.GRAMOS).element3);
-        assertFile(peerEngineClient, FileUtil.joinPaths(peerEngineClient.getMediaPath(), "images", namePathAndHash(File.MOON).element3) + ".jpeg", namePathAndHash(File.MOON).element3);
-        assertFileNot(peerEngineClient, FileUtil.joinPaths(peerEngineClient.getMediaPath(), "images", namePathAndHash(File.ALIEN).element3) + ".jpg", namePathAndHash(File.ALIEN).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(peerEngineClient.getMediaPath(), "images", namePathAndHash(TestFile.GRAMOS).element3 + ".jpg"), namePathAndHash(TestFile.GRAMOS).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(peerEngineClient.getMediaPath(), "images", namePathAndHash(TestFile.MOON).element3 + ".jpeg"), namePathAndHash(TestFile.MOON).element3);
+        assertFileNot(peerEngineClient, FileUtils.getFile(peerEngineClient.getMediaPath(), "images", namePathAndHash(TestFile.ALIEN).element3) + ".jpg", namePathAndHash(TestFile.ALIEN).element3);
 
         // wait 4 cycles
         ThreadUtil.safeSleep(4 * CYCLE_LENGTH);
         announceEvent(5);
 
-        assertFile(peerEngineClient, FileUtil.joinPaths(peerEngineClient.getMediaPath(), "images", namePathAndHash(File.ALIEN).element3) + ".jpg", namePathAndHash(File.ALIEN).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(peerEngineClient.getMediaPath(), "images", namePathAndHash(TestFile.ALIEN).element3 + ".jpg"), namePathAndHash(TestFile.ALIEN).element3);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("2"));
         peerEngineClient.stop();
     }
 
@@ -165,9 +166,9 @@ public class ImageDownloadIT {
     public void imageDownload2() throws IOException, XMLStreamException {
         String userPath = "./etc/user_1";
 
-        FileUtil.clearDirectory("./etc/test-files-cp/");
-        for (String file : FileUtil.getDirectoryContents("./etc/test-files/")) {
-            FileUtil.copy(FileUtil.joinPaths("./etc/test-files/", file), "./etc/test-files-cp/");
+        FileUtils.cleanDirectory(new File("./etc/test-files-cp/"));
+        for (File file : FileUtils.listFiles(new File("./etc/test-files/"), null, false)) {
+            FileUtils.copyFile(file, FileUtils.getFile("./etc/test-files-cp/", file.getName()));
         }
 
         // clear dbs
@@ -175,9 +176,9 @@ public class ImageDownloadIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
 
         setupDB2(sharedDB, peerEngineClient);
@@ -198,7 +199,7 @@ public class ImageDownloadIT {
         ThreadUtil.safeSleep(4 * CYCLE_LENGTH);
         announceEvent(5);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -212,37 +213,37 @@ public class ImageDownloadIT {
     private static void setupDB1(String db, PeerEngineClient peerEngineClient) throws IOException {
         // named movie
         Movie movie = new Movie(db, "Alien");
-        movie.setImageHash(new ImageHash(namePathAndHash(File.ALIEN).element3, "jpg"));
+        movie.setImageHash(new ImageHash(namePathAndHash(TestFile.ALIEN).element3, "jpg"));
 //        peerEngineClient.localItemModified(movie);
     }
 
     private static void setupDB2(String db, PeerEngineClient peerEngineClient) throws IOException {
         // named movie
         Movie movie = new Movie(db, "21 gramos");
-        movie.setImageHash(new ImageHash(namePathAndHash(File.GRAMOS).element3, "jpg"));
+        movie.setImageHash(new ImageHash(namePathAndHash(TestFile.GRAMOS).element3, "jpg"));
 
         TVSeries tvSeries = new TVSeries(db, "Moon");
-        tvSeries.setImageHash(new ImageHash(namePathAndHash(File.MOON).element3, "jpeg"));
+        tvSeries.setImageHash(new ImageHash(namePathAndHash(TestFile.MOON).element3, "jpeg"));
 
         addFiles2(peerEngineClient);
     }
 
     private static void addFiles2(PeerEngineClient peerEngineClient) throws IOException {
-        peerEngineClient.addLocalImageFile(namePathAndHash(File.GRAMOS).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(File.MOON).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(File.ALIEN).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.ALIEN).element2);
     }
 
-    private void assertFile(PeerEngineClient peerEngineClient, String path, String hash) {
+    private void assertFile(PeerEngineClient peerEngineClient, File path, String hash) {
         System.out.println("Asserting file at " + path + "...");
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(hash));
-        Assert.assertTrue(FileUtil.isFile(path));
+        Assert.assertTrue(path.isFile());
     }
 
     private void assertFileNot(PeerEngineClient peerEngineClient, String path, String hash) {
         System.out.println("Asserting not file at " + path + "...");
         Assert.assertFalse(peerEngineClient.getFileHashDatabase().containsKey(hash));
-        Assert.assertFalse(FileUtil.isFile(path));
+        Assert.assertFalse(new File(path).isFile());
     }
 
 }

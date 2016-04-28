@@ -5,11 +5,11 @@ import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
-import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.hash.SHA_1;
 import jacz.util.lists.tuple.Duple;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -282,8 +282,8 @@ public class ItemIntegrator {
                         databases.getRemoteDB(peerAndId.element1),
                         type,
                         peerAndId.element2);
-            } catch (UnavailablePeerException e) {
-                // this peer is no longer a friend -> skip
+            } catch (IOException e) {
+                // could not retrieve its remote database -> skip
                 continue;
             }
             remoteItems.add(new Duple<>(peerAndId.element1, remoteItem));

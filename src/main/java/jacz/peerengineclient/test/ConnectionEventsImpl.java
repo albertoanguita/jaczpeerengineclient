@@ -5,14 +5,19 @@ import jacz.peerengineservice.client.connection.State;
 import jacz.util.network.IP4Port;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Connection events
  */
 public class ConnectionEventsImpl implements ConnectionEvents {
     
     @Override
-    public void listeningPortModified(int port) {
-        System.out.println("Listening port modified: " + port);
-    }
+    public void localPortModified(int port) {
+            System.out.println("Local port modified: " + port);
+        }
+
+    @Override
+    public void externalPortModified(int port) {
+            System.out.println("External port modified: " + port);
+        }
 
     @Override
     public void initializingConnection() {

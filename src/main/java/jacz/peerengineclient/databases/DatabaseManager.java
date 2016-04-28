@@ -14,7 +14,6 @@ import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * This class manages data databases and their proper synchronization and integration
@@ -43,19 +42,17 @@ public class DatabaseManager {
             Databases databases,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            PeerEngineClient peerEngineClient,
-            String basePath,
-            Set<PeerId> friendPeers) throws IOException {
+            PeerEngineClient peerEngineClient) throws IOException {
         this.peerEngineClient = peerEngineClient;
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
         dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
         sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
-        // just in case, try to add databases for all registered friend peers
-        for (PeerId friendPeer : friendPeers) {
-            addPeer(basePath, friendPeer);
-        }
+//        // just in case, try to add databases for all registered friend peers
+//        for (PeerId friendPeer : friendPeers) {
+//            addPeer(basePath, friendPeer);
+//        }
     }
 
     public void start() {
@@ -126,12 +123,12 @@ public class DatabaseManager {
      *
      * @param peerID new friend peer
      */
-    public synchronized void addPeer(String path, PeerId peerID) throws IOException {
-        if (!databases.containsRemoteDB(peerID)) {
-            String dbPath = DatabaseIO.createNewRemoteDatabase(path, peerID);
-            databases.addRemoteDB(peerID, dbPath);
-        }
-    }
+//    public synchronized void addPeer(String path, PeerId peerID) throws IOException {
+//        if (!databases.containsRemoteDB(peerID)) {
+//            String dbPath = DatabaseIO.createNewRemoteDatabase(path, peerID);
+//            databases.addRemoteDB(peerID, dbPath);
+//        }
+//    }
 
     /**
      * Permanently removes a peer from the database handling.

@@ -45,17 +45,19 @@ public class ItemSerializer {
 
     static SerializedItem serializeVideoFile(VideoFile videoFile) {
         SerializedItem item = setupSerializeItem(videoFile, true);
-        serializeFileWithLanguages(item, videoFile);
+        serializeFile(item, videoFile);
         item.addInteger(DatabaseMediator.Field.MINUTES, videoFile.getMinutes());
         item.addInteger(DatabaseMediator.Field.RESOLUTION, videoFile.getResolution());
         item.addQuality(DatabaseMediator.Field.QUALITY_CODE, videoFile.getQuality());
+        item.addLocalizedLanguageList(DatabaseMediator.Field.LOCALIZED_LANGUAGE_LIST, videoFile.getLocalizedLanguages());
         item.addIntegerList(DatabaseMediator.Field.SUBTITLE_FILE_LIST, videoFile.getSubtitleFilesIds());
         return item;
     }
 
     static SerializedItem serializeSubtitleFile(SubtitleFile subtitleFile) {
         SerializedItem item = setupSerializeItem(subtitleFile, true);
-        serializeFileWithLanguages(item, subtitleFile);
+        serializeFile(item, subtitleFile);
+        item.addLocalizedLanguage(DatabaseMediator.Field.LOCALIZED_LANGUAGE, subtitleFile.getLocalizedLanguage());
         return item;
     }
 
@@ -72,6 +74,7 @@ public class ItemSerializer {
     }
 
     static void serializeCreationItem(SerializedItem item, CreationItem creationItem) {
+        item.addLanguage(DatabaseMediator.Field.LANGUAGE, creationItem.getLanguage());
         item.addString(DatabaseMediator.Field.TITLE, creationItem.getTitle());
         item.addString(DatabaseMediator.Field.ORIGINAL_TITLE, creationItem.getOriginalTitle());
         item.addInteger(DatabaseMediator.Field.YEAR, creationItem.getYear());
@@ -84,15 +87,15 @@ public class ItemSerializer {
 //        item.addIntegerList(DatabaseMediator.Field.ACTOR_LIST, creationItem.getActorsIds());
     }
 
-    static void serializeNamedItem(SerializedItem item, NamedItem namedItem) {
-        item.addString(DatabaseMediator.Field.NAME, namedItem.getName());
-        item.addStringList(DatabaseMediator.Field.ALIASES, namedItem.getAliases());
-    }
-
-    static void serializeFileWithLanguages(SerializedItem item, FileWithLanguages fileWithLanguages) {
-        serializeFile(item, fileWithLanguages);
-        item.addLanguageList(DatabaseMediator.Field.LANGUAGES, fileWithLanguages.getLanguages());
-    }
+//    static void serializeNamedItem(SerializedItem item, NamedItem namedItem) {
+//        item.addString(DatabaseMediator.Field.NAME, namedItem.getName());
+//        item.addStringList(DatabaseMediator.Field.ALIASES, namedItem.getAliases());
+//    }
+//
+//    static void serializeFileWithLanguages(SerializedItem item, FileWithLanguages fileWithLanguages) {
+//        serializeFile(item, fileWithLanguages);
+//        item.addLanguageList(DatabaseMediator.Field.LANGUAGES, fileWithLanguages.getLanguages());
+//    }
 
     static void serializeFile(SerializedItem item, File file) {
         item.addString(DatabaseMediator.Field.HASH, file.getHash());
@@ -141,16 +144,18 @@ public class ItemSerializer {
 //    }
 
     static void deserializeVideoFile(SerializedItem item, VideoFile videoFile) {
-        deserializeFileWithLanguages(item, videoFile);
+        deserializeFile(item, videoFile);
         videoFile.setMinutesPostponed(item.getInteger(DatabaseMediator.Field.MINUTES));
         videoFile.setResolutionPostponed(item.getInteger(DatabaseMediator.Field.RESOLUTION));
         videoFile.setQualityPostponed(item.getQuality(DatabaseMediator.Field.QUALITY_CODE));
+        videoFile.setLocalizedLanguagesPostponed(item.getLocalizedLanguageList(DatabaseMediator.Field.LOCALIZED_LANGUAGE_LIST));
         videoFile.setSubtitleFilesIdsPostponed(item.getIntegerList(DatabaseMediator.Field.SUBTITLE_FILE_LIST));
         finishDeserialization(videoFile);
     }
 
     static void deserializeSubtitleFile(SerializedItem item, SubtitleFile subtitleFile) {
-        deserializeFileWithLanguages(item, subtitleFile);
+        deserializeFile(item, subtitleFile);
+        subtitleFile.setLocalizedLanguagePostponed(item.getLocalizedLanguage(DatabaseMediator.Field.LOCALIZED_LANGUAGE));
         finishDeserialization(subtitleFile);
     }
 
@@ -164,6 +169,7 @@ public class ItemSerializer {
 
     static void deserializeCreationItem(SerializedItem item, CreationItem creationItem) {
         deserializeDatabaseItem(item, creationItem);
+        creationItem.setLanguagePostponed(item.getLanguage(DatabaseMediator.Field.LANGUAGE));
         creationItem.setTitlePostponed(item.getString(DatabaseMediator.Field.TITLE));
         creationItem.setOriginalTitlePostponed(item.getString(DatabaseMediator.Field.ORIGINAL_TITLE));
         creationItem.setYearPostponed(item.getInteger(DatabaseMediator.Field.YEAR));
@@ -176,16 +182,16 @@ public class ItemSerializer {
 //        creationItem.setActorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.ACTOR_LIST));
     }
 
-    static void deserializeNamedItem(SerializedItem item, NamedItem namedItem) {
-        deserializeDatabaseItem(item, namedItem);
-        namedItem.setNamePostponed(item.getString(DatabaseMediator.Field.NAME));
-        namedItem.setAliasesPostponed(item.getStringList(DatabaseMediator.Field.ALIASES));
-    }
-
-    static void deserializeFileWithLanguages(SerializedItem item, FileWithLanguages fileWithLanguages) {
-        deserializeFile(item, fileWithLanguages);
-        fileWithLanguages.setLanguagesPostponed(item.getLanguageList(DatabaseMediator.Field.LANGUAGES));
-    }
+//    static void deserializeNamedItem(SerializedItem item, NamedItem namedItem) {
+//        deserializeDatabaseItem(item, namedItem);
+//        namedItem.setNamePostponed(item.getString(DatabaseMediator.Field.NAME));
+//        namedItem.setAliasesPostponed(item.getStringList(DatabaseMediator.Field.ALIASES));
+//    }
+//
+//    static void deserializeFileWithLanguages(SerializedItem item, FileWithLanguages fileWithLanguages) {
+//        deserializeFile(item, fileWithLanguages);
+//        fileWithLanguages.setLanguagesPostponed(item.getLanguageList(DatabaseMediator.Field.LANGUAGES));
+//    }
 
     static void deserializeFile(SerializedItem item, File file) {
         deserializeDatabaseItem(item, file);

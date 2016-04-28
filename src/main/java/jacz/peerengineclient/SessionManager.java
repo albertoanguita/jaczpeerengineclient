@@ -13,6 +13,7 @@ import jacz.peerengineservice.client.PeersPersonalData;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.NetworkConfiguration;
 import jacz.peerengineservice.client.connection.peers.PeerConnectionConfig;
+import jacz.peerengineservice.client.connection.peers.PeersEvents;
 import jacz.peerengineservice.client.connection.peers.kb.PeerKnowledgeBase;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
@@ -74,7 +75,7 @@ public class SessionManager {
 
             // config files
             new PeerConnectionConfig(Paths.connectionConfigPath(userPath), mainCountry);
-            new NetworkConfiguration(Paths.networkConfigPath(basePath), DEFAULT_LOCAL_PORT, DEFAULT_EXTERNAL_PORT);
+            new NetworkConfiguration(Paths.networkConfigPath(userPath), DEFAULT_LOCAL_PORT, DEFAULT_EXTERNAL_PORT);
 
             // database files
             DatabaseIO.createNewDatabaseFileStructure(userPath);
@@ -83,16 +84,13 @@ public class SessionManager {
             PeerKnowledgeBase.createNew(Paths.peerKBPath(userPath));
 
             // personal data file
-            PeersPersonalData peersPersonalData = new PeersPersonalData(
-                    Paths.personalDataPath(userPath),
-                    DEFAULT_NICK,
-                    nick);
+            new PeersPersonalData(Paths.personalDataPath(userPath), DEFAULT_NICK, nick);
 
             // user media paths
             new MediaPaths(Paths.mediaPathsConfigPath(userPath), mediaPath, tempPath);
 
             // statistics file
-            TransferStatistics.createNew(Paths.statisticsPath(userPath));
+            TransferStatistics.createNew(Paths.statisticsPath(userPath)).stop();
 
 //            stopAndSave(
 //                    userPath,
@@ -137,6 +135,7 @@ public class SessionManager {
             String userPath,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
+            PeersEvents peersEvents,
             ResourceTransferEvents resourceTransferEvents,
             TempFileManagerEvents tempFileManagerEvents,
             DatabaseSynchEvents databaseSynchEvents,
@@ -145,64 +144,25 @@ public class SessionManager {
             ErrorHandler errorHandler) throws IOException {
 
         try {
-//            EightTuple<PeerId, NetworkConfiguration, PeersPersonalData, PeerRelations, Integer, Integer, String, String> config =
-//                    FileIO.readConfig(userPath, DEFAULT_NICK);
-//            PeerId ownPeerId = config.element1;
-//            NetworkConfiguration networkConfiguration = config.element2;
-//            PeersPersonalData peersPersonalData = config.element3;
-//            PeerRelations peerRelations = config.element4;
-//            Integer maxDownloadSpeed = config.element5;
-//            Integer maxUploadSpeed = config.element6;
-//            String tempDownloadsPath = config.element7;
-//            String baseMediaPath = config.element8;
             PeerId ownPeerId = PeerIdConfig.readPeerId(userPath);
-            Duple<Integer, Integer> speedLimits = EngineConfig.readSpeedLimitsConfig(userPath);
-            Integer maxDownloadSpeed = speedLimits.element1;
-            Integer maxUploadSpeed = speedLimits.element2;
             PeerEncryption peerEncryption = new PeerEncryption(Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
 
-            PeerEngineClient peerEngineClient = new PeerEngineClient(
+            return new PeerEngineClient(
                     userPath,
                     ownPeerId,
                     peerEncryption,
                     new MediaPaths(Paths.mediaPathsConfigPath(userPath)),
                     generalEvents,
                     connectionEvents,
+                    peersEvents,
                     resourceTransferEvents,
                     tempFileManagerEvents,
                     databaseSynchEvents,
                     downloadEvents,
                     integrationEvents,
                     errorHandler);
-            peerEngineClient.setMaxDesiredDownloadSpeed(maxDownloadSpeed);
-            peerEngineClient.setMaxDesiredUploadSpeed(maxUploadSpeed);
-            return peerEngineClient;
         } catch (Exception e) {
             throw new IOException(e.getMessage());
         }
     }
-
-//    public static synchronized void stopAndSave(
-//            String userPath,
-//            PeerId ownPeerId,
-//            String ownNick,
-//            NetworkConfiguration networkConfiguration,
-////            PeersPersonalData peersPersonalData,
-////            PeerRelations peerRelations,
-//            Integer maxDownloadSpeed,
-//            Integer maxUploadSpeed,
-//            String tempDownloadsPath,
-//            String baseMediaPath,
-//            PeerEncryption peerEncryption,
-//            TransferStatistics transferStatistics) throws IOException, XMLStreamException {
-//        transferStatistics.stop();
-////        FileIO.writeConfig(userPath, ownPeerId, networkConfiguration, peersPersonalData, peerRelations, maxDownloadSpeed, maxUploadSpeed, tempDownloadsPath, baseMediaPath);
-//        PeerIdConfig.writePeerIdConfig(userPath, ownPeerId);
-//        NickConfig.writeNickConfig(userPath, ownNick);
-//        NetworkConfig.writeNetworkConfig(userPath, networkConfiguration);
-//        EngineConfig.writeSpeedLimitsConfig(userPath, maxDownloadSpeed, maxUploadSpeed);
-//        PathsConfig.writePathsConfig(userPath, tempDownloadsPath, baseMediaPath);
-//        VersionedObjectSerializer.serialize(peerEncryption, CRC_LENGTH, Paths.encryptionPath(userPath), Paths.encryptionBackupPath(userPath));
-//        VersionedObjectSerializer.serialize(transferStatistics, CRC_LENGTH, Paths.statisticsPath(userPath), Paths.statisticsBackupPath(userPath));
-//    }
 }

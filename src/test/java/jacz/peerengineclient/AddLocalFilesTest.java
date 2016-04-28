@@ -5,10 +5,11 @@ import jacz.database.Movie;
 import jacz.database.TVSeries;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.test.Client;
-import jacz.util.files.FileUtil;
 import jacz.util.lists.tuple.Triple;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -16,7 +17,7 @@ import java.io.IOException;
  */
 public class AddLocalFilesTest {
 
-    public enum File {
+    public enum TestFile {
         VIDEO_1,
         SUB_1,
         VIDEO_2,
@@ -31,11 +32,11 @@ public class AddLocalFilesTest {
     }
 
     // paths and MD5 hashes of the files above:
-    private static Triple<String, String, String> namePathAndHash(File file) {
+    private static Triple<String, String, String> namePathAndHash(TestFile testFile) {
         String name;
         String path = "./etc/test-files-cp/";
         String hash;
-        switch (file) {
+        switch (testFile) {
             case SUB_1:
                 name = "file1.srt";
                 hash = "572976d9712dc9bafbcdd68f5945b25d".toUpperCase();
@@ -104,48 +105,51 @@ public class AddLocalFilesTest {
 
         String userPath = "./etc/user_0";
 
-        FileUtil.clearDirectory("./etc/test-files-cp/");
-        for (String file : FileUtil.getDirectoryContents("./etc/test-files/")) {
-            FileUtil.copy(FileUtil.joinPaths("./etc/test-files/", file), "./etc/test-files-cp/");
+        FileUtils.cleanDirectory(new java.io.File("./etc/test-files-cp/"));
+        for (File file : FileUtils.listFiles(new File("./etc/test-files/"), null, false)) {
+            FileUtils.copyFile(file, FileUtils.getFile("./etc/test-files-cp/", file.getName()));
         }
+//        for (String file : FileUtil.getDirectoryContents("./etc/test-files/")) {
+//            FileUtils.copyFile(FileUtils.getFile("./etc/test-files/", file), new File("./etc/test-files-cp/"));
+//        }
 
         // clear dbs
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
+        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
         String db = peerEngineClient.getDatabases().getLocalDB();
         String mediaPath = peerEngineClient.getMediaPath();
         Movie movie = new Movie(db, "Alien");
         TVSeries tvSeries = new TVSeries(db, "Bottom");
         Chapter chapter = new Chapter(db, "Day out");
 
-        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.VIDEO_1).element2);
-        peerEngineClient.addLocalFileFixedPath(namePathAndHash(File.SUB_1).element2);
-        assertFile(peerEngineClient, namePathAndHash(File.VIDEO_1).element2, namePathAndHash(File.VIDEO_1).element3);
-        assertFile(peerEngineClient, namePathAndHash(File.SUB_1).element2, namePathAndHash(File.SUB_1).element3);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(TestFile.VIDEO_1).element2);
+        peerEngineClient.addLocalFileFixedPath(namePathAndHash(TestFile.SUB_1).element2);
+        assertFile(peerEngineClient, new File(namePathAndHash(TestFile.VIDEO_1).element2), namePathAndHash(TestFile.VIDEO_1).element3);
+        assertFile(peerEngineClient, new File(namePathAndHash(TestFile.SUB_1).element2), namePathAndHash(TestFile.SUB_1).element3);
 
-        peerEngineClient.addLocalMovieFile(namePathAndHash(File.VIDEO_2).element2, movie);
-        peerEngineClient.addLocalMovieFile(namePathAndHash(File.SUB_2).element2, movie);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(File.VIDEO_2).element1), namePathAndHash(File.VIDEO_2).element3);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(File.SUB_2).element1), namePathAndHash(File.SUB_2).element3);
+        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.VIDEO_2).element2, movie);
+        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.SUB_2).element2, movie);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(TestFile.VIDEO_2).element1), namePathAndHash(TestFile.VIDEO_2).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(TestFile.SUB_2).element1), namePathAndHash(TestFile.SUB_2).element3);
 
-        peerEngineClient.addLocalChapterFile(namePathAndHash(File.VIDEO_3).element2, tvSeries, chapter);
-        peerEngineClient.addLocalChapterFile(namePathAndHash(File.SUB_3).element2, tvSeries, chapter);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(File.VIDEO_3).element1), namePathAndHash(File.VIDEO_3).element3);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(File.SUB_3).element1), namePathAndHash(File.SUB_3).element3);
+        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.VIDEO_3).element2, tvSeries, chapter);
+        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.SUB_3).element2, tvSeries, chapter);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(TestFile.VIDEO_3).element1), namePathAndHash(TestFile.VIDEO_3).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(TestFile.SUB_3).element1), namePathAndHash(TestFile.SUB_3).element3);
 
-        peerEngineClient.addLocalImageFile(namePathAndHash(File.GRAMOS).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(File.MOON).element2);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "images", namePathAndHash(File.GRAMOS).element3 + ".jpg"), namePathAndHash(File.GRAMOS).element3);
-        assertFile(peerEngineClient, FileUtil.joinPaths(mediaPath, "images", namePathAndHash(File.MOON).element3) + ".jpeg", namePathAndHash(File.MOON).element3);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "images", namePathAndHash(TestFile.GRAMOS).element3 + ".jpg"), namePathAndHash(TestFile.GRAMOS).element3);
+        assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "images", namePathAndHash(TestFile.MOON).element3 + ".jpeg"), namePathAndHash(TestFile.MOON).element3);
     }
 
-    private void assertFile(PeerEngineClient peerEngineClient, String path, String hash) {
+    private void assertFile(PeerEngineClient peerEngineClient, File path, String hash) {
         System.out.println("Asserting file at " + path + "...");
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(hash));
-        Assert.assertTrue(FileUtil.isFile(path));
+        Assert.assertTrue(path.isFile());
     }
 }

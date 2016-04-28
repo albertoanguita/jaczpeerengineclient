@@ -5,6 +5,7 @@ import com.neovisionaries.i18n.LanguageCode;
 import jacz.database.*;
 import jacz.database.util.GenreCode;
 import jacz.database.util.ImageHash;
+import jacz.database.util.LocalizedLanguage;
 import jacz.database.util.QualityCode;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.test.Client;
@@ -14,7 +15,6 @@ import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.ThreadUtil;
 import junitx.framework.ListAssert;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 
@@ -48,8 +48,8 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("3"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
@@ -96,8 +96,8 @@ public class SynchAndIntegrateIT {
         ThreadUtil.safeSleep(5000);
 
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("3"));
         peerEngineClient.stop();
     }
 
@@ -110,7 +110,7 @@ public class SynchAndIntegrateIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB2(sharedDB);
@@ -137,7 +137,7 @@ public class SynchAndIntegrateIT {
 
         announceEvent(4);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -150,7 +150,7 @@ public class SynchAndIntegrateIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB3(sharedDB);
@@ -176,7 +176,7 @@ public class SynchAndIntegrateIT {
 
         announceEvent(8);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.stop();
     }
 
@@ -220,17 +220,18 @@ public class SynchAndIntegrateIT {
 
     private static void setupDB2(String db) {
         Movie movie = new Movie(db, "Avatar");
+        movie.setLanguage(LanguageCode.es);
         movie.setMinutes(150);
-        Person person = new Person(db, "actor 1");
-        person.addAlias("actor 1 1");
-        movie.addActor(person);
-        person = new Person(db, "actor 2");
-        movie.addActor(person);
-        person = new Person(db, "director 1");
-        movie.addCreator(person);
-        Company company = new Company(db, "Disney");
-        company.addAlias("Disney inc");
-        movie.addProductionCompany(company);
+//        Person person = new Person(db, "actor 1");
+//        person.addAlias("actor 1 1");
+        movie.addActor("actor 1");
+//        person = new Person(db, "actor 2");
+        movie.addActor("actor 2");
+//        person = new Person(db, "director 1");
+        movie.addCreator("director 1");
+//        Company company = new Company(db, "Disney");
+//        company.addAlias("Disney inc");
+        movie.addProductionCompany("Disney");
         movie.setSynopsis("Marines in a remote planet");
         movie.setYear(2008);
         movie.setOriginalTitle("Avatar orig");
@@ -244,16 +245,17 @@ public class SynchAndIntegrateIT {
         videoFile.addAdditionalSource("torrent 1");
         videoFile.setMinutes(155);
         videoFile.setLength(2048L);
-        videoFile.addLanguage(LanguageCode.aa);
+        videoFile.addLocalizedLanguage(new LocalizedLanguage(LanguageCode.aa, CountryCode.US));
         SubtitleFile subtitleFile = new SubtitleFile(db, "qqqwww");
         subtitleFile.setLength(1024L);
         subtitleFile.setName("sub 1");
-        subtitleFile.addLanguage(LanguageCode.ab);
+        subtitleFile.setLocalizedLanguage(new LocalizedLanguage(LanguageCode.ab, CountryCode.UK));
         subtitleFile.addAdditionalSource("torrent 2");
         videoFile.addSubtitleFile(subtitleFile);
         movie.addVideoFile(videoFile);
 
         movie = new Movie(db, "Star wars");
+        movie.setLanguage(LanguageCode.en);
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ADVENTURE);
         movie = new Movie(db, "The goonies");
@@ -294,24 +296,25 @@ public class SynchAndIntegrateIT {
         Movie movie2 = Movie.getMovies(db).get(1);
         Movie movie3 = Movie.getMovies(db).get(2);
         Assert.assertEquals("Avatar", movie1.getTitle());
+        Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
         Assert.assertEquals(new Integer(150), movie1.getMinutes());
         Assert.assertEquals(2, movie1.getActors().size());
-        Person actor1 = movie1.getActors().get(0);
-        Person actor2 = movie1.getActors().get(1);
-        Assert.assertEquals("actor 1", actor1.getName());
-        Assert.assertEquals(1, actor1.getAliases().size());
-        Assert.assertEquals("actor 1 1", actor1.getAliases().get(0));
-        Assert.assertEquals("actor 2", actor2.getName());
-        Assert.assertEquals(0, actor2.getAliases().size());
+        String actor1 = movie1.getActors().get(0);
+        String actor2 = movie1.getActors().get(1);
+        Assert.assertEquals("actor 1", actor1);
+//        Assert.assertEquals(1, actor1.getAliases().size());
+//        Assert.assertEquals("actor 1 1", actor1.getAliases().get(0));
+        Assert.assertEquals("actor 2", actor2);
+//        Assert.assertEquals(0, actor2.getAliases().size());
         Assert.assertEquals(1, movie1.getCreators().size());
-        Person creator = movie1.getCreators().get(0);
-        Assert.assertEquals("director 1", creator.getName());
-        Assert.assertEquals(0, creator.getAliases().size());
+        String creator = movie1.getCreators().get(0);
+        Assert.assertEquals("director 1", creator);
+//        Assert.assertEquals(0, creator.getAliases().size());
         Assert.assertEquals(1, movie1.getProductionCompanies().size());
-        Company company = movie1.getProductionCompanies().get(0);
-        Assert.assertEquals("Disney", company.getName());
-        Assert.assertEquals(1, company.getAliases().size());
-        Assert.assertEquals("Disney inc", company.getAliases().get(0));
+        String company = movie1.getProductionCompanies().get(0);
+        Assert.assertEquals("Disney", company);
+//        Assert.assertEquals(1, company.getAliases().size());
+//        Assert.assertEquals("Disney inc", company.getAliases().get(0));
         Assert.assertEquals("Marines in a remote planet", movie1.getSynopsis());
         Assert.assertEquals(new Integer(2008), movie1.getYear());
         Assert.assertEquals("Avatar orig", movie1.getOriginalTitle());
@@ -331,20 +334,21 @@ public class SynchAndIntegrateIT {
         Assert.assertEquals("torrent 1", videoFile.getAdditionalSources().get(0));
         Assert.assertEquals(new Integer(155), videoFile.getMinutes());
         Assert.assertEquals(new Long(2048L), videoFile.getLength());
-        Assert.assertEquals(1, videoFile.getLanguages().size());
-        Assert.assertEquals(LanguageCode.aa, videoFile.getLanguages().get(0));
+        Assert.assertEquals(1, videoFile.getLocalizedLanguages().size());
+        Assert.assertEquals(new LocalizedLanguage(LanguageCode.aa, CountryCode.US), videoFile.getLocalizedLanguages().get(0));
         Assert.assertEquals(1, videoFile.getSubtitleFiles().size());
         SubtitleFile subtitleFile = videoFile.getSubtitleFiles().get(0);
         Assert.assertEquals(new Long(1024L), subtitleFile.getLength());
         Assert.assertEquals("sub 1", subtitleFile.getName());
         Assert.assertEquals("qqqwww", subtitleFile.getHash());
-        Assert.assertEquals(1, subtitleFile.getLanguages().size());
-        Assert.assertEquals(LanguageCode.ab, subtitleFile.getLanguages().get(0));
+//        Assert.assertEquals(1, subtitleFile.getLanguages().size());
+        Assert.assertEquals(new LocalizedLanguage(LanguageCode.ab, CountryCode.UK), subtitleFile.getLocalizedLanguage());
         Assert.assertEquals(1, subtitleFile.getAdditionalSources().size());
         Assert.assertEquals("torrent 2", subtitleFile.getAdditionalSources().get(0));
 
 
         Assert.assertEquals("Star wars", movie2.getTitle());
+        Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
         Assert.assertEquals("Star wars", movie2.getOriginalTitle());
         List<GenreCode> genres = new ArrayList<>();
         if (phase == 0) {
@@ -356,6 +360,7 @@ public class SynchAndIntegrateIT {
         }
         ListAssert.assertEquals(genres, movie2.getGenres());
         Assert.assertEquals("The goonies", movie3.getTitle());
+        Assert.assertEquals(null, movie3.getLanguage());
         Assert.assertEquals("The goonies orig", movie3.getOriginalTitle());
         Assert.assertEquals(new Integer(1996), movie3.getYear());
 
@@ -393,6 +398,7 @@ public class SynchAndIntegrateIT {
 
     private static void setupDB3(String db) {
         Movie movie = new Movie(db, "Star wars");
+        movie.setLanguage(LanguageCode.fr);
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ACTION);
         movie.addGenre(GenreCode.SCI_FI);
@@ -432,6 +438,7 @@ public class SynchAndIntegrateIT {
         Movie movie2 = Movie.getMovies(db).get(1);
         Movie movie3 = Movie.getMovies(db).get(2);
         Assert.assertEquals("Star wars", movie1.getTitle());
+        Assert.assertEquals(LanguageCode.fr, movie1.getLanguage());
         Assert.assertEquals("Star wars", movie1.getOriginalTitle());
         List<GenreCode> genres = new ArrayList<>();
         genres.add(GenreCode.ACTION);
@@ -526,24 +533,25 @@ public class SynchAndIntegrateIT {
             }
             Assert.assertEquals("The lord of the rings", movie0.getTitle());
             Assert.assertEquals("Avatar", movie1.getTitle());
+            Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
             Assert.assertEquals(new Integer(150), movie1.getMinutes());
             Assert.assertEquals(2, movie1.getActors().size());
-            Person actor1 = movie1.getActors().get(0);
-            Person actor2 = movie1.getActors().get(1);
-            Assert.assertEquals("actor 1", actor1.getName());
-            Assert.assertEquals(1, actor1.getAliases().size());
-            Assert.assertEquals("actor 1 1", actor1.getAliases().get(0));
-            Assert.assertEquals("actor 2", actor2.getName());
-            Assert.assertEquals(0, actor2.getAliases().size());
+            String actor1 = movie1.getActors().get(0);
+            String actor2 = movie1.getActors().get(1);
+            Assert.assertEquals("actor 1", actor1);
+//            Assert.assertEquals(1, actor1.getAliases().size());
+//            Assert.assertEquals("actor 1 1", actor1.getAliases().get(0));
+            Assert.assertEquals("actor 2", actor2);
+//            Assert.assertEquals(0, actor2.getAliases().size());
             Assert.assertEquals(1, movie1.getCreators().size());
-            Person creator = movie1.getCreators().get(0);
-            Assert.assertEquals("director 1", creator.getName());
-            Assert.assertEquals(0, creator.getAliases().size());
+            String creator = movie1.getCreators().get(0);
+            Assert.assertEquals("director 1", creator);
+//            Assert.assertEquals(0, creator.getAliases().size());
             Assert.assertEquals(1, movie1.getProductionCompanies().size());
-            Company company = movie1.getProductionCompanies().get(0);
-            Assert.assertEquals("Disney", company.getName());
-            Assert.assertEquals(1, company.getAliases().size());
-            Assert.assertEquals("Disney inc", company.getAliases().get(0));
+            String company = movie1.getProductionCompanies().get(0);
+            Assert.assertEquals("Disney", company);
+//            Assert.assertEquals(1, company.getAliases().size());
+//            Assert.assertEquals("Disney inc", company.getAliases().get(0));
             Assert.assertEquals("Marines in a remote planet", movie1.getSynopsis());
             Assert.assertEquals(new Integer(2008), movie1.getYear());
             Assert.assertEquals("Avatar orig", movie1.getOriginalTitle());
@@ -563,20 +571,21 @@ public class SynchAndIntegrateIT {
             Assert.assertEquals("torrent 1", videoFile.getAdditionalSources().get(0));
             Assert.assertEquals(new Integer(155), videoFile.getMinutes());
             Assert.assertEquals(new Long(2048L), videoFile.getLength());
-            Assert.assertEquals(1, videoFile.getLanguages().size());
-            Assert.assertEquals(LanguageCode.aa, videoFile.getLanguages().get(0));
+            Assert.assertEquals(1, videoFile.getLocalizedLanguages().size());
+            Assert.assertEquals(new LocalizedLanguage(LanguageCode.aa, CountryCode.US), videoFile.getLocalizedLanguages().get(0));
             Assert.assertEquals(1, videoFile.getSubtitleFiles().size());
             SubtitleFile subtitleFile = videoFile.getSubtitleFiles().get(0);
             Assert.assertEquals(new Long(1024L), subtitleFile.getLength());
             Assert.assertEquals("sub 1", subtitleFile.getName());
             Assert.assertEquals("qqqwww", subtitleFile.getHash());
-            Assert.assertEquals(1, subtitleFile.getLanguages().size());
-            Assert.assertEquals(LanguageCode.ab, subtitleFile.getLanguages().get(0));
+//            Assert.assertEquals(1, subtitleFile.getLanguages().size());
+            Assert.assertEquals(new LocalizedLanguage(LanguageCode.ab, CountryCode.UK), subtitleFile.getLocalizedLanguage());
             Assert.assertEquals(1, subtitleFile.getAdditionalSources().size());
             Assert.assertEquals("torrent 2", subtitleFile.getAdditionalSources().get(0));
 
 
             Assert.assertEquals("Star wars", movie2.getTitle());
+            Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
             Assert.assertEquals("Star wars", movie2.getOriginalTitle());
             List<GenreCode> genres = new ArrayList<>();
             countries = new ArrayList<>();

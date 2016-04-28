@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 
 /**
  * Returns a date format for storing and parsing dates in text files
+ * todo remove
  */
 public class DateFormatting {
 

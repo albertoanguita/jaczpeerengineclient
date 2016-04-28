@@ -6,6 +6,7 @@ import com.neovisionaries.i18n.LanguageCode;
 import jacz.database.DatabaseMediator;
 import jacz.database.util.GenreCode;
 import jacz.database.util.ImageHash;
+import jacz.database.util.LocalizedLanguage;
 import jacz.database.util.QualityCode;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,12 +32,15 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
     private HashMap<DatabaseMediator.Field, Integer> integerFields;
     private HashMap<DatabaseMediator.Field, Long> longFields;
     private HashMap<DatabaseMediator.Field, Date> dateFields;
+    private HashMap<DatabaseMediator.Field, LanguageCode> languageFields;
+    private HashMap<DatabaseMediator.Field, LocalizedLanguage> localizedLanguageFields;
     private HashMap<DatabaseMediator.Field, QualityCode> qualityFields;
     private HashMap<DatabaseMediator.Field, List<String>> stringListFields;
     private HashMap<DatabaseMediator.Field, List<Integer>> integerListFields;
     private HashMap<DatabaseMediator.Field, List<CountryCode>> countryListFields;
     private HashMap<DatabaseMediator.Field, List<GenreCode>> genreListFields;
-    private HashMap<DatabaseMediator.Field, List<LanguageCode>> languageListFields;
+    private HashMap<DatabaseMediator.Field, List<LocalizedLanguage>> localizedLanguageListFields;
+    //    private HashMap<DatabaseMediator.Field, List<LanguageCode>> languageListFields;
     private HashMap<DatabaseMediator.Field, ImageHash> imageHashFields;
 
     public SerializedItem(DatabaseMediator.ItemType type, Integer id, long timestamp, boolean alive) {
@@ -48,11 +52,14 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         integerFields = null;
         longFields = null;
         dateFields = null;
+        languageFields = null;
+        localizedLanguageFields = null;
         qualityFields = null;
         stringListFields = null;
         countryListFields = null;
         genreListFields = null;
-        languageListFields = null;
+        localizedLanguageListFields = null;
+//        languageListFields = null;
         imageHashFields = null;
     }
 
@@ -100,6 +107,20 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         dateFields.put(field, value);
     }
 
+    public void addLanguage(DatabaseMediator.Field field, LanguageCode language) {
+        if (languageFields == null) {
+            languageFields = new HashMap<>();
+        }
+        languageFields.put(field, language);
+    }
+
+    public void addLocalizedLanguage(DatabaseMediator.Field field, LocalizedLanguage localizedLanguage) {
+        if (localizedLanguageFields == null) {
+            localizedLanguageFields = new HashMap<>();
+        }
+        localizedLanguageFields.put(field, localizedLanguage);
+    }
+
     public void addQuality(DatabaseMediator.Field field, QualityCode quality) {
         if (qualityFields == null) {
             qualityFields = new HashMap<>();
@@ -135,12 +156,19 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         genreListFields.put(field, genreList);
     }
 
-    public void addLanguageList(DatabaseMediator.Field field, List<LanguageCode> languageList) {
-        if (languageListFields == null) {
-            languageListFields = new HashMap<>();
+    public void addLocalizedLanguageList(DatabaseMediator.Field field, List<LocalizedLanguage> localizedLanguageList) {
+        if (localizedLanguageListFields == null) {
+            localizedLanguageListFields = new HashMap<>();
         }
-        languageListFields.put(field, languageList);
+        localizedLanguageListFields.put(field, localizedLanguageList);
     }
+
+//    public void addLanguageList(DatabaseMediator.Field field, List<LanguageCode> languageList) {
+//        if (languageListFields == null) {
+//            languageListFields = new HashMap<>();
+//        }
+//        languageListFields.put(field, languageList);
+//    }
 
     public void addImageHash(DatabaseMediator.Field field, ImageHash imageHash) {
         if (imageHashFields == null) {
@@ -164,7 +192,15 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
     public Date getDate(DatabaseMediator.Field field) {
         return dateFields.get(field);
     }
-    
+
+    public LanguageCode getLanguage(DatabaseMediator.Field field) {
+        return languageFields.get(field);
+    }
+
+    public LocalizedLanguage getLocalizedLanguage(DatabaseMediator.Field field) {
+        return localizedLanguageFields.get(field);
+    }
+
     public QualityCode getQuality(DatabaseMediator.Field field) {
         return qualityFields.get(field);
     }
@@ -185,9 +221,13 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
         return genreListFields.get(field);
     }
 
-    public List<LanguageCode> getLanguageList(DatabaseMediator.Field field) {
-        return languageListFields.get(field);
+    public List<LocalizedLanguage> getLocalizedLanguageList(DatabaseMediator.Field field) {
+        return localizedLanguageListFields.get(field);
     }
+
+//    public List<LanguageCode> getLanguageList(DatabaseMediator.Field field) {
+//        return languageListFields.get(field);
+//    }
 
     public ImageHash getImageHash(DatabaseMediator.Field field) {
         return imageHashFields.get(field);
@@ -216,11 +256,15 @@ public class SerializedItem implements Serializable, Comparable<SerializedItem> 
                 ", integerFields=" + integerFields +
                 ", longFields=" + longFields +
                 ", dateFields=" + dateFields +
+                ", languageFields=" + languageFields +
+                ", localizedLanguageFields=" + localizedLanguageFields +
                 ", qualityFields=" + qualityFields +
                 ", stringListFields=" + stringListFields +
+                ", integerListFields=" + integerListFields +
                 ", countryListFields=" + countryListFields +
                 ", genreListFields=" + genreListFields +
-                ", languageListFields=" + languageListFields +
+                ", localizedLanguageListFields=" + localizedLanguageListFields +
+                ", imageHashFields=" + imageHashFields +
                 '}';
     }
 }

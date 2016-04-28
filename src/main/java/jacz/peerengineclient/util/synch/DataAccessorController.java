@@ -10,6 +10,7 @@ import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyControllerMaxActivities;
 import jacz.util.notification.ProgressNotificationWithError;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -97,8 +98,8 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
                         // immediately finish the concurrent activity, as it did not take place
                         concurrencyController.endActivity(SYNCH_ACTIVITY);
                     }
-                } catch (UnavailablePeerException e) {
-                    // peer is no longer connected, ignore request
+                } catch (Exception e) {
+                    // peer is no longer connected, or could not retrieve its remote database -> ignore request
                 }
             }
         }
@@ -106,7 +107,7 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
 
     public abstract ProgressNotificationWithError<Integer, SynchError> getRemoteSynchProgress(PeerId peerID) throws UnavailablePeerException;
 
-    public abstract REMOTE getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException;
+    public abstract REMOTE getRemoteDataAccessor(PeerId peerID) throws UnavailablePeerException, IOException;
 
     public void localHashSynchFinished(PeerId remotePeerId) {
         synchronized (activeLocalHashSynchs) {

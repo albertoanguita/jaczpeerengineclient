@@ -32,16 +32,13 @@ public class DatabaseIO {
             String basePath,
             DatabaseSynchEvents databaseSynchEvents,
             IntegrationEvents integrationEvents,
-            PeerEngineClient peerEngineClient,
-            Set<PeerId> friendPeers
+            PeerEngineClient peerEngineClient
     ) throws IOException, VersionedSerializationException {
         return new DatabaseManager(
                 new Databases(basePath),
                 databaseSynchEvents,
                 integrationEvents,
-                peerEngineClient,
-                basePath,
-                friendPeers);
+                peerEngineClient);
     }
 
     public static void save(String basePath, DatabaseManager databaseManager) throws IOException {

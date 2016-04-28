@@ -2,7 +2,6 @@ package jacz.peerengineclient.databases;
 
 import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerId;
-import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
@@ -10,9 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Alberto on 21/12/2015.
+ * This class provides access to all media databases
  */
 public class Databases {
+
+    private final String basePath;
 
     private final String integratedDB;
 
@@ -27,6 +28,7 @@ public class Databases {
     private final ItemRelations itemRelations;
 
     public Databases(String basePath) throws IOException, VersionedSerializationException {
+        this.basePath = basePath;
         integratedDB = Paths.integratedDBPath(basePath);
         localDB = Paths.localDBPath(basePath);
         remoteDBs = new HashMap<>();
@@ -54,12 +56,13 @@ public class Databases {
         return remoteDBs.containsKey(peerID);
     }
 
-    public synchronized String getRemoteDB(PeerId peerID) throws UnavailablePeerException {
-        if (remoteDBs.containsKey(peerID)) {
+    public synchronized String getRemoteDB(PeerId peerID) throws IOException {
+        if (!remoteDBs.containsKey(peerID)) {
+            String dbPath = DatabaseIO.createNewRemoteDatabase(basePath, peerID);
+            remoteDBs.put(peerID, dbPath);
             return remoteDBs.get(peerID);
-        } else {
-            throw new UnavailablePeerException();
         }
+        return remoteDBs.get(peerID);
     }
 
     public synchronized void addRemoteDB(PeerId peerID, String dbPath) {

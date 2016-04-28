@@ -13,10 +13,11 @@ import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.DownloadState;
 import jacz.util.concurrency.ThreadUtil;
-import jacz.util.files.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -65,11 +66,11 @@ public class FileDownloadIncompleteIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
+        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
         // download at 40 kB/s
-        peerEngineClient.setMaxDesiredDownloadSpeed(40);
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.setMaxDownloadSpeed(40);
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
 
@@ -97,12 +98,12 @@ public class FileDownloadIncompleteIT {
         announceEvent(15);
 
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(fileHash()));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName())));
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
 
         ThreadUtil.safeSleep(5000);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("3"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }
@@ -117,13 +118,13 @@ public class FileDownloadIncompleteIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
-        FileUtil.clearDirectory(peerEngineClient.getTempDownloadsPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
+        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
         // download at 10 kB/s
-        peerEngineClient.setMaxDesiredDownloadSpeed(10);
+        peerEngineClient.setMaxDownloadSpeed(10);
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("1"));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("3"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
 
         // connect and warm up
@@ -153,7 +154,7 @@ public class FileDownloadIncompleteIT {
         announceEvent(10);
 
         Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(fileHash()));
-        Assert.assertTrue(FileUtil.isFile(FileUtil.joinPaths(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName())));
+        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
 
         // wait 5 cycle
         ThreadUtil.safeSleep(5 * CYCLE_LENGTH);
@@ -161,8 +162,8 @@ public class FileDownloadIncompleteIT {
 
         ThreadUtil.safeSleep(CYCLE_LENGTH);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("1"));
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("3"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }
@@ -176,9 +177,9 @@ public class FileDownloadIncompleteIT {
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
         peerEngineClient.getFileHashDatabase().clear();
-        FileUtil.clearDirectory(peerEngineClient.getMediaPath());
+        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
         System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
-        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 
         setupDB3(localDB, peerEngineClient);
@@ -199,7 +200,7 @@ public class FileDownloadIncompleteIT {
 
         announceEvent(10);
 
-        peerEngineClient.removeFriendPeer(PeerId.buildTestPeerId("2"));
+        peerEngineClient.removeFavoritePeer(PeerId.buildTestPeerId("2"));
         ThreadUtil.safeSleep(1000);
         peerEngineClient.stop();
     }

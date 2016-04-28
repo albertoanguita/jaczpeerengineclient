@@ -22,7 +22,6 @@ public class Paths {
      * directory paths
      **********************/
 
-    // todo remove
     private static final String CONFIG_DIR = "config";
 
     private static final String ENCRYPTION_DIR = "encryption";
@@ -31,11 +30,11 @@ public class Paths {
 
     private static final String DATA_DIR = "data";
 
-    private static final String DATABASES_DIR = FileUtils.getFile(DATA_DIR, "databases").getName();
+    private static final String DATABASES_DIR = FileUtils.getFile(DATA_DIR, "databases").getPath();
 
-    private static final String REMOTE_DATABASES_DIR = FileUtils.getFile(DATABASES_DIR, "remote").getName();
+    private static final String REMOTE_DATABASES_DIR = FileUtils.getFile(DATABASES_DIR, "remote").getPath();
 
-    private static final String REMOTE_SHARES_DIR = FileUtils.getFile(DATA_DIR, "remote-shares").getName();
+    private static final String REMOTE_SHARES_DIR = FileUtils.getFile(DATA_DIR, "remote-shares").getPath();
 
     private static final String DEFAULT_TEMP_DIR = "temp";
 
@@ -54,22 +53,15 @@ public class Paths {
      * file names
      **********************/
 
-
-
-    private static final String CONNECTION_CONFIG_FILE = "config";
-    private static final String PEER_KNOWLEDGE_BASE_DATABASE_FILE = "peer-kb";
-    private static final String NETWORK_CONFIG_FILE = "network";
-    private static final String PERSONAL_DATA_FILE = "personal-data";
-    ///////
     private static final String CONFIG_FILE = "config";
 
+    private static final String PEER_KNOWLEDGE_BASE_DATABASE_FILE = "peer-kb";
+
+    private static final String NETWORK_CONFIG_FILE = "network";
+
+    private static final String PERSONAL_DATA_FILE = "personal-data";
+
     private static final String PEER_ID_CONFIG_FILE = "id";
-
-//    private static final String NETWORK_CONFIG_FILE = "network";
-
-    private static final String NICK_CONFIG_FILE = "nick";
-
-    private static final String ENGINE_CONFIG_FILE = "limits";
 
     private static final String MEDIA_PATHS_CONFIG_FILE = "paths";
 
@@ -103,7 +95,7 @@ public class Paths {
 
 
     private static String getFilePath(String basePath, String dir, String fileName, String extension) {
-        return FileUtils.getFile(basePath, dir, fileName + extension).getName();
+        return FileUtils.getFile(basePath, dir, fileName + extension).getPath();
     }
 
     /**********************
@@ -168,7 +160,7 @@ public class Paths {
      ***********************/
 
     public static String connectionConfigPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, CONNECTION_CONFIG_FILE, EXT_DB);
+        return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_DB);
     }
 
     public static String networkConfigPath(String basePath) {
@@ -176,16 +168,16 @@ public class Paths {
     }
 
     public static String personalDataPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, PERSONAL_DATA_FILE, EXT_DB);
+        return getFilePath(basePath, DATA_DIR, PERSONAL_DATA_FILE, EXT_DB);
     }
 
-    public static String configPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_XML);
-    }
-
-    public static String configBackupPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_BACKUP);
-    }
+//    public static String configPath(String basePath) {
+//        return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_XML);
+//    }
+//
+//    public static String configBackupPath(String basePath) {
+//        return getFilePath(basePath, CONFIG_DIR, CONFIG_FILE, EXT_BACKUP);
+//    }
 
     public static String peerIdConfigPath(String basePath) {
         return getFilePath(basePath, CONFIG_DIR, PEER_ID_CONFIG_FILE, EXT_XML);
@@ -211,13 +203,13 @@ public class Paths {
 //        return getFilePath(basePath, CONFIG_DIR, NICK_CONFIG_FILE, EXT_BACKUP);
 //    }
 
-    public static String engineConfigPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_XML);
-    }
-
-    public static String engineConfigBackupPath(String basePath) {
-        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_BACKUP);
-    }
+//    public static String engineConfigPath(String basePath) {
+//        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_XML);
+//    }
+//
+//    public static String engineConfigBackupPath(String basePath) {
+//        return getFilePath(basePath, CONFIG_DIR, ENGINE_CONFIG_FILE, EXT_BACKUP);
+//    }
 
     public static String mediaPathsConfigPath(String basePath) {
         return getFilePath(basePath, CONFIG_DIR, MEDIA_PATHS_CONFIG_FILE, EXT_DB);
@@ -240,7 +232,7 @@ public class Paths {
      ***********************/
 
     public static String statisticsPath(String basePath) {
-        return getFilePath(basePath, STATISTICS_DIR, STATISTICS_FILE, EXT_VERSIONED);
+        return getFilePath(basePath, STATISTICS_DIR, STATISTICS_FILE, EXT_DB);
     }
 
 //    public static String statisticsBackupPath(String basePath) {
@@ -291,7 +283,7 @@ public class Paths {
     }
 
     public static String itemRelationsPath(String basePath) {
-        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_DB);
+        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_VERSIONED);
     }
 
     public static String itemRelationsBackupPath(String basePath) {

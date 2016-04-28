@@ -25,6 +25,7 @@ import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
+import jacz.peerengineservice.util.PeerRelationship;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
@@ -102,8 +103,6 @@ public class PeerEngineClient {
             PeerId ownPeerId,
             PeerEncryption peerEncryption,
             MediaPaths mediaPaths,
-//            String tempDownloadsPath,
-//            String baseMediaPath,
             GeneralEvents generalEvents,
             ConnectionEvents connectionEvents,
             PeersEvents peersEvents,
@@ -114,9 +113,8 @@ public class PeerEngineClient {
             IntegrationEvents integrationEvents,
             ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
-//        this.peersPersonalData = peersPersonalData;
         peerShareManager = PeerShareIO.load(basePath, this);
-        databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this, peerRelations.getFriendPeers());
+        databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this);
         ErrorHandlerBridge errorHandlerBridge = new ErrorHandlerBridge(this, errorHandler);
         DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager, peerShareManager);
         synchronized (this) {
@@ -129,9 +127,9 @@ public class PeerEngineClient {
                     Paths.peerKBPath(basePath),
                     peerEncryption,
                     Paths.networkConfigPath(basePath),
-                    new GeneralEventsBridge(this, generalEvents),
+                    generalEvents,
                     connectionEvents,
-                    peersEvents,
+                    new PeersEventsBridge(this, peersEvents),
                     resourceTransferEvents,
                     Paths.personalDataPath(basePath),
                     Paths.statisticsPath(basePath),
@@ -145,8 +143,6 @@ public class PeerEngineClient {
         periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader);
         tempFileManager = new TempFileManager(mediaPaths.getTempDownloadsPath(), tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
-//        this.tempDownloadsPath = tempDownloadsPath;
-//        this.baseMediaPath = baseMediaPath;
         this.mediaPaths = mediaPaths;
 
         peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(peerShareManager.getFileHash(), tempFileManager));
@@ -227,7 +223,7 @@ public class PeerEngineClient {
 //                    baseMediaPath,
 //                    peerClient.getPeerEncryption(),
 //                    transferStatistics
-            );
+//            );
         }
     }
 
@@ -267,57 +263,95 @@ public class PeerEngineClient {
         peerClient.setExternalPort(port);
     }
 
-    public boolean isFriendPeer(PeerId peerID) {
-        return peerClient.isFriendPeer(peerID);
+    public synchronized PeerRelationship getPeerRelationship(PeerId peerId) {
+        return peerClient.getPeerRelationship(peerId);
     }
 
-    public boolean isBlockedPeer(PeerId peerID) {
-        return peerClient.isBlockedPeer(peerID);
+    public synchronized boolean isFavoritePeer(PeerId peerId) {
+        return peerClient.isFavoritePeer(peerId);
     }
 
-    public boolean isNonRegisteredPeer(PeerId peerID) {
-        return peerClient.isNonRegisteredPeer(peerID);
+    public synchronized boolean isBlockedPeer(PeerId peerId) {
+        return peerClient.isBlockedPeer(peerId);
     }
 
-    public Set<PeerId> getFriendPeers() {
-        return peerClient.getFriendPeers();
+    public synchronized Set<PeerId> getFavoritePeers() {
+        return peerClient.getFavoritePeers();
     }
 
-    public void addFriendPeer(PeerId peerID) {
-        // add personal data so its data can be saved
-        peerClient.addFriendPeer(peerID);
+    public void addFavoritePeer(final PeerId peerId) {
+        peerClient.addFavoritePeer(peerId);
     }
 
-    public void removeFriendPeer(PeerId peerID) {
-        peerClient.removeFriendPeer(peerID);
+    public synchronized void removeFavoritePeer(final PeerId peerId) {
+        peerClient.removeFavoritePeer(peerId);
     }
 
-    public Set<PeerId> getBlockedPeers() {
+    public synchronized Set<PeerId> getBlockedPeers() {
         return peerClient.getBlockedPeers();
     }
 
-    public void addBlockedPeer(PeerId peerID) {
-        peerClient.addBlockedPeer(peerID);
+    public synchronized void addBlockedPeer(final PeerId peerId) {
+        peerClient.addBlockedPeer(peerId);
     }
 
-    public void removeBlockedPeer(PeerId peerID) {
-        peerClient.removeBlockedPeer(peerID);
+    public synchronized void removeBlockedPeer(final PeerId peerId) {
+        peerClient.removeBlockedPeer(peerId);
     }
 
-    synchronized void peerIsNowFriend(PeerId peerID) {
-        try {
-            databaseManager.addPeer(basePath, peerID);
-        } catch (IOException e) {
-            // todo handle
-            e.printStackTrace();
-        }
-    }
 
-    synchronized void peerIsNoLongerFriend(PeerId peerID) {
-        System.out.println("Peer is no longer friend: " + peerID);
-        databaseManager.removePeer(basePath, peerID);
-        peerShareManager.removeRemotePeer(basePath, peerID);
-    }
+//    public boolean isFriendPeer(PeerId peerID) {
+//        return peerClient.isFriendPeer(peerID);
+//    }
+//
+//    public boolean isBlockedPeer(PeerId peerID) {
+//        return peerClient.isBlockedPeer(peerID);
+//    }
+//
+//    public boolean isNonRegisteredPeer(PeerId peerID) {
+//        return peerClient.isNonRegisteredPeer(peerID);
+//    }
+//
+//    public Set<PeerId> getFriendPeers() {
+//        return peerClient.getFriendPeers();
+//    }
+//
+//    public void addFriendPeer(PeerId peerID) {
+//        // add personal data so its data can be saved
+//        peerClient.addFriendPeer(peerID);
+//    }
+//
+//    public void removeFriendPeer(PeerId peerID) {
+//        peerClient.removeFriendPeer(peerID);
+//    }
+//
+//    public Set<PeerId> getBlockedPeers() {
+//        return peerClient.getBlockedPeers();
+//    }
+//
+//    public void addBlockedPeer(PeerId peerID) {
+//        peerClient.addBlockedPeer(peerID);
+//    }
+//
+//    public void removeBlockedPeer(PeerId peerID) {
+//        peerClient.removeBlockedPeer(peerID);
+//    }
+
+//    synchronized void peerIsNowFriend(PeerId peerID) {
+////        try {
+////            databaseManager.addPeer(basePath, peerID);
+////        } catch (IOException e) {
+////            // todo handle
+////            e.printStackTrace();
+////        }
+//    }
+
+    // todo do not delete dbs, since they might still be useful (regulars). Perform periodic checks
+//    synchronized void peerIsNoLongerFriend(PeerId peerID) {
+//        System.out.println("Peer is no longer friend: " + peerID);
+//        databaseManager.removePeer(basePath, peerID);
+//        peerShareManager.removeRemotePeer(basePath, peerID);
+//    }
 
     synchronized void peerConnected(PeerId peerID) {
         peerShareManager.peerConnected(basePath, peerID);
@@ -463,21 +497,20 @@ public class PeerEngineClient {
      *
      * @return the maximum allowed speed for receiving data from other peers, in KBytes per second (or null if no limit is established)
      */
-    public synchronized Integer getMaxDesiredDownloadSpeed() {
-        Float speed = peerClient.getMaxDesiredDownloadSpeed();
+    public synchronized Integer getMaxDownloadSpeed() {
+        Float speed = peerClient.getMaxDownloadSpeed();
         return speed == null ? null : (int) (Math.ceil(speed / 1024f));
     }
 
     /**
      * Sets the maximum allows speed for downloading data from other peers. The value is provided in KBytes per second. A null or negative value
      * is considered as no limit
-     * todo add localStorage for maxDownloadSpeed and maxUploadSpeed
      *
      * @param totalMaxDesiredSpeed the value, in KBytes per second, for limiting download speed of data transfer to other peers
      */
-    public synchronized void setMaxDesiredDownloadSpeed(Integer totalMaxDesiredSpeed) {
+    public synchronized void setMaxDownloadSpeed(Integer totalMaxDesiredSpeed) {
         Float speed = (totalMaxDesiredSpeed == null || totalMaxDesiredSpeed < 0) ? null : (float) (totalMaxDesiredSpeed * 1024);
-        peerClient.setMaxDesiredDownloadSpeed(speed);
+        peerClient.setMaxDownloadSpeed(speed);
     }
 
     /**
@@ -485,8 +518,8 @@ public class PeerEngineClient {
      *
      * @return the maximum allowed speed for sending data to other peers, in KBytes per second (or null if no limit is established)
      */
-    public synchronized Integer getMaxDesiredUploadSpeed() {
-        Float speed = peerClient.getMaxDesiredUploadSpeed();
+    public synchronized Integer getMaxUploadSpeed() {
+        Float speed = peerClient.getMaxUploadSpeed();
         return speed == null ? null : (int) (Math.ceil(speed / 1024f));
     }
 
@@ -496,9 +529,9 @@ public class PeerEngineClient {
      *
      * @param totalMaxDesiredSpeed the value, in KBytes per second, for limiting upload speed of data transfer to other peers
      */
-    public synchronized void setMaxDesiredUploadSpeed(Integer totalMaxDesiredSpeed) {
+    public synchronized void setMaxUploadSpeed(Integer totalMaxDesiredSpeed) {
         Float speed = (totalMaxDesiredSpeed == null || totalMaxDesiredSpeed < 0) ? null : (float) (totalMaxDesiredSpeed * 1024);
-        peerClient.setMaxDesiredUploadSpeed(speed);
+        peerClient.setMaxUploadSpeed(speed);
     }
 
     /**
