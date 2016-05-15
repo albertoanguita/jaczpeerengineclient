@@ -30,13 +30,11 @@ public class DataAccessorControllerProgress implements ProgressNotificationWithE
 
     @Override
     public void beginTask() {
-        // ignore
         synchProgress.beginTask();
     }
 
     @Override
     public void addNotification(Integer message) {
-        // ignore
         synchProgress.addNotification(message);
     }
 

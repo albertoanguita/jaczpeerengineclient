@@ -1,15 +1,13 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
-import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Stores and loads peer share objects. These objects are the file hash database (with timestamp) used to index
@@ -25,45 +23,38 @@ public class PeerShareIO {
 
     public static void createNewFileStructure(String basePath) throws IOException {
         // create an empty file hash
-        FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        saveLocalHash(basePath, fileHash);
+        new FileHashDatabaseWithTimestamp(PathConstants.fileHashPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
     }
 
     public static PeerShareManager load(String basePath, PeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
-        FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
+        FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(PathConstants.fileHashPath(basePath));
         return new PeerShareManager(peerEngineClient, fileHash);
     }
 
-    static RemotePeerShare loadRemoteShare(String basePath, PeerId peerID, ForeignShares foreignShares) throws IOException, VersionedSerializationException {
+    static RemotePeerShare loadRemoteShare(String basePath, PeerId peerID, ForeignShares foreignShares) throws IOException {
         return new RemotePeerShare(
                 foreignShares,
-                Paths.remoteSharePath(basePath, peerID),
-                Paths.remoteShareBackupPath(basePath, peerID));
+                PathConstants.remoteSharePath(basePath, peerID));
     }
 
-    public static void save(String basePath, PeerShareManager peerShareManager) throws IOException {
-        saveLocalHash(basePath, peerShareManager.getFileHash());
-        for (Map.Entry<PeerId, RemotePeerShare> entry : peerShareManager.getRemotePeerShares()) {
-            saveRemotePeerShare(basePath, entry.getKey(), entry.getValue());
-        }
-    }
+//    public static void save(String basePath, PeerShareManager peerShareManager) throws IOException {
+//        for (Map.Entry<PeerId, RemotePeerShare> entry : peerShareManager.getRemotePeerShares()) {
+//            saveRemotePeerShare(basePath, entry.getKey(), entry.getValue());
+//        }
+//    }
 
-    public static void saveLocalHash(String basePath, FileHashDatabaseWithTimestamp fileHash) throws IOException {
-        VersionedObjectSerializer.serialize(fileHash, CRCBytes, Paths.fileHashPath(basePath), Paths.fileHashBackupPath(basePath));
-    }
-
-    static void saveRemotePeerShare(String basePath, PeerId peerID, RemotePeerShare remotePeerShare) throws IOException {
-        VersionedObjectSerializer.serialize(
-                remotePeerShare,
-                CRCBytes,
-                Paths.remoteSharePath(basePath, peerID),
-                Paths.remoteShareBackupPath(basePath, peerID));
-    }
+//    static void saveRemotePeerShare(String basePath, PeerId peerID, RemotePeerShare remotePeerShare) throws IOException {
+//        VersionedObjectSerializer.serialize(
+//                remotePeerShare,
+//                CRCBytes,
+//                PathConstants.remoteSharePath(basePath, peerID),
+//                PathConstants.remoteShareBackupPath(basePath, peerID));
+//    }
 
     static void removeRemotePeerShare(String basePath, PeerId peerID) {
         //noinspection ResultOfMethodCallIgnored
-        new File(Paths.remoteSharePath(basePath, peerID)).delete();
+        new File(PathConstants.remoteSharePath(basePath, peerID)).delete();
         //noinspection ResultOfMethodCallIgnored
-        new File(Paths.remoteShareBackupPath(basePath, peerID)).delete();
+//        new File(PathConstants.remoteShareBackupPath(basePath, peerID)).delete();
     }
 }

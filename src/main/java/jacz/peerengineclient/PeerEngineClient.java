@@ -1,5 +1,6 @@
 package jacz.peerengineclient;
 
+import com.neovisionaries.i18n.CountryCode;
 import jacz.database.*;
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.data.MoveFileAction;
@@ -12,7 +13,7 @@ import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.integration.SharedDatabaseGenerator;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.MediaPaths;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineclient.util.PeriodicTaskReminder;
@@ -22,6 +23,7 @@ import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.client.GeneralEvents;
 import jacz.peerengineservice.client.PeerClient;
+import jacz.peerengineservice.client.connection.ConnectedPeers;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
@@ -29,6 +31,7 @@ import jacz.peerengineservice.util.PeerRelationship;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
+import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.MasterResourceStreamer;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
@@ -39,31 +42,32 @@ import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileGenerator;
 import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
-import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.io.serialization.VersionedSerializationException;
+import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.Triple;
-import jacz.util.log.ErrorHandler;
+import jacz.util.log.ErrorFactory;
 import jacz.util.notification.ProgressNotificationWithError;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
 /**
  * PeerEngine client adapted for Jacuzzi
- *
- * todo write files upon parameter changes
+ * @FUTURE@ todo remove all use of File, use Path, in all projects
  */
 public class PeerEngineClient {
 
-    private static final String SERVER_URL = "https://testserver01-1100.appspot.com/_ah/api/server/v1/";
+    private static final String SERVER_URL = "https://jaczserver.appspot.com/_ah/api/server/v1/";
 
     public static final String DEFAULT_STORE = "@J_PEER_ENGINE_CLIENT_DEFAULT_RESOURCE_STORE";
 
@@ -88,6 +92,8 @@ public class PeerEngineClient {
 
     private final DatabaseManager databaseManager;
 
+    private final ErrorHandlerBridge errorHandlerBridge;
+
     private final PeriodicTaskReminder periodicTaskReminder;
 
     private final DownloadEvents downloadEvents;
@@ -96,7 +102,7 @@ public class PeerEngineClient {
 
     private final MediaPaths mediaPaths;
 
-
+    private final List<String> repairedFiles;
 
     public PeerEngineClient(
             String basePath,
@@ -111,32 +117,31 @@ public class PeerEngineClient {
             DatabaseSynchEvents databaseSynchEvents,
             DownloadEvents downloadEvents,
             IntegrationEvents integrationEvents,
-            ErrorHandler errorHandler) throws IOException, VersionedSerializationException {
+            ErrorEvents errorEvents) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
+        repairedFiles = new ArrayList<>();
         peerShareManager = PeerShareIO.load(basePath, this);
+        repairedFiles.addAll(peerShareManager.getFileHash().getRepairedFiles());
         databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this);
-        ErrorHandlerBridge errorHandlerBridge = new ErrorHandlerBridge(this, errorHandler);
-        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(databaseManager, peerShareManager);
-        synchronized (this) {
-            // other threads will try to get the peerClient while it has not yet been created. We avoid concurrency
-            // issues by synchronizing its creation and its getter
-            peerClient = new PeerClient(
-                    ownPeerId,
-                    SERVER_URL,
-                    Paths.connectionConfigPath(basePath),
-                    Paths.peerKBPath(basePath),
-                    peerEncryption,
-                    Paths.networkConfigPath(basePath),
-                    generalEvents,
-                    connectionEvents,
-                    new PeersEventsBridge(this, peersEvents),
-                    resourceTransferEvents,
-                    Paths.personalDataPath(basePath),
-                    Paths.statisticsPath(basePath),
-                    new HashMap<>(),
-                    dataAccessorContainer,
-                    errorHandlerBridge);
-        }
+        repairedFiles.addAll(databaseManager.getDatabases().getRepairedFiles());
+        errorHandlerBridge = new ErrorHandlerBridge(this, errorEvents);
+        DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(this, databaseManager, peerShareManager);
+        peerClient = new PeerClient(
+                ownPeerId,
+                SERVER_URL,
+                PathConstants.connectionConfigPath(basePath),
+                PathConstants.peerKBPath(basePath),
+                peerEncryption,
+                PathConstants.networkConfigPath(basePath),
+                generalEvents,
+                connectionEvents,
+                new PeersEventsBridge(this, peersEvents),
+                resourceTransferEvents,
+                PathConstants.personalDataPath(basePath),
+                PathConstants.statisticsPath(basePath),
+                new HashMap<>(),
+                dataAccessorContainer,
+                errorHandlerBridge);
         fileAPI = new FileAPI(peerShareManager.getFileHash(), peerClient);
         imageDownloader = new ImageDownloader(this, databaseManager.getDatabases().getIntegratedDB(), fileAPI);
         peerShareManager.setPeerClient(peerClient);
@@ -151,6 +156,10 @@ public class PeerEngineClient {
         start();
     }
 
+    public List<String> getRepairedFiles() {
+        return repairedFiles;
+    }
+
     private void loadTempDownloads() {
         for (String tempFile : tempFileManager.getExistingTempFiles()) {
             try {
@@ -161,8 +170,7 @@ public class PeerEngineClient {
                 downloadFile(storeName, totalHash, tempFileWriter, DEFAULT_STREAMING_NEED, hashAlgorithm);
             } catch (IOException e) {
                 // error loading the temp file
-                // todo notify?
-                e.printStackTrace();
+                errorHandlerBridge.temporaryDownloadFileCouldNotBeRecovered(FileUtils.getFile(mediaPaths.getTempDownloadsPath(), tempFile).getAbsolutePath());
             } catch (NotAliveException e) {
                 // ignore, cannot happen
             }
@@ -173,10 +181,6 @@ public class PeerEngineClient {
     private void start() {
         databaseManager.start();
         periodicTaskReminder.start();
-    }
-
-    public synchronized PeerClient getPeerClient() {
-        return peerClient;
     }
 
     public FileAPI getFileAPI() {
@@ -195,36 +199,39 @@ public class PeerEngineClient {
         peerClient.disconnect();
     }
 
-    public void stop() throws IOException, XMLStreamException {
-        periodicTaskReminder.stop();
-        if (databaseManager != null) {
-            databaseManager.stop();
-            DatabaseIO.save(basePath, databaseManager);
+    public synchronized PeerId getOwnPeerId() {
+        return peerClient.getOwnPeerId();
+    }
+
+    public void stop() {
+        try {
+            periodicTaskReminder.stop();
+            if (databaseManager != null) {
+                databaseManager.stop();
+                DatabaseIO.save(basePath, databaseManager);
+            }
+            if (peerShareManager != null) {
+                peerShareManager.stop();
+//                PeerShareIO.save(basePath, peerShareManager);
+            }
+            if (tempFileManager != null) {
+                tempFileManager.stop();
+            }
+            if (peerClient != null) {
+                peerClient.stop();
+            }
+        } catch (IOException e) {
+            errorHandlerBridge.sessionDataCouldNotBeSaved();
         }
-        if (peerShareManager != null) {
-            peerShareManager.stop();
-            PeerShareIO.save(basePath, peerShareManager);
-        }
-        if (tempFileManager != null) {
-            tempFileManager.stop();
-        }
-        if (peerClient != null) {
-            peerClient.stop();
-            // only if we managed to create a peer client, save all data
-//            SessionManager.stopAndSave(
-//                    basePath,
-//                    peerClient.getOwnPeerId(),
-//                    peerClient.getNetworkConfiguration(),
-////                    peerClient.getPeersPersonalData(),
-////                    peerClient.getPeerRelations(),
-//                    getMaxDesiredDownloadSpeed(),
-//                    getMaxDesiredUploadSpeed(),
-//                    tempDownloadsPath,
-//                    baseMediaPath,
-//                    peerClient.getPeerEncryption(),
-//                    transferStatistics
-//            );
-        }
+    }
+
+
+    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName) {
+        errorHandlerBridge.downloadedFileCouldNotBeLoaded(path, expectedFileName);
+    }
+
+    public void reportFatalError(String message, Object... data) {
+        ErrorFactory.reportError(errorHandlerBridge, message, data);
     }
 
     public Databases getDatabases() {
@@ -235,16 +242,18 @@ public class PeerEngineClient {
         return databaseManager.getSharedDatabaseGenerator();
     }
 
-    public void localItemModified(DatabaseItem item) {
+    /**
+     * A local item has been modified, and needs to be re-integrated in the integrated database
+     *
+     * @param item modified item
+     * @throws IllegalStateException if the client has been previously stopped
+     */
+    public void localItemModified(DatabaseItem item) throws IllegalStateException {
         databaseManager.localItemModified(item);
     }
 
     public void removeLocalItem(DatabaseItem item) {
         databaseManager.removeLocalItem(item);
-    }
-
-    public State getConnectionState() {
-        return peerClient.getConnectionState();
     }
 
     public int getLocalPort() {
@@ -261,6 +270,42 @@ public class PeerEngineClient {
 
     public void setExternalPort(int port) {
         peerClient.setExternalPort(port);
+    }
+
+    public State getConnectionState() {
+        return peerClient.getConnectionState();
+    }
+
+    public synchronized boolean isConnectedPeer(PeerId peerId) {
+        return peerClient.isConnectedPeer(peerId);
+    }
+
+    public synchronized Set<PeerId> getConnectedPeers() {
+        return peerClient.getConnectedPeers();
+    }
+
+    public synchronized ArrayList<ConnectedPeers.PeerConnectionData> getConnectedPeersData() {
+        return peerClient.getConnectedPeersData();
+    }
+
+    public String getOwnNick() {
+        return peerClient.getOwnNick();
+    }
+
+    public synchronized void setOwnNick(String nick) {
+        peerClient.setOwnNick(nick);
+    }
+
+    public String getPeerNick(PeerId peerID) {
+        return peerClient.getPeerNick(peerID);
+    }
+
+    public int getPeerAffinity(PeerId peerId) {
+        return peerClient.getPeerAffinity(peerId);
+    }
+
+    public void updatePeerAffinity(PeerId peerId, int affinity) {
+        peerClient.updatePeerAffinity(peerId, affinity);
     }
 
     public synchronized PeerRelationship getPeerRelationship(PeerId peerId) {
@@ -299,59 +344,57 @@ public class PeerEngineClient {
         peerClient.removeBlockedPeer(peerId);
     }
 
+    public PeerId getNextConnectedPeer(PeerId peerID) {
+        return peerClient.getNextConnectedPeer(peerID);
+    }
 
-//    public boolean isFriendPeer(PeerId peerID) {
-//        return peerClient.isFriendPeer(peerID);
-//    }
-//
-//    public boolean isBlockedPeer(PeerId peerID) {
-//        return peerClient.isBlockedPeer(peerID);
-//    }
-//
-//    public boolean isNonRegisteredPeer(PeerId peerID) {
-//        return peerClient.isNonRegisteredPeer(peerID);
-//    }
-//
-//    public Set<PeerId> getFriendPeers() {
-//        return peerClient.getFriendPeers();
-//    }
-//
-//    public void addFriendPeer(PeerId peerID) {
-//        // add personal data so its data can be saved
-//        peerClient.addFriendPeer(peerID);
-//    }
-//
-//    public void removeFriendPeer(PeerId peerID) {
-//        peerClient.removeFriendPeer(peerID);
-//    }
-//
-//    public Set<PeerId> getBlockedPeers() {
-//        return peerClient.getBlockedPeers();
-//    }
-//
-//    public void addBlockedPeer(PeerId peerID) {
-//        peerClient.addBlockedPeer(peerID);
-//    }
-//
-//    public void removeBlockedPeer(PeerId peerID) {
-//        peerClient.removeBlockedPeer(peerID);
-//    }
+    public boolean isWishForRegularConnections() {
+        return peerClient.isWishForRegularConnections();
+    }
 
-//    synchronized void peerIsNowFriend(PeerId peerID) {
-////        try {
-////            databaseManager.addPeer(basePath, peerID);
-////        } catch (IOException e) {
-////            // todo handle
-////            e.printStackTrace();
-////        }
-//    }
+    public void setWishForRegularsConnections(boolean enabled) {
+        peerClient.setWishForRegularsConnections(enabled);
+    }
 
-    // todo do not delete dbs, since they might still be useful (regulars). Perform periodic checks
-//    synchronized void peerIsNoLongerFriend(PeerId peerID) {
-//        System.out.println("Peer is no longer friend: " + peerID);
-//        databaseManager.removePeer(basePath, peerID);
-//        peerShareManager.removeRemotePeer(basePath, peerID);
-//    }
+    public int getMaxRegularConnections() {
+        return peerClient.getMaxRegularConnections();
+    }
+
+    public void setMaxRegularConnections(int maxRegularConnections) {
+        peerClient.setMaxRegularConnections(maxRegularConnections);
+    }
+
+    public int getMaxRegularConnectionsForAdditionalCountries() {
+        return peerClient.getMaxRegularConnectionsForAdditionalCountries();
+    }
+
+    public void setMaxRegularConnectionsForAdditionalCountries(int maxRegularConnections) {
+        peerClient.setMaxRegularConnectionsForAdditionalCountries(maxRegularConnections);
+    }
+
+    public int getMaxRegularConnectionsForOtherCountries() {
+        return peerClient.getMaxRegularConnectionsForOtherCountries();
+    }
+
+    public CountryCode getMainCountry() {
+        return peerClient.getMainCountry();
+    }
+
+    public void setMainCountry(CountryCode mainCountry) {
+        peerClient.setMainCountry(mainCountry);
+    }
+
+    public List<CountryCode> getAdditionalCountries() {
+        return peerClient.getAdditionalCountries();
+    }
+
+    public boolean isAdditionalCountry(CountryCode country) {
+        return peerClient.isAdditionalCountry(country);
+    }
+
+    public void setAdditionalCountries(List<CountryCode> additionalCountries) {
+        peerClient.setAdditionalCountries(additionalCountries);
+    }
 
     synchronized void peerConnected(PeerId peerID) {
         peerShareManager.peerConnected(basePath, peerID);
@@ -359,18 +402,6 @@ public class PeerEngineClient {
 
     synchronized void peerDisconnected(PeerId peerID) {
         peerShareManager.peerDisconnected(basePath, peerID);
-    }
-
-    public synchronized void setNick(String nick) {
-        peerClient.setOwnNick(nick);
-    }
-
-    public String getOwnNick() {
-        return peerClient.getOwnNick();
-    }
-
-    public String getNick(PeerId peerID) {
-        return peerClient.getPeerNick(peerID);
     }
 
     /**
@@ -383,50 +414,71 @@ public class PeerEngineClient {
         peerClient.searchFavorites();
     }
 
+    public void clearAllPeerAddresses() {
+        peerClient.clearAllPeerAddresses();
+    }
+
+    public void clearAllData() {
+        peerClient.clearAllData();
+    }
+
     public synchronized String addLocalFileFixedPath(String path) throws IOException {
         return peerShareManager.getFileHash().put(path);
     }
 
-    public synchronized String addLocalMovieFile(String path, Movie movie) throws IOException {
-        return addLocalFile(path, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
+    public synchronized Duple<String, String> addLocalMovieFile(String path, Movie movie) throws IOException {
+        return addLocalMovieFile(path, Paths.get(path).getFileName().toString(), movie);
     }
 
-    public synchronized String addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter) throws IOException {
-        return addLocalFile(path, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+    public synchronized Duple<String, String> addLocalMovieFile(String path, String expectedFileName, Movie movie) throws IOException {
+        return addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
     }
 
-    public synchronized String addLocalImageFile(String path) throws IOException {
-        return addLocalFile(path, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
+    public synchronized Duple<String, String> addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter) throws IOException {
+        return addLocalChapterFile(path, Paths.get(path).getFileName().toString(), tvSeries, chapter);
     }
 
-    private synchronized String addLocalFile(
+    public synchronized Duple<String, String> addLocalChapterFile(String path, String expectedFileName, TVSeries tvSeries, Chapter chapter) throws IOException {
+        return addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+    }
+
+    public synchronized Duple<String, String> addLocalImageFile(String path) throws IOException {
+        return addLocalImageFile(path, Paths.get(path).getFileName().toString());
+    }
+
+    public synchronized Duple<String, String> addLocalImageFile(String path, String expectedFileName) throws IOException {
+        return addLocalFile(path, Paths.get(path).getFileName().toString(), MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
+    }
+
+    private synchronized Duple<String, String> addLocalFile(
             String path,
+            String expectedFileName,
             MoveFileAction moveFileAction,
             Movie movie,
             TVSeries tvSeries,
             Chapter chapter) throws IOException {
-        if (!peerShareManager.getFileHash().containsValue(path)) {
-            String newPath;
-            Triple<String, String, String> location;
-            if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
-                if (movie != null) {
-                    location = Paths.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), FilenameUtils.getName(path));
-                } else {
-                    location = Paths.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), FilenameUtils.getName(path));
-                }
+        Triple<String, String, String> location;
+        if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
+            if (movie != null) {
+                location = PathConstants.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), expectedFileName);
             } else {
-                // to images repo
-                location = Paths.imageFilePath(mediaPaths.getBaseMediaPath(), path);
+                location = PathConstants.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), expectedFileName);
             }
-            newPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
-            if (!new File(path).getAbsolutePath().equals(new File(newPath).getAbsolutePath())) {
-                // if necessary, move or copy the file to its corresponding place in the media directory
-                FileUtils.moveFile(new File(path), new File(newPath));
-            }
-            return addLocalFileFixedPath(newPath);
         } else {
-            return addLocalFileFixedPath(path);
+            // to images repo
+            location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
         }
+        // this is the path in the media library where this file should go (file is created in the process)
+        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+
+        if (!Paths.get(finalPath).getParent().equals(Paths.get(path))) {
+            // the given path is not in the expected place in the media library -> needs to be moved
+            Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+        } else {
+            // the given path is already in its expected place in the media library -> use it as final path
+            finalPath = path;
+        }
+        return new Duple<>(finalPath, addLocalFileFixedPath(finalPath));
     }
 
     public synchronized void removeLocalFile(String key, boolean removeFile) {
@@ -455,8 +507,6 @@ public class PeerEngineClient {
     public synchronized DownloadManager downloadImage(ImageHash imageHash) throws IOException, NotAliveException {
         HashMap<String, Serializable> userDictionary =
                 buildUserDictionary(DownloadInfo.Type.IMAGE, null, null, null, null, imageHash.getHash(), imageHash.serialize());
-        // todo change for temp download (move when complete)
-//        ResourceWriter resourceWriter = new BasicFileWriter(Paths.imagesDir(baseMediaPath), Paths.imageFileName(baseMediaPath, imageHash), userDictionary);
         ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
         return downloadFile(IMAGE_STORE, imageHash.getHash(), resourceWriter, DEFAULT_STREAMING_NEED, HASH_ALGORITHM);
     }
@@ -490,7 +540,9 @@ public class PeerEngineClient {
                 hashAlgorithm);
     }
 
-
+    public TransferStatistics getTransferStatistics() {
+        return peerClient.getTransferStatistics();
+    }
 
     /**
      * Retrieves the maximum allowed speed for downloading data from other peers. A null value indicates that no limit has been established
@@ -534,21 +586,33 @@ public class PeerEngineClient {
         peerClient.setMaxUploadSpeed(speed);
     }
 
+    public double getDownloadPartSelectionAccuracy() {
+        return peerClient.getDownloadPartSelectionAccuracy();
+    }
+
+    public void setDownloadPartSelectionAccuracy(double accuracy) {
+        peerClient.setDownloadPartSelectionAccuracy(accuracy);
+    }
+
     /**
      * Retrieves a shallow copy of the active downloads (only visible ones)
      *
      * @return a shallow copy of the active downloads
      */
-    public List<DownloadManager> getVisibleDownloads(String resourceStore) {
-        return peerClient.getVisibleDownloads(resourceStore);
+    public List<DownloadManager> getDownloads(String resourceStore) {
+        return peerClient.getDownloads(resourceStore);
+    }
+
+    public List<DownloadManager> getAllDownloads() {
+        return peerClient.getAllDownloads();
     }
 
 
-    public synchronized void setVisibleDownloadsManagerTimer(long millis) {
+    public synchronized void setVisibleDownloadsTimer(long millis) {
         peerClient.setVisibleDownloadsTimer(millis);
     }
 
-    public synchronized void stopVisibleDownloadsManager() {
+    public synchronized void stopVisibleDownloads() {
         peerClient.stopVisibleDownloadsTimer();
     }
 
@@ -557,12 +621,12 @@ public class PeerEngineClient {
      *
      * @return a shallow copy of the active downloads
      */
-    public List<UploadManager> getVisibleUploads(String resourceStore) {
-        return peerClient.getVisibleUploads(resourceStore);
+    public List<UploadManager> getUploads(String resourceStore) {
+        return peerClient.getUploads(resourceStore);
     }
 
-    public PeerId getNextConnectedPeer(PeerId peerID) {
-        return peerClient.getNextConnectedPeer(peerID);
+    public List<UploadManager> getAllUploads() {
+        return peerClient.getAllUploads();
     }
 
     public synchronized void setVisibleUploadsManagerTimer(long millis) {
@@ -573,13 +637,53 @@ public class PeerEngineClient {
         peerClient.stopVisibleUploadsTimer();
     }
 
+    /**
+     * Sends an object message to a connected peer. If the given peer is not among the list of connected peers, the
+     * message will be ignored
+     *
+     * @param peerId  ID of the peer to which the message is to be sent
+     * @param message string message to send
+     */
+    public void sendObjectMessage(PeerId peerId, Serializable message) {
+        peerClient.sendObjectMessage(peerId, message);
+    }
+
+    /**
+     * Sends an object message to all connected peers
+     *
+     * @param message string message to send to all connected peers
+     */
+    public void broadcastObjectMessage(Serializable message) {
+        peerClient.broadcastObjectMessage(message);
+    }
+
 
     public boolean synchronizeList(PeerId peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
         return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessor, timeout, progress);
     }
 
-    FileHashDatabase getFileHashDatabase() {
-        return peerShareManager.getFileHash();
+    void clearFileHashDatabase() {
+        peerShareManager.getFileHash().clear();
+    }
+
+    String removeFileByHash(String hash) {
+        return peerShareManager.getFileHash().remove(hash);
+    }
+
+    String removeFileByPath(String path) throws IOException {
+        return peerShareManager.getFileHash().removeValue(path);
+    }
+
+    boolean containsFileByHash(String hash) {
+        return peerShareManager.getFileHash().containsKey(hash);
+    }
+
+    boolean containsFileByPath(String path) throws IOException {
+        return peerShareManager.getFileHash().containsValue(path);
+    }
+
+    public String getFile(String hash) {
+        return peerShareManager.getFileHash().getFilePath(hash);
     }
 
     public synchronized String getBaseDataDir() {

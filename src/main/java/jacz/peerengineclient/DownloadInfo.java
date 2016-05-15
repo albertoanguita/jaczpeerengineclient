@@ -99,4 +99,17 @@ public class DownloadInfo {
                 (String) userDictionary.get("fileName")
         );
     }
+
+    @Override
+    public String toString() {
+        return "DownloadInfo{" +
+                "type=" + type +
+                ", containerType=" + containerType +
+                ", containerId=" + containerId +
+                ", superContainerId=" + superContainerId +
+                ", itemId=" + itemId +
+                ", fileHash='" + fileHash + '\'' +
+                ", fileName='" + fileName + '\'' +
+                '}';
+    }
 }

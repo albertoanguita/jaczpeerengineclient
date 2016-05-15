@@ -53,13 +53,8 @@ public class ItemIntegrator {
 
     public void integrateLocalItem(
             Databases databases,
-            DatabaseItem localItem) {
-        try {
-            concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
-        } catch (IllegalStateException e) {
-            // the activity is stopped
-            // todo
-        }
+            DatabaseItem localItem) throws IllegalStateException {
+        concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
 
         DatabaseMediator.ItemType type = localItem.getItemType();
         DatabaseItem integratedItem;

@@ -1,6 +1,8 @@
 package jacz.peerengineclient.databases.integration;
 
 import jacz.database.DatabaseMediator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,7 +11,8 @@ import java.util.concurrent.Executors;
  * Created by Alberto on 28/12/2015.
  */
 public class IntegrationEventsBridge implements IntegrationEvents {
-    // todo logger
+
+    private final static Logger logger = LoggerFactory.getLogger(IntegrationEventsBridge.class);
 
     private final IntegrationEvents integrationEvents;
 
@@ -22,16 +25,19 @@ public class IntegrationEventsBridge implements IntegrationEvents {
 
     @Override
     public void newIntegratedItem(DatabaseMediator.ItemType type, Integer id) {
+        logger.info("new integrated item. type: " + type + ", id: " + id);
         sequentialTaskExecutor.submit(() -> integrationEvents.newIntegratedItem(type, id));
     }
 
     @Override
     public void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id) {
+        logger.info("integrated item has new media content. type: " + type + ", id: " + id);
         sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasNewMediaContent(type, id));
     }
 
     @Override
     public void integratedItemsRemoved() {
+        logger.info("integrated item removed");
         sequentialTaskExecutor.submit(integrationEvents::integratedItemsRemoved);
     }
 

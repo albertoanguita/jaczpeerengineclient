@@ -53,5 +53,4 @@ public class ForeignShares {
         videosShare.removeResourceProvider(peerID);
         imagesShare.removeResourceProvider(peerID);
     }
-
 }

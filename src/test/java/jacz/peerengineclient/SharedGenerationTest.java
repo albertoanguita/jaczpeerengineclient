@@ -3,8 +3,8 @@ package jacz.peerengineclient;
 import jacz.database.Movie;
 import jacz.database.VideoFile;
 import jacz.peerengineclient.databases.DatabaseIO;
-import jacz.peerengineclient.test.Client;
-import jacz.peerengineclient.test.TestUtil;
+import jacz.peerengineclient.common.Client;
+import jacz.peerengineclient.common.TestUtil;
 import jacz.util.concurrency.ThreadUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -42,9 +42,9 @@ public class SharedGenerationTest {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.getFileHashDatabase().clear();
+        peerEngineClient.clearFileHashDatabase();
         FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
 //        peerEngineClient.addFriendPeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();

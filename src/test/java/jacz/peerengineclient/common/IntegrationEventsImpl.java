@@ -1,10 +1,10 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Created by Alberto on 28/04/2016.
  */
 public class IntegrationEventsImpl implements IntegrationEvents {
 

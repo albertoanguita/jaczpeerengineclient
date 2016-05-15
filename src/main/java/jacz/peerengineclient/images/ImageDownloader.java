@@ -6,6 +6,8 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineservice.NotAliveException;
 import jacz.util.date_time.TimedEventRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -15,6 +17,8 @@ import java.util.Set;
  * Created by Alberto on 18/02/2016.
  */
 public class ImageDownloader {
+
+    private final static Logger logger = LoggerFactory.getLogger(ImageDownloader.class);
 
     private static final long RECENT_IMAGE_CHECK_THRESHOLD = 60000;
 
@@ -35,9 +39,11 @@ public class ImageDownloader {
 
     public void downloadMissingImages() {
         if (!timedEventRecord.lastEventIsRecent()) {
+            logger.info("Searching for missing images...");
             Set<ImageHash> missingImages = getMissingImages();
             for (ImageHash imageHash : missingImages) {
                 try {
+                    logger.info("Downloading missing image " + imageHash);
                     peerEngineClient.downloadImage(imageHash);
                 } catch (IOException | NotAliveException e) {
                     // ignore

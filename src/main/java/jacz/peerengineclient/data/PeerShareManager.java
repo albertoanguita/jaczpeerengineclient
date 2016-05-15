@@ -4,6 +4,7 @@ import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.data.synch.FileHashDatabaseAccessor;
 import jacz.peerengineclient.data.synch.RemotePeerShareAccessor;
 import jacz.peerengineclient.data.synch.TempFilesAccessor;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineclient.util.synch.DataAccessorController;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
@@ -11,7 +12,6 @@ import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class PeerShareManager {
                 PeerEngineClient peerEngineClient,
                 FileHashDatabaseWithTimestamp fileHash,
                 Map<PeerId, RemotePeerShare> remotePeerShares) {
-            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient);
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient, "FileHashSynch");
             this.fileHash = fileHash;
             this.remotePeerShares = remotePeerShares;
         }
@@ -73,7 +73,7 @@ public class PeerShareManager {
         public TempFilesDataAccessorController(
                 PeerEngineClient peerEngineClient,
                 ForeignShares foreignShares) {
-            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient);
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, SYNCH_TIMEOUT, MAX_SHARE_SYNCH_TASKS, peerEngineClient, "TempFilesSynch");
             this.foreignShares = foreignShares;
         }
 
@@ -104,7 +104,7 @@ public class PeerShareManager {
 
     private static final int VERY_LARGE_SHARED_SYNCH_COUNT = 20;
 
-    private static final long SYNCH_TIMEOUT = 15000L;
+    private static final long SYNCH_TIMEOUT = 10000L;
 
     private static final int MAX_SHARE_SYNCH_TASKS = 20;
 
@@ -147,9 +147,14 @@ public class PeerShareManager {
         RemotePeerShare remotePeerShare;
         try {
             remotePeerShare = PeerShareIO.loadRemoteShare(basePath, peerID, foreignShares);
-        } catch (IOException | VersionedSerializationException e) {
+        } catch (IOException e) {
             // could not load the share (maybe it did not exist) -> create a new one
-            remotePeerShare = new RemotePeerShare(peerID, foreignShares);
+            try {
+                remotePeerShare = new RemotePeerShare(peerID, foreignShares, PathConstants.remoteSharePath(basePath, peerID));
+            } catch (IOException e1) {
+                peerEngineClient.reportFatalError("Could not create remote share for peer", peerID, PathConstants.remoteSharePath(basePath, peerID));
+                return;
+            }
         }
         remotePeerShares.put(peerID, remotePeerShare);
     }
@@ -158,13 +163,13 @@ public class PeerShareManager {
         RemotePeerShare remotePeerShare = remotePeerShares.remove(peerID);
         if (remotePeerShare != null) {
             remotePeerShare.notifyPeerDisconnected();
-            try {
-                PeerShareIO.saveRemotePeerShare(basePath, peerID, remotePeerShare);
-            } catch (IOException e) {
-                // error writing the remote peer share to disk -> remove the files, if any
-                // a new peer share will be created at some time in the future
-                PeerShareIO.removeRemotePeerShare(basePath, peerID);
-            }
+//            try {
+//                PeerShareIO.saveRemotePeerShare(basePath, peerID, remotePeerShare);
+//            } catch (IOException e) {
+//                // error writing the remote peer share to disk -> remove the files, if any
+//                // a new peer share will be created at some time in the future
+//                PeerShareIO.removeRemotePeerShare(basePath, peerID);
+//            }
         }
     }
 
@@ -193,6 +198,7 @@ public class PeerShareManager {
     }
 
     public void stop() {
+        // @FUTURE@ todo once this stop could not wait because the cc inside was blocked in some unfinished synch process
         fileHashDataAccessorController.stop();
         tempFilesDataAccessorController.stop();
     }

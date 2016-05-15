@@ -1,19 +1,20 @@
-package jacz.peerengineclient.test.load_config;
+package jacz.peerengineclient.loadconfig;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
-import jacz.peerengineclient.test.Client;
+import jacz.peerengineclient.common.Client;
 import jacz.util.concurrency.ThreadUtil;
+import org.junit.Test;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Created by Alberto on 28/04/2016.
  */
-public class TestLoadConfig {
+public class LoadConfigTest {
 
-    public static void main(String[] args) throws IOException, XMLStreamException {
+    @Test
+    public void test() throws IOException {
 
         System.out.println(SessionManager.listAvailableConfigs("./etc"));
 

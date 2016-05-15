@@ -1,11 +1,11 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Created by Alberto on 28/04/2016.
  */
 public class DatabaseSynchEventsImpl implements DatabaseSynchEvents {
 
@@ -46,7 +46,7 @@ public class DatabaseSynchEventsImpl implements DatabaseSynchEvents {
 
     @Override
     public void sharedSynchError(PeerId remotePeerId, SynchError error) {
-        System.out.println("Shared synch error with " + TestUtil.formatPeer(remotePeerId) + ", progress: " + error);
+        System.out.println("Shared synch error with " + TestUtil.formatPeer(remotePeerId) + ", error: " + error);
     }
 
     @Override

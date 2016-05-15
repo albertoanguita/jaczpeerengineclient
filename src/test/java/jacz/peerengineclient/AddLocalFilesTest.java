@@ -3,14 +3,16 @@ package jacz.peerengineclient;
 import jacz.database.Chapter;
 import jacz.database.Movie;
 import jacz.database.TVSeries;
+import jacz.peerengineclient.common.Client;
 import jacz.peerengineclient.databases.DatabaseIO;
-import jacz.peerengineclient.test.Client;
 import jacz.util.lists.tuple.Triple;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+
+//import jacz.peerengineclient.test.Client;
 
 /**
  * Created by Alberto on 18/02/2016.
@@ -117,7 +119,7 @@ public class AddLocalFilesTest {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.getFileHashDatabase().clear();
+        peerEngineClient.clearFileHashDatabase();
         FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
         FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
         String db = peerEngineClient.getDatabases().getLocalDB();
@@ -149,7 +151,7 @@ public class AddLocalFilesTest {
 
     private void assertFile(PeerEngineClient peerEngineClient, File path, String hash) {
         System.out.println("Asserting file at " + path + "...");
-        Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(hash));
+        Assert.assertTrue(peerEngineClient.containsFileByHash(hash));
         Assert.assertTrue(path.isFile());
     }
 }

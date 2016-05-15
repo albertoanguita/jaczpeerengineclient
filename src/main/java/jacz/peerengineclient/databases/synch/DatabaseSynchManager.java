@@ -38,7 +38,7 @@ public class DatabaseSynchManager {
                 DatabaseSynchManager databaseSynchManager,
                 DatabaseManager databaseManager,
                 Databases databases) {
-            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, DATABASE_SYNCH_TIMEOUT, MAX_DATABASE_SYNCH_TASKS, peerEngineClient);
+            super(RECENTLY_THRESHOLD, LARGE_SHARED_SYNCH_COUNT, VERY_LARGE_SHARED_SYNCH_COUNT, DATABASE_SYNCH_TIMEOUT, MAX_DATABASE_SYNCH_TASKS, peerEngineClient, "DatabaseSynch");
             this.databaseSynchManager = databaseSynchManager;
             this.databaseManager = databaseManager;
             this.databases = databases;
@@ -80,13 +80,15 @@ public class DatabaseSynchManager {
 
     private static final int VERY_LARGE_SHARED_SYNCH_COUNT = 10;
 
-    private static final long DATABASE_SYNCH_TIMEOUT = 15000L;
+    private static final long DATABASE_SYNCH_TIMEOUT = 10000L;
 
     private static final int MAX_DATABASE_SYNCH_TASKS = 10;
 
     private final DatabaseSynchEvents databaseSynchEvents;
 
     private final DatabaseSynchAccessorController databaseSynchAccessorController;
+
+    private final PeerEngineClient peerEngineClient;
 
     public DatabaseSynchManager(
             DatabaseManager databaseManager,
@@ -95,6 +97,7 @@ public class DatabaseSynchManager {
             Databases databases) {
         this.databaseSynchEvents = databaseSynchEvents;
         databaseSynchAccessorController = new DatabaseSynchAccessorController(peerEngineClient, this, databaseManager, databases);
+        this.peerEngineClient = peerEngineClient;
     }
 
     /**
@@ -128,7 +131,9 @@ public class DatabaseSynchManager {
     }
 
     void sharedDatabaseSynchFailed(PeerId remotePeerId, SynchError error) {
-        // todo check errors (fatal with DATA_ACCESS_ERROR)
+        if (error.type == SynchError.Type.DATA_ACCESS_ERROR || error.type == SynchError.Type.DATA_NOT_SERIALIZABLE) {
+            peerEngineClient.reportFatalError("Shared database synch process failed", error);
+        }
         databaseSynchEvents.sharedSynchError(remotePeerId, error);
     }
 
@@ -149,7 +154,9 @@ public class DatabaseSynchManager {
     }
 
     void remoteDatabaseSynchFailed(PeerId remotePeerId, SynchError error) {
-        // todo check errors (fatal with DATA_ACCESS_ERROR)
+        if (error.type == SynchError.Type.DATA_ACCESS_ERROR || error.type == SynchError.Type.DATA_NOT_SERIALIZABLE) {
+            peerEngineClient.reportFatalError("Remote database synch process failed", error);
+        }
         databaseSynchEvents.remoteSynchError(remotePeerId, error);
     }
 

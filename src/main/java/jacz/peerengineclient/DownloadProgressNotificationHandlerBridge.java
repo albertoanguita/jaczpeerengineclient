@@ -4,7 +4,6 @@ import jacz.database.Chapter;
 import jacz.database.DatabaseMediator;
 import jacz.database.Movie;
 import jacz.database.TVSeries;
-import jacz.peerengineclient.file_system.Paths;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.datatransfer.DownloadProgressNotificationHandler;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
@@ -12,11 +11,10 @@ import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.util.files.FileGenerator;
+import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.Triple;
 import jacz.util.numeric.range.LongRange;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -111,40 +109,88 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
 
     @Override
     public synchronized void completed(String resourceID, String storeName, ResourceWriter resourceWriter, DownloadManager downloadManager) {
-        String finalPath = null;
         DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
+        Duple<String, String> pathAndHash;
         try {
-            Triple<String, String, String> location;
             if (downloadInfo.type.isMedia()) {
-                // move file to required location
+                // move file to required location in media library
                 if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
                     Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
-                    location = Paths.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
+                    if (movie != null) {
+                        pathAndHash = peerEngineClient.addLocalMovieFile(resourceWriter.getPath(), downloadInfo.fileName, movie);
+                    } else {
+                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+                        return;
+                    }
                 } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
-                    Integer tvSeriesID = downloadInfo.superContainerId;
-                    // in fact, chapters without tv series are never received because they are not shared by the other peer
+                    // chapters without tv series are never received because they are not shared by the other peer
                     // we however maintain this code in case this situation changes
-                    String tvSeriesTitle = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId).getTitle() : "unclassified-chapters";
+                    TVSeries tvSeries = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId) : null;
                     Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
-                    // todo sanitize fileName
-                    location = Paths.seriesFilePath(downloadsPath, tvSeriesID, tvSeriesTitle, chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
+                    if (chapter != null) {
+                        pathAndHash = peerEngineClient.addLocalChapterFile(resourceWriter.getPath(), downloadInfo.fileName, tvSeries, chapter);
+                    } else {
+                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+                        return;
+                    }
                 } else {
-                    // todo fatal error
+                    peerEngineClient.reportFatalError("Unrecognized downloaded item container type", downloadInfo.containerType, resourceID, storeName);
                     return;
                 }
             } else {
                 // image file -> move to correct location
-                location = Paths.imageFilePath(downloadsPath, downloadInfo.fileName, downloadInfo.fileHash);
+                pathAndHash = peerEngineClient.addLocalImageFile(resourceWriter.getPath(), downloadInfo.fileName);
             }
-            finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
-            FileUtils.moveFile(new File(resourceWriter.getPath()), new File(finalPath));
-            // finally, add this file to the file hash database
-            peerEngineClient.getFileHashDatabase().put(finalPath);
+            downloadEvents.completed(downloadInfo, pathAndHash.element1, downloadManager);
         } catch (IOException e) {
-            // todo what here??
-            e.printStackTrace();
+            peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
         }
-        downloadEvents.completed(downloadInfo, finalPath, downloadManager);
+
+
+
+
+//        String finalPath = null;
+//        DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary());
+//        try {
+//            Triple<String, String, String> location;
+//            if (downloadInfo.type.isMedia()) {
+//                // move file to required location
+//                if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
+//                    Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
+//                    location = PathConstants.movieFilePath(downloadsPath, movie.getId(), movie.getTitle(), downloadInfo.fileName);
+//                } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
+//                    Integer tvSeriesID = downloadInfo.superContainerId;
+//                    // in fact, chapters without tv series are never received because they are not shared by the other peer
+//                    // we however maintain this code in case this situation changes
+//                    String tvSeriesTitle = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId).getTitle() : "unclassified-chapters";
+//                    Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
+//                    location = PathConstants.seriesFilePath(downloadsPath, tvSeriesID, tvSeriesTitle, chapter.getId(), chapter.getTitle(), downloadInfo.fileName);
+//                } else {
+//                    peerEngineClient.reportFatalError("Unrecognized downloaded item container type", downloadInfo.containerType, resourceID, storeName);
+//                    return;
+//                }
+//            } else {
+//                // image file -> move to correct location
+//                location = PathConstants.imageFilePath(downloadsPath, downloadInfo.fileName, downloadInfo.fileHash);
+//            }
+//            location = sanitizePath(location);
+//            finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+//            Files.move(java.nio.file.Paths.get(resourceWriter.getPath()), java.nio.file.Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+//            FileUtils.moveFile(new File(resourceWriter.getPath()), new File(finalPath));
+//            // finally, add this file to the file hash database
+//            peerEngineClient.addLocalFileFixedPath(finalPath);
+//        } catch (IOException e) {
+//            peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+//        }
+
+
+    }
+
+    private Triple<String, String, String> sanitizePath(Triple<String, String, String> location) {
+        return new Triple<>(
+                location.element1,
+                FileGenerator.sanitizeFilenameXPlatform(location.element2),
+                FileGenerator.sanitizeFilenameXPlatform(location.element3));
     }
 
     @Override

@@ -16,11 +16,14 @@ import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
  */
 public class DataAccessorContainerImpl implements DataAccessorContainer {
 
+    private final PeerEngineClient peerEngineClient;
+
     private final DatabaseManager databaseManager;
 
     private final PeerShareManager peerShareManager;
 
-    public DataAccessorContainerImpl(DatabaseManager databaseManager, PeerShareManager peerShareManager) {
+    public DataAccessorContainerImpl(PeerEngineClient peerEngineClient, DatabaseManager databaseManager, PeerShareManager peerShareManager) {
+        this.peerEngineClient = peerEngineClient;
         this.databaseManager = databaseManager;
         this.peerShareManager = peerShareManager;
     }
@@ -48,7 +51,7 @@ public class DataAccessorContainerImpl implements DataAccessorContainer {
                 return peerShareManager.requestForLocalTempFilesSynch(peerID);
 
             default:
-                // todo fatal error
+                peerEngineClient.reportFatalError("Invalid data accessor name", dataAccessorName, peerID);
                 throw new AccessorNotFoundException();
         }
     }

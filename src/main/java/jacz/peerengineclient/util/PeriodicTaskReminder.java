@@ -15,6 +15,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Reminder for remote synch processes
@@ -65,6 +66,8 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final Timer timer;
 
+    private final AtomicBoolean alive;
+
 //    private final Daemon daemon;
 
     private final PeerSpecificTask databaseSynchManagerTask;
@@ -72,9 +75,6 @@ public class PeriodicTaskReminder implements TimerAction {
     private final PeerSpecificTask peerShareManagerTempFilesTask;
 
     private final ExecutorService imageDownloaderTask;
-
-    // todo 3 daemons and 3 queues -> new inner class
-    // for image downloader, a sequential task executor
 
     public PeriodicTaskReminder(
             PeerEngineClient peerEngineClient,
@@ -85,6 +85,7 @@ public class PeriodicTaskReminder implements TimerAction {
         lastSynchedPeerId = null;
         this.imageDownloader = imageDownloader;
         timer = new Timer(REMOTE_SYNCH_DELAY, this, false, "PeriodicTaskReminder");
+        alive = new AtomicBoolean(true);
         databaseSynchManagerTask = new PeerSpecificTask() {
             @Override
             public void performTask(PeerId peerID) {
@@ -111,22 +112,28 @@ public class PeriodicTaskReminder implements TimerAction {
     }
 
     @Override
-    public Long wakeUp(Timer timer) {
-        lastSynchedPeerId = peerEngineClient.getNextConnectedPeer(lastSynchedPeerId);
-        if (lastSynchedPeerId != null) {
-            databaseSynchManagerTask.addTaskForPeer(lastSynchedPeerId);
-            peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerId);
-            peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
+    public synchronized Long wakeUp(Timer timer) {
+        if (alive.get()) {
+            lastSynchedPeerId = peerEngineClient.getNextConnectedPeer(lastSynchedPeerId);
+            if (lastSynchedPeerId != null) {
+                databaseSynchManagerTask.addTaskForPeer(lastSynchedPeerId);
+                peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerId);
+                peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
+            }
+            imageDownloaderTask.submit(imageDownloader::downloadMissingImages);
+            return null;
+        } else {
+            return 0L;
         }
-        imageDownloaderTask.submit(imageDownloader::downloadMissingImages);
-        return null;
     }
 
-    public void stop() {
-        timer.stop();
-        databaseSynchManagerTask.stop();
-        peerShareManagerRemoteShareTask.stop();
-        peerShareManagerTempFilesTask.stop();
-        imageDownloaderTask.shutdown();
+    public synchronized void stop() {
+        if (alive.getAndSet(false)) {
+            timer.stop();
+            databaseSynchManagerTask.stop();
+            peerShareManagerRemoteShareTask.stop();
+            peerShareManagerTempFilesTask.stop();
+            imageDownloaderTask.shutdown();
+        }
     }
 }

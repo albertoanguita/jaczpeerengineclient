@@ -16,7 +16,7 @@ import java.util.*;
 /**
  * API hard-coded paths
  */
-public class Paths {
+public class PathConstants {
 
     /**********************
      * directory paths
@@ -47,6 +47,8 @@ public class Paths {
     private static final String TV_SERIES_DIR = "series";
 
     private static final String UNKNOWN_TITLE_DIR = "untitled_item";
+
+    private static final String UNCLASSIFIED_CHAPTERS = "unclassified_chapters";
 
 
     /**********************
@@ -79,7 +81,7 @@ public class Paths {
 
     private static final String ITEM_RELATIONS_FILE = "item-relations";
 
-    private static final String FILE_HASH_DATABASE_FILE = "hash-db";
+    private static final String FILE_HASH_DATABASE_FILE = "hashes";
 
     /**********************
      * file extensions
@@ -295,11 +297,7 @@ public class Paths {
      ***********************/
 
     public static String fileHashPath(String basePath) {
-        return getFilePath(basePath, DATA_DIR, FILE_HASH_DATABASE_FILE, EXT_VERSIONED);
-    }
-
-    public static String fileHashBackupPath(String basePath) {
-        return getFilePath(basePath, DATA_DIR, FILE_HASH_DATABASE_FILE, EXT_BACKUP);
+        return getFilePath(basePath, DATA_DIR, FILE_HASH_DATABASE_FILE, EXT_DB);
     }
 
     /************************
@@ -315,12 +313,12 @@ public class Paths {
      ***********************/
 
     public static String remoteSharePath(String basePath, PeerId peerID) {
-        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_VERSIONED);
+        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_DB);
     }
 
-    public static String remoteShareBackupPath(String basePath, PeerId peerID) {
-        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
-    }
+//    public static String remoteShareBackupPath(String basePath, PeerId peerID) {
+//        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
+//    }
 
     /************************
      * downloads
@@ -353,7 +351,7 @@ public class Paths {
 
     public static Triple<String, String, String> imageFilePath(String downloadsDir, String fileName, String hash) throws IOException {
         FileUtils.forceMkdir(imagesDir(downloadsDir));
-        return new Triple<>(imagesDir(downloadsDir).getName(), hash, FilenameUtils.getExtension(fileName));
+        return new Triple<>(imagesDir(downloadsDir).getPath(), hash, FilenameUtils.getExtension(fileName));
     }
 
     public static String imageFileName(String downloadsDir, ImageHash imageHash) throws IOException {
@@ -365,15 +363,15 @@ public class Paths {
         FileUtils.forceMkdir(moviesDir(downloadsDir));
         File titleDir = generateTitleDir(moviesDir(downloadsDir), movieId, movieTitle);
         FileUtils.forceMkdir(titleDir);
-        return new Triple<>(titleDir.getName(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
+        return new Triple<>(titleDir.getPath(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
     }
 
     public static Triple<String, String, String> seriesFilePath(String downloadsDir, Integer seriesId, String seriesTitle, int chapterId, String chapterTitle, String fileName) throws IOException {
         FileUtils.forceMkdir(seriesDir(downloadsDir));
-        File seriesTitledDir = generateTitleDir(seriesDir(downloadsDir), seriesId, seriesTitle);
+        File seriesTitledDir = seriesId != null ? generateTitleDir(seriesDir(downloadsDir), seriesId, seriesTitle) : new File(UNCLASSIFIED_CHAPTERS);
         FileUtils.forceMkdir(seriesTitledDir);
         File chapterTitledDir = generateTitleDir(seriesTitledDir, chapterId, chapterTitle);
         FileUtils.forceMkdir(chapterTitledDir);
-        return new Triple<>(chapterTitledDir.getName(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
+        return new Triple<>(chapterTitledDir.getPath(), FilenameUtils.getBaseName(fileName), FilenameUtils.getExtension(fileName));
     }
 }

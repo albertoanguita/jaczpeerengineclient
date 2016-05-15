@@ -42,4 +42,25 @@ public class SerializedHashItem implements Serializable, Comparable<SerializedHa
                 ", alive=" + alive +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SerializedHashItem that = (SerializedHashItem) o;
+
+        if (timestamp != that.timestamp) return false;
+        if (alive != that.alive) return false;
+        return hash.equals(that.hash);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (timestamp ^ (timestamp >>> 32));
+        result = 31 * result + hash.hashCode();
+        result = 31 * result + (alive ? 1 : 0);
+        return result;
+    }
 }

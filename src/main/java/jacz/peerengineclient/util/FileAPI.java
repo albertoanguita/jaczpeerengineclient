@@ -31,7 +31,9 @@ public class FileAPI {
     public Set<String> getTempHashes() {
         Set<String> tempHashes = new HashSet<>();
         for (DownloadManager downloadManager : peerClient.getAllDownloads()) {
-            tempHashes.add(downloadManager.getResourceID());
+            if (downloadManager.getLength() != null) {
+                tempHashes.add(downloadManager.getResourceID());
+            }
         }
         return tempHashes;
     }

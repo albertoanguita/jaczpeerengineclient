@@ -1,9 +1,9 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.PeerId;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Created by Alberto on 28/04/2016.
  */
 public class TestUtil {
 
@@ -17,4 +17,11 @@ public class TestUtil {
         return "{" + peerID.toString().substring(40) + "}";
     }
 
+    public static PeerId peerID(int b) {
+        String pid = "" + b;
+        while (pid.length() < 43) {
+            pid = "0" + pid;
+        }
+        return new PeerId(pid);
+    }
 }

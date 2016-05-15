@@ -5,5 +5,5 @@ package jacz.peerengineclient.test;
  *
  * Pattern copied from http://www.javacodegeeks.com/2015/01/separating-integration-tests-from-unit-tests-using-maven-failsafe-junit-category.html
  */
-public interface IntegrationTest {
+public class IntegrationTest {
 }

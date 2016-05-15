@@ -4,7 +4,7 @@ import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
@@ -12,7 +12,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * This class handles saving and restoring the data of the library manager. For all handled peers,
@@ -35,7 +34,7 @@ public class DatabaseIO {
             PeerEngineClient peerEngineClient
     ) throws IOException, VersionedSerializationException {
         return new DatabaseManager(
-                new Databases(basePath),
+                new Databases(peerEngineClient, basePath),
                 databaseSynchEvents,
                 integrationEvents,
                 peerEngineClient);
@@ -46,28 +45,28 @@ public class DatabaseIO {
     }
 
     private static void saveItemRelations(String basePath, ItemRelations itemRelations) throws IOException {
-        VersionedObjectSerializer.serialize(itemRelations, CRCBytes, Paths.itemRelationsPath(basePath), Paths.itemRelationsBackupPath(basePath));
+        VersionedObjectSerializer.serialize(itemRelations, CRCBytes, PathConstants.itemRelationsPath(basePath), PathConstants.itemRelationsBackupPath(basePath));
     }
 
     public static void createNewDatabaseFileStructure(String basePath) throws IOException {
-        DatabaseMediator.dropAndCreate(Paths.integratedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        DatabaseMediator.dropAndCreate(Paths.localDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        DatabaseMediator.dropAndCreate(Paths.sharedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        DatabaseMediator.dropAndCreate(Paths.deletedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        DatabaseMediator.dropAndCreate(PathConstants.integratedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        DatabaseMediator.dropAndCreate(PathConstants.localDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        DatabaseMediator.dropAndCreate(PathConstants.sharedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
+        DatabaseMediator.dropAndCreate(PathConstants.deletedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
         ItemRelations itemRelations = new ItemRelations();
         saveItemRelations(basePath, itemRelations);
     }
 
     static String createNewRemoteDatabase(String basePath, PeerId peerID) throws IOException {
         // set up a temporary database with a pre-fixed identifier. This database will be re-created in the first synch
-        String dbPath = Paths.remoteDBPath(basePath, peerID);
+        String dbPath = PathConstants.remoteDBPath(basePath, peerID);
         DatabaseMediator.dropAndCreate(dbPath, "temp-id");
         return dbPath;
     }
 
     public static void removeRemoteDatabase(String basePath, PeerId peerID) {
         //noinspection ResultOfMethodCallIgnored
-        new File(Paths.remoteDBPath(basePath, peerID)).delete();
+        new File(PathConstants.remoteDBPath(basePath, peerID)).delete();
     }
 
 }

@@ -1,29 +1,29 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 
 /**
- * todo
+ *
  */
 public class TempFileManagerEventsImpl implements TempFileManagerEvents {
 
     @Override
     public void indexFileGenerated(String indexFilePath) {
-
+        System.out.println("Index file generated: " + indexFilePath);
     }
 
     @Override
     public void indexFileRecovered(String indexFilePath) {
-
+        System.out.println("Index file recpvered: " + indexFilePath);
     }
 
     @Override
     public void indexFileErrorRestoredWithBackup(String indexFilePath) {
-
+        System.out.println("Index file error restored with backup: " + indexFilePath);
     }
 
     @Override
     public void indexFileError(String indexFilePath) {
-
+        System.out.println("Index file error: " + indexFilePath);
     }
 }

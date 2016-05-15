@@ -1,4 +1,4 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.State;
@@ -8,7 +8,7 @@ import jacz.util.network.IP4Port;
  * Connection events
  */
 public class ConnectionEventsImpl implements ConnectionEvents {
-    
+
     @Override
     public void localPortModified(int port) {
             System.out.println("Local port modified: " + port);

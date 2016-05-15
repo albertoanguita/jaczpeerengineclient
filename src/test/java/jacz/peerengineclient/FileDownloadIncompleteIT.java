@@ -3,10 +3,10 @@ package jacz.peerengineclient;
 import jacz.database.DatabaseMediator;
 import jacz.database.Movie;
 import jacz.database.VideoFile;
+import jacz.peerengineclient.common.Client;
+import jacz.peerengineclient.common.TestUtil;
 import jacz.peerengineclient.databases.DatabaseIO;
-import jacz.peerengineclient.file_system.Paths;
-import jacz.peerengineclient.test.Client;
-import jacz.peerengineclient.test.TestUtil;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
@@ -17,7 +17,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -64,15 +63,17 @@ public class FileDownloadIncompleteIT {
         // clear dbs
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
+        FileUtils.cleanDirectory(new java.io.File("./etc/user_0/media"));
+        FileUtils.cleanDirectory(new java.io.File("./etc/user_0/temp"));
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.getFileHashDatabase().clear();
-        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
-        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
+        peerEngineClient.clearAllData();
+        peerEngineClient.setWishForRegularsConnections(false);
+        peerEngineClient.clearFileHashDatabase();
         // download at 40 kB/s
         peerEngineClient.setMaxDownloadSpeed(40);
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
 
         // connect and warm up
         peerEngineClient.connect();
@@ -84,7 +85,7 @@ public class FileDownloadIncompleteIT {
 
         announceEvent(5);
         assertIntegrated(integratedDB);
-        peerEngineClient.getPeerClient().setVisibleDownloadsTimer(3000);
+        peerEngineClient.setVisibleDownloadsTimer(3000);
 
         // start downloading the file
         Movie movie = Movie.getMovies(integratedDB).get(0);
@@ -97,8 +98,8 @@ public class FileDownloadIncompleteIT {
         ThreadUtil.safeSleep(10 * CYCLE_LENGTH);
         announceEvent(15);
 
-        Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(fileHash()));
-        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
+        Assert.assertTrue(peerEngineClient.containsFileByHash(fileHash()));
+        Assert.assertTrue(FileUtils.getFile(PathConstants.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
 
         ThreadUtil.safeSleep(5000);
 
@@ -116,13 +117,15 @@ public class FileDownloadIncompleteIT {
         // clear dbs
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
+        FileUtils.cleanDirectory(new java.io.File("./etc/user_1/media"));
+        FileUtils.cleanDirectory(new java.io.File("./etc/user_1/temp"));
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.getFileHashDatabase().clear();
-        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
-        FileUtils.cleanDirectory(new File(peerEngineClient.getTempDownloadsPath()));
+        peerEngineClient.clearAllData();
+        peerEngineClient.setWishForRegularsConnections(false);
+        peerEngineClient.clearFileHashDatabase();
         // download at 10 kB/s
         peerEngineClient.setMaxDownloadSpeed(10);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("3"));
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
@@ -153,8 +156,8 @@ public class FileDownloadIncompleteIT {
 
         announceEvent(10);
 
-        Assert.assertTrue(peerEngineClient.getFileHashDatabase().containsKey(fileHash()));
-        Assert.assertTrue(FileUtils.getFile(Paths.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
+        Assert.assertTrue(peerEngineClient.containsFileByHash(fileHash()));
+        Assert.assertTrue(FileUtils.getFile(PathConstants.moviesDir(peerEngineClient.getMediaPath()), movie.getTitle() + "_" + movie.getId(), videoFile.getName()).isFile());
 
         // wait 5 cycle
         ThreadUtil.safeSleep(5 * CYCLE_LENGTH);
@@ -175,10 +178,12 @@ public class FileDownloadIncompleteIT {
         // clear dbs
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
+        FileUtils.cleanDirectory(new java.io.File("./etc/user_2/media"));
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        peerEngineClient.getFileHashDatabase().clear();
-        FileUtils.cleanDirectory(new File(peerEngineClient.getMediaPath()));
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        peerEngineClient.clearAllData();
+        peerEngineClient.setWishForRegularsConnections(false);
+        peerEngineClient.clearFileHashDatabase();
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         String localDB = peerEngineClient.getDatabases().getLocalDB();
 

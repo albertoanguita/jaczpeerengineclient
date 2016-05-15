@@ -1,16 +1,14 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.util.hash.hashdb.FileHashDatabase;
-import jacz.util.io.serialization.UnrecognizedVersionException;
-import jacz.util.io.serialization.VersionStack;
-import jacz.util.io.serialization.VersionedObjectSerializer;
-import jacz.util.io.serialization.VersionedSerializationException;
+import jacz.util.hash.hashdb.FileHashDatabaseLS;
 import jacz.util.maps.DoubleMap;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -18,76 +16,92 @@ import java.util.stream.Collectors;
  * <p>
  * This class is used to model the hashes stored locally and shared with the rest of the peers. The put and remove
  * methods are overridden to maintain track of active and deleted items.
- *
- * todo we must synchronize this class
+ * <p>
+ * All stored paths are automatically converted to absolute
  */
-public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
+public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
 
     private static final String VERSION_0_1 = "VERSION_0.1";
 
     private static final String CURRENT_VERSION = VERSION_0_1;
 
-    private String id;
+    private static final String VERSION_KEY = FileHashDatabaseWithTimestamp.class.getName() + "Version";
+
+    private static final String ID_KEY = "id";
+
+    private static final String TIMESTAMP_KEY = "timestamp";
+
+    private static final String ACTIVE_TIMESTAMP_CATEGORY = "@@@act@@@";
+
+    private static final String DELETED_TIMESTAMP_CATEGORY = "@@@del@@@";
 
     private DoubleMap<Long, String> activeHashes;
 
     private HashMap<Long, String> deletedHashes;
 
-    private Long nextTimestamp;
-
     private Long getNextTimestamp() {
-        return nextTimestamp++;
+        long timestamp = getLocalStorage().getLong(TIMESTAMP_KEY);
+        getLocalStorage().setLong(TIMESTAMP_KEY, timestamp + 1);
+        return timestamp;
     }
 
-    public FileHashDatabaseWithTimestamp(String id) {
-        super(PeerEngineClient.getHashFunction());
-        this.id = id;
+    public FileHashDatabaseWithTimestamp(String path, String id) throws IOException {
+        super(path, PeerEngineClient.getHashFunction(), true);
+        getLocalStorage().setString(VERSION_KEY, CURRENT_VERSION);
+        getLocalStorage().setString(ID_KEY, id);
         init();
     }
 
     private void init() {
         activeHashes = new DoubleMap<>();
         deletedHashes = new HashMap<>();
-        nextTimestamp = 1L;
+        getLocalStorage().setLong(TIMESTAMP_KEY, 1L);
     }
 
-    public FileHashDatabaseWithTimestamp(String path, String... backupPaths) throws IOException, VersionedSerializationException {
-        VersionedObjectSerializer.deserialize(this, path, backupPaths);
+    public FileHashDatabaseWithTimestamp(String path) throws IOException {
+        super(path);
+        updateFileHashDatabaseWithTimestamp(getLocalStorage().getString(VERSION_KEY));
+        activeHashes = new DoubleMap<>();
+        deletedHashes = new HashMap<>();
+        for (String activeHashesKey : getLocalStorage().keys(ACTIVE_TIMESTAMP_CATEGORY)) {
+            activeHashes.put(Long.parseLong(activeHashesKey), getLocalStorage().getString(ACTIVE_TIMESTAMP_CATEGORY, activeHashesKey));
+        }
+        for (String deletedHashesKey : getLocalStorage().keys(DELETED_TIMESTAMP_CATEGORY)) {
+            deletedHashes.put(Long.parseLong(deletedHashesKey), getLocalStorage().getString(DELETED_TIMESTAMP_CATEGORY, deletedHashesKey));
+        }
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
+        String id = getLocalStorage().getString(ID_KEY);
         super.clear();
+        getLocalStorage().setString(VERSION_KEY, CURRENT_VERSION);
+        getLocalStorage().setString(ID_KEY, id);
         init();
     }
 
     public String getId() {
-        return id;
+        return getLocalStorage().getString(ID_KEY);
     }
 
     @Override
-    public String put(String path) throws IOException {
+    public synchronized String put(String path) throws IOException {
         String hash = super.put(path);
-        activeHashes.put(getNextTimestamp(), hash);
+        Long timeStamp = getNextTimestamp();
+        activeHashes.put(timeStamp, hash);
+        getLocalStorage().setString(ACTIVE_TIMESTAMP_CATEGORY, timeStamp.toString(), hash);
         return hash;
     }
 
     @Override
-    public String put(String folderPath, List<String> fileNames) throws IOException {
-        // todo fatal error
-        // folders are not used in this API
-        return null;
-    }
-
-    @Override
-    public String remove(String hash) {
+    public synchronized String remove(String hash) {
         String path = super.remove(hash);
         moveFromActiveToDeleted(hash);
         return path;
     }
 
     @Override
-    public String removeValue(String path) throws IOException {
+    public synchronized String removeValue(String path) throws IOException {
         String hash = super.removeValue(path);
         moveFromActiveToDeleted(hash);
         return hash;
@@ -97,22 +111,18 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
         Long timestamp = activeHashes.removeReverse(hash);
         if (timestamp != null) {
             // the item did exist in activeHashes -> add to deleted hashes
-            deletedHashes.put(getNextTimestamp(), hash);
+            getLocalStorage().removeItem(ACTIVE_TIMESTAMP_CATEGORY, timestamp.toString());
+            Long newTimestamp = getNextTimestamp();
+            deletedHashes.put(newTimestamp, hash);
+            getLocalStorage().setString(DELETED_TIMESTAMP_CATEGORY, newTimestamp.toString(), hash);
         }
     }
 
-    @Override
-    public String removeValue(String folderPath, List<String> fileNames) throws IOException {
-        // todo fatal error
-        // folders are not used in this API
-        return null;
-    }
-
-    public Set<String> getActiveHashesSetCopy() {
+    public synchronized Set<String> getActiveHashesSetCopy() {
         return new HashSet<>(activeHashes.values());
     }
 
-    public List<SerializedHashItem> getHashesFrom(long fromTimestamp) {
+    public synchronized List<SerializedHashItem> getHashesFrom(long fromTimestamp) {
         List<SerializedHashItem> items =
                 activeHashes
                         .entrySet()
@@ -130,31 +140,10 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabase {
         return items;
     }
 
-    @Override
-    public VersionStack getCurrentVersion() {
-        return new VersionStack(CURRENT_VERSION, super.getCurrentVersion());
-    }
 
-    @Override
-    public Map<String, Serializable> serialize() {
-        Map<String, Serializable> map = new HashMap<>(super.serialize());
-        map.put("id", id);
-        map.put("activeHashes", activeHashes);
-        map.put("deletedHashes", deletedHashes);
-        map.put("nextTimestamp", nextTimestamp);
-        return map;
-    }
-
-    @Override
-    public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
-        if (version.equals(CURRENT_VERSION)) {
-            id = (String) attributes.get("id");
-            activeHashes = (DoubleMap<Long, String>) attributes.get("activeHashes");
-            deletedHashes = (HashMap<Long, String>) attributes.get("deletedHashes");
-            nextTimestamp = (Long) attributes.get("nextTimestamp");
-            super.deserialize(parentVersions.retrieveVersion(), attributes, parentVersions);
-        } else {
-            throw new UnrecognizedVersionException();
+    private void updateFileHashDatabaseWithTimestamp(String storedVersion) {
+        if (!storedVersion.equals(CURRENT_VERSION)) {
+            throw new RuntimeException();
         }
     }
 }

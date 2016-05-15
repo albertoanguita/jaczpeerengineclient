@@ -8,9 +8,9 @@ import jacz.database.util.ImageHash;
 import jacz.database.util.LocalizedLanguage;
 import jacz.database.util.QualityCode;
 import jacz.peerengineclient.databases.DatabaseIO;
-import jacz.peerengineclient.test.Client;
+import jacz.peerengineclient.common.Client;
+import jacz.peerengineclient.common.TestUtil;
 import jacz.peerengineclient.test.IntegrationTest;
-import jacz.peerengineclient.test.TestUtil;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
 import jacz.util.concurrency.ThreadUtil;
@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * This test performs a synch with two other peers and integrates their data to create the integrated database.
- * After that, two files are downloaded, so the shared database is  built. Finally, one of the files is deleted.
+ * After that, two files are downloaded, so the shared database is built. Finally, one of the files is deleted.
  */
 @Category(IntegrationTest.class)
 public class SynchAndIntegrateIT {
@@ -48,11 +48,13 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
+        peerEngineClient.clearAllData();
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("2"));
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("3"));
+        peerEngineClient.setWishForRegularsConnections(false);
         String localDB = peerEngineClient.getDatabases().getLocalDB();
         String integratedDB = peerEngineClient.getDatabases().getIntegratedDB();
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
 
         setupLocal(localDB, peerEngineClient);
         // connect and warm up
@@ -109,8 +111,10 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
+        peerEngineClient.clearAllData();
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.setWishForRegularsConnections(false);
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB2(sharedDB);
@@ -149,8 +153,10 @@ public class SynchAndIntegrateIT {
         DatabaseIO.createNewDatabaseFileStructure(userPath);
 
         PeerEngineClient peerEngineClient = Client.loadClient(userPath);
-        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getPeerClient().getOwnPeerId()));
+        System.out.println("Client started for peer " + TestUtil.formatPeer(peerEngineClient.getOwnPeerId()));
+        peerEngineClient.clearAllData();
         peerEngineClient.addFavoritePeer(PeerId.buildTestPeerId("1"));
+        peerEngineClient.setWishForRegularsConnections(false);
 
         String sharedDB = peerEngineClient.getDatabases().getSharedDB();
         setupDB3(sharedDB);
@@ -386,13 +392,13 @@ public class SynchAndIntegrateIT {
         TVSeries tvSeries1 = TVSeries.getTVSeries(db).get(0);
         TVSeries tvSeries2 = TVSeries.getTVSeries(db).get(1);
         Assert.assertEquals("Friends", tvSeries1.getTitle());
-        Assert.assertEquals(2, tvSeries1.getChapters(db).size());
-        Assert.assertEquals("Friends 1", tvSeries1.getChapters(db).get(0).getTitle());
-        Assert.assertEquals("Friends 2", tvSeries1.getChapters(db).get(1).getTitle());
+        Assert.assertEquals(2, tvSeries1.getChapters(null).size());
+        Assert.assertEquals("Friends 1", tvSeries1.getChapters(null).get(0).getTitle());
+        Assert.assertEquals("Friends 2", tvSeries1.getChapters(null).get(1).getTitle());
         Assert.assertEquals("Breaking bad", tvSeries2.getTitle());
-        Assert.assertEquals(2, tvSeries2.getChapters(db).size());
-        Assert.assertEquals("Breaking bad 1", tvSeries2.getChapters(db).get(0).getTitle());
-        Assert.assertEquals("Breaking bad 2", tvSeries2.getChapters(db).get(1).getTitle());
+        Assert.assertEquals(2, tvSeries2.getChapters(null).size());
+        Assert.assertEquals("Breaking bad 1", tvSeries2.getChapters(null).get(0).getTitle());
+        Assert.assertEquals("Breaking bad 2", tvSeries2.getChapters(null).get(1).getTitle());
         endDBAssert(db, phase);
     }
 
@@ -478,13 +484,13 @@ public class SynchAndIntegrateIT {
         TVSeries tvSeries1 = TVSeries.getTVSeries(db).get(0);
         TVSeries tvSeries2 = TVSeries.getTVSeries(db).get(1);
         Assert.assertEquals("Game of thrones", tvSeries1.getTitle());
-        Assert.assertEquals(2, tvSeries1.getChapters(db).size());
-        Assert.assertEquals("Game of thrones 1", tvSeries1.getChapters(db).get(0).getTitle());
-        Assert.assertEquals("Game of thrones 2", tvSeries1.getChapters(db).get(1).getTitle());
+        Assert.assertEquals(2, tvSeries1.getChapters(null).size());
+        Assert.assertEquals("Game of thrones 1", tvSeries1.getChapters(null).get(0).getTitle());
+        Assert.assertEquals("Game of thrones 2", tvSeries1.getChapters(null).get(1).getTitle());
         Assert.assertEquals("Breaking bad other", tvSeries2.getTitle());
-        Assert.assertEquals(2, tvSeries2.getChapters(db).size());
-        Assert.assertEquals("Breaking bad 2 other", tvSeries2.getChapters(db).get(0).getTitle());
-        Assert.assertEquals("Breaking bad 3", tvSeries2.getChapters(db).get(1).getTitle());
+        Assert.assertEquals(2, tvSeries2.getChapters(null).size());
+        Assert.assertEquals("Breaking bad 2 other", tvSeries2.getChapters(null).get(0).getTitle());
+        Assert.assertEquals("Breaking bad 3", tvSeries2.getChapters(null).get(1).getTitle());
         endDBAssert(db, phase);
     }
 
@@ -701,22 +707,22 @@ public class SynchAndIntegrateIT {
             }
             Assert.assertEquals("Bottom", tvSeries0.getTitle());
             Assert.assertEquals("Friends", tvSeries1.getTitle());
-            Assert.assertEquals(2, tvSeries1.getChapters(db).size());
-            Assert.assertEquals("Friends 1", tvSeries1.getChapters(db).get(0).getTitle());
-            Assert.assertEquals("Friends 2", tvSeries1.getChapters(db).get(1).getTitle());
+            Assert.assertEquals(2, tvSeries1.getChapters(null).size());
+            Assert.assertEquals("Friends 1", tvSeries1.getChapters(null).get(0).getTitle());
+            Assert.assertEquals("Friends 2", tvSeries1.getChapters(null).get(1).getTitle());
             Assert.assertEquals("Breaking bad", tvSeries2.getTitle());
-            Assert.assertEquals(2, tvSeries2.getChapters(db).size());
-            Assert.assertEquals("Breaking bad 1", tvSeries2.getChapters(db).get(0).getTitle());
-            Assert.assertEquals("Breaking bad 2", tvSeries2.getChapters(db).get(1).getTitle());
+            Assert.assertEquals(2, tvSeries2.getChapters(null).size());
+            Assert.assertEquals("Breaking bad 1", tvSeries2.getChapters(null).get(0).getTitle());
+            Assert.assertEquals("Breaking bad 2", tvSeries2.getChapters(null).get(1).getTitle());
             if (phase == 3 || phase == 4) {
                 Assert.assertEquals("Game of thrones", tvSeries3.getTitle());
-                Assert.assertEquals(2, tvSeries3.getChapters(db).size());
-                Assert.assertEquals("Game of thrones 1", tvSeries3.getChapters(db).get(0).getTitle());
-                Assert.assertEquals("Game of thrones 2", tvSeries3.getChapters(db).get(1).getTitle());
+                Assert.assertEquals(2, tvSeries3.getChapters(null).size());
+                Assert.assertEquals("Game of thrones 1", tvSeries3.getChapters(null).get(0).getTitle());
+                Assert.assertEquals("Game of thrones 2", tvSeries3.getChapters(null).get(1).getTitle());
                 Assert.assertEquals("Breaking bad other", tvSeries4.getTitle());
-                Assert.assertEquals(2, tvSeries4.getChapters(db).size());
-                Assert.assertEquals("Breaking bad 2 other", tvSeries4.getChapters(db).get(0).getTitle());
-                Assert.assertEquals("Breaking bad 3", tvSeries4.getChapters(db).get(1).getTitle());
+                Assert.assertEquals(2, tvSeries4.getChapters(null).size());
+                Assert.assertEquals("Breaking bad 2 other", tvSeries4.getChapters(null).get(0).getTitle());
+                Assert.assertEquals("Breaking bad 3", tvSeries4.getChapters(null).get(1).getTitle());
             }
         }
         endDBAssert(db, phase);

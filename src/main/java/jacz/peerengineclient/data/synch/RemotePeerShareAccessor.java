@@ -2,11 +2,14 @@ package jacz.peerengineclient.data.synch;
 
 import jacz.peerengineclient.data.RemotePeerShare;
 import jacz.peerengineclient.data.SerializedHashItem;
+import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.List;

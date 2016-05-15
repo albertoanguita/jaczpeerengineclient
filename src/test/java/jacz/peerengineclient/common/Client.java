@@ -1,20 +1,21 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
+import jacz.util.lists.tuple.Duple;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * Created by Alberto on 02/01/2016.
+ * Created by Alberto on 28/04/2016.
  */
 public class Client {
 
     public static PeerEngineClient loadClient(String userPath) throws IOException {
-        GeneralEventsImpl generalEvents = new GeneralEventsImpl();
-        return SessionManager.load(
+        Duple<PeerEngineClient, List<String>> duple = SessionManager.load(
                 userPath,
-                generalEvents,
+                new GeneralEventsImpl(),
                 new ConnectionEventsImpl(),
                 new PeersEventsImpl(),
                 new ResourceTransferEventsImpl(),
@@ -22,6 +23,11 @@ public class Client {
                 new DatabaseSynchEventsImpl(),
                 new DownloadEventsImpl(),
                 new IntegrationEventsImpl(),
-                new ErrorHandlerImpl());
+                new ErrorEventsImpl());
+
+        if (!duple.element2.isEmpty()) {
+            System.err.println("REPAIRED FILES: " + duple.element2);
+        }
+        return duple.element1;
     }
 }

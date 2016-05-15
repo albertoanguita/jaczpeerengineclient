@@ -1,6 +1,7 @@
 package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseMediator;
+import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.*;
 import jacz.util.lists.tuple.Duple;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by Alberto on 21/12/2015.
+ * todo refactor to local storage
  */
 public class ItemRelations implements VersionedObject {
 
@@ -153,6 +154,8 @@ public class ItemRelations implements VersionedObject {
 
     private static final String CURRENT_VERSION = VERSION_0_1;
 
+    private final PeerEngineClient peerEngineClient;
+
     private ItemRelationsMap integratedToLocal;
 
     private ItemToPeerListRelationsMap integratedToRemote;
@@ -167,7 +170,10 @@ public class ItemRelations implements VersionedObject {
 
     private Map<PeerId, ItemRelationsMap> remoteToIntegrated;
 
+    private final List<String> repairedFiles;
+
     public ItemRelations() {
+        peerEngineClient = null;
         integratedToLocal = new ItemRelationsMap();
         integratedToRemote = new ItemToPeerListRelationsMap();
         integratedToDeleted = new ItemRelationsMap();
@@ -175,10 +181,12 @@ public class ItemRelations implements VersionedObject {
         integratedToShared = new ItemRelationsMap();
         localToIntegrated = new ItemRelationsMap();
         remoteToIntegrated = new HashMap<>();
+        repairedFiles = new ArrayList<>();
     }
 
-    public ItemRelations(String path, String... backupPaths) throws IOException, VersionedSerializationException {
-        VersionedObjectSerializer.deserialize(this, path, backupPaths);
+    public ItemRelations(PeerEngineClient peerEngineClient, String path, String... backupPaths) throws IOException, VersionedSerializationException {
+        this.peerEngineClient = peerEngineClient;
+        repairedFiles = VersionedObjectSerializer.deserialize(this, path, true, backupPaths);
     }
 
     public ItemRelationsMap getIntegratedToLocal() {
@@ -212,6 +220,10 @@ public class ItemRelations implements VersionedObject {
         return remoteToIntegrated.get(peerID);
     }
 
+    public List<String> getRepairedFiles() {
+        return repairedFiles;
+    }
+
     @Override
     public VersionStack getCurrentVersion() {
         return new VersionStack(CURRENT_VERSION);
@@ -227,10 +239,10 @@ public class ItemRelations implements VersionedObject {
             attributes.put("deletedToIntegrated", VersionedObjectSerializer.serialize(deletedToIntegrated));
             attributes.put("integratedToShared", VersionedObjectSerializer.serialize(integratedToShared));
             attributes.put("localToIntegrated", VersionedObjectSerializer.serialize(localToIntegrated));
-            attributes.put("remoteToIntegrated", serializeRemoteToIntegrated(remoteToIntegrated));
+            attributes.put("remoteToIntegrated", serializeRemoteToIntegrated(peerEngineClient, remoteToIntegrated));
             return attributes;
         } catch (NotSerializableException e) {
-            // todo fatal error
+            peerEngineClient.reportFatalError("Item relation is not serializable", e);
             return new HashMap<>();
         }
     }
@@ -245,7 +257,7 @@ public class ItemRelations implements VersionedObject {
                 deletedToIntegrated = new ItemRelationsMap((byte[]) attributes.get("deletedToIntegrated"));
                 integratedToShared = new ItemRelationsMap((byte[]) attributes.get("integratedToShared"));
                 localToIntegrated = new ItemRelationsMap((byte[]) attributes.get("localToIntegrated"));
-                remoteToIntegrated = deserializeRemoteToIntegrated((byte[]) attributes.get("remoteToIntegrated"));
+                remoteToIntegrated = deserializeRemoteToIntegrated(peerEngineClient, (byte[]) attributes.get("remoteToIntegrated"));
             } catch (VersionedSerializationException e) {
                 throw new RuntimeException(e.getMessage());
             }
@@ -254,7 +266,7 @@ public class ItemRelations implements VersionedObject {
         }
     }
 
-    private static byte[] serializeRemoteToIntegrated(Map<PeerId, ItemRelationsMap> remoteToIntegrated) {
+    private static byte[] serializeRemoteToIntegrated(PeerEngineClient peerEngineClient, Map<PeerId, ItemRelationsMap> remoteToIntegrated) {
         FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(remoteToIntegrated.size()));
         try {
             for (Map.Entry<PeerId, ItemRelationsMap> entry : remoteToIntegrated.entrySet()) {
@@ -264,12 +276,12 @@ public class ItemRelations implements VersionedObject {
             }
             return data.generateArray();
         } catch (NotSerializableException e) {
-            // todo fatal error
+            peerEngineClient.reportFatalError("Item relation is not serializable", e);
             return new byte[0];
         }
     }
 
-    private static Map<PeerId, ItemRelationsMap> deserializeRemoteToIntegrated(byte[] data) {
+    private static Map<PeerId, ItemRelationsMap> deserializeRemoteToIntegrated(PeerEngineClient peerEngineClient, byte[] data) {
         MutableOffset offset = new MutableOffset();
         int mapSize = Serializer.deserializeIntValue(data, offset);
         Map<PeerId, ItemRelationsMap> remoteToIntegrated = new HashMap<>();
@@ -281,7 +293,7 @@ public class ItemRelations implements VersionedObject {
             }
             return remoteToIntegrated;
         } catch (VersionedSerializationException e) {
-            // todo fatal error
+            peerEngineClient.reportFatalError("Item relation is not serializable", e);
             return new HashMap<>();
         }
     }

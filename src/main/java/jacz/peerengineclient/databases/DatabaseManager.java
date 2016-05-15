@@ -17,7 +17,6 @@ import java.io.IOException;
 
 /**
  * This class manages data databases and their proper synchronization and integration
- * todo check synch statements, maybe not needed (e.g. integrate local item)
  */
 public class DatabaseManager {
 
@@ -49,10 +48,6 @@ public class DatabaseManager {
         dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
         sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
-//        // just in case, try to add databases for all registered friend peers
-//        for (PeerId friendPeer : friendPeers) {
-//            addPeer(basePath, friendPeer);
-//        }
     }
 
     public void start() {
@@ -80,11 +75,11 @@ public class DatabaseManager {
      *
      * @param item the modified item
      */
-    public synchronized void localItemModified(DatabaseItem item) {
+    public void localItemModified(DatabaseItem item) throws IllegalStateException {
         itemIntegrator.integrateLocalItem(databases, item);
     }
 
-    public synchronized void removeLocalItem(DatabaseItem item) {
+    public void removeLocalItem(DatabaseItem item) {
         itemIntegrator.removeLocalContent(databases, item);
         item.delete();
     }
@@ -97,7 +92,7 @@ public class DatabaseManager {
      *
      * @param peerID peer whose library must be synched
      */
-    public synchronized void remoteItemModified(PeerId peerID, DatabaseItem item) {
+    public void remoteItemModified(PeerId peerID, DatabaseItem item) {
         itemIntegrator.integrateRemoteItem(databases, peerID, item);
     }
 
@@ -106,42 +101,33 @@ public class DatabaseManager {
      *
      * @param peerID
      */
-    public synchronized void remoteItemWillBeRemoved(PeerId peerID, DatabaseItem item) {
+    public void remoteItemWillBeRemoved(PeerId peerID, DatabaseItem item) {
         itemIntegrator.removeRemoteItem(databases, peerID, item);
     }
 
     /**
      * A remote peer is requesting to get access to the shared library for synchronizing it with us
      */
-    public synchronized DatabaseAccessor requestForSharedDatabaseSynchFromRemotePeer(PeerId peerID) throws ServerBusyException {
+    public DatabaseAccessor requestForSharedDatabaseSynchFromRemotePeer(PeerId peerID) throws ServerBusyException {
         return databaseSynchManager.requestForSharedDatabaseSynch(peerID);
     }
 
     /**
-     * Adds a new peer in the list of peers with databases. This should be invoked when we have a new friend peer.
-     * This information is stored in the config information
-     *
-     * @param peerID new friend peer
-     */
-//    public synchronized void addPeer(String path, PeerId peerID) throws IOException {
-//        if (!databases.containsRemoteDB(peerID)) {
-//            String dbPath = DatabaseIO.createNewRemoteDatabase(path, peerID);
-//            databases.addRemoteDB(peerID, dbPath);
-//        }
-//    }
-
-    /**
      * Permanently removes a peer from the database handling.
      * Its stored databases will be removed and erased from the integrated information
+     * <p>
+     * This method should be invoked before running any integration tasks (e.g. at startup), for old peers for
+     * example
+     * <p>
+     * Items that have some media downloaded will be moved to the deleted database. The rest of items will be simple
+     * removed
      *
      * @param peerID peer which is no longer friend.
      */
     public synchronized void removePeer(String path, PeerId peerID) {
-        databases.removeRemoteDB(peerID);
-        // todo to avoid problems with other pieces of code that access remote dbs, we postpone the actual deletion
-        // of the db file until the next startup
+        // @FUTURE@ todo invoke and complete code. Remove items and move those with media to deleted. Fix item relations. Invoke for very old peers
+        // databases.removeRemoteDB(peerID);
         // DatabaseIO.removeRemoteDatabase(path, peerID);
-        // todo remove from integrated, and copy necessary info to local database
     }
 
     /**

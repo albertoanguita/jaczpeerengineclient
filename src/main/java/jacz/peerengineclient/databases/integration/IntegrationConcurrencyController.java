@@ -8,7 +8,7 @@ import jacz.util.maps.ObjectCount;
  */
 public class IntegrationConcurrencyController implements ConcurrencyControllerAction {
 
-    public static enum Activity {
+    public enum Activity {
         LOCAL_TO_INTEGRATED,
         REMOTE_TO_INTEGRATED,
         INTEGRATED_TO_SHARED
@@ -37,6 +37,7 @@ public class IntegrationConcurrencyController implements ConcurrencyControllerAc
 
     @Override
     public boolean activityCanExecute(String activity, ObjectCount<String> numberOfExecutionsOfActivities) {
+        // we only allow one activity at a time (max = 1), so concurrency issues are already solved
         return true;
     }
 

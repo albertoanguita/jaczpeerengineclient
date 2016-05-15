@@ -1,10 +1,10 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.GeneralEvents;
 
 /**
- * Created by Alberto on 24/12/2015.
+ * Created by Alberto on 28/04/2016.
  */
 public class GeneralEventsImpl implements GeneralEvents {
 

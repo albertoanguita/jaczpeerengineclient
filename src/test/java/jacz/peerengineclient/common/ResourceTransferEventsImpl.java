@@ -1,11 +1,12 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.datatransfer.*;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
+import jacz.peerengineservice.util.datatransfer.slave.UploadManager;
 
 /**
- * todo
+ * Created by Alberto on 28/04/2016.
  */
 public class ResourceTransferEventsImpl implements ResourceTransferEvents {
 
@@ -81,6 +82,7 @@ public class ResourceTransferEventsImpl implements ResourceTransferEvents {
 
     @Override
     public void periodicDownloadsNotification(DownloadsManager downloadsManager) {
+        System.out.println("PERIODIC DOWNLOADS: " + downloadsManager.getAllDownloads().size());
         for (DownloadManager downloadManager : downloadsManager.getAllDownloads()) {
             Double speed = downloadManager.getStatistics().getSpeed();
             speed /= 1024d;
@@ -90,12 +92,19 @@ public class ResourceTransferEventsImpl implements ResourceTransferEvents {
             if (length != null) {
                 part = (double) size / (double) length * 100d;
             }
-            System.out.println("Speed for " + downloadManager.getResourceID() + " (store " + downloadManager.getStoreName() + "): " + speed + "KB, downloaded part: " + part);
+            System.out.println("Speed for " + downloadManager.getResourceID() + ": " + speed + "KB, downloaded part: " + part);
         }
     }
 
     @Override
     public void periodicUploadsNotification(UploadsManager uploadsManager) {
-
+        System.out.println("PERIODIC UPLOADS: " + uploadsManager.getAllUploads().size());
+        for (UploadManager uploadManager : uploadsManager.getAllUploads()) {
+            Double speed = uploadManager.getStatistics().getSpeed();
+            speed /= 1024d;
+            long size = uploadManager.getStatistics().getUploadedSizeThisResource();
+            System.out.println("Speed for " + uploadManager.getResourceID() + ": " + speed + "KB, uploaded size: " + size);
+            System.out.println("Assigned size: " + uploadManager.getStatistics().getAssignedPart().size());
+        }
     }
 }

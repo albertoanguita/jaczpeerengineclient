@@ -1,11 +1,13 @@
 package jacz.peerengineclient.databases;
 
-import jacz.peerengineclient.file_system.Paths;
+import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
 import jacz.util.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,17 +29,17 @@ public class Databases {
 
     private final ItemRelations itemRelations;
 
-    public Databases(String basePath) throws IOException, VersionedSerializationException {
+    public Databases(PeerEngineClient peerEngineClient, String basePath) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
-        integratedDB = Paths.integratedDBPath(basePath);
-        localDB = Paths.localDBPath(basePath);
+        integratedDB = PathConstants.integratedDBPath(basePath);
+        localDB = PathConstants.localDBPath(basePath);
         remoteDBs = new HashMap<>();
-        for (PeerId peerID : Paths.listRemoteDBPeers(basePath)) {
-            remoteDBs.put(peerID, Paths.remoteDBPath(basePath, peerID));
+        for (PeerId peerID : PathConstants.listRemoteDBPeers(basePath)) {
+            remoteDBs.put(peerID, PathConstants.remoteDBPath(basePath, peerID));
         }
-        sharedDB = Paths.sharedDBPath(basePath);
-        deletedDB = Paths.deletedDBPath(basePath);
-        itemRelations = new ItemRelations(Paths.itemRelationsPath(basePath), Paths.itemRelationsBackupPath(basePath));
+        sharedDB = PathConstants.sharedDBPath(basePath);
+        deletedDB = PathConstants.deletedDBPath(basePath);
+        itemRelations = new ItemRelations(peerEngineClient, PathConstants.itemRelationsPath(basePath), PathConstants.itemRelationsBackupPath(basePath));
     }
 
     public String getIntegratedDB() {
@@ -65,10 +67,6 @@ public class Databases {
         return remoteDBs.get(peerID);
     }
 
-    public synchronized void addRemoteDB(PeerId peerID, String dbPath) {
-        remoteDBs.put(peerID, dbPath);
-    }
-
     public synchronized void removeRemoteDB(PeerId peerID) {
         remoteDBs.remove(peerID);
     }
@@ -83,5 +81,9 @@ public class Databases {
 
     public ItemRelations getItemRelations() {
         return itemRelations;
+    }
+
+    public List<String> getRepairedFiles() {
+        return itemRelations.getRepairedFiles();
     }
 }

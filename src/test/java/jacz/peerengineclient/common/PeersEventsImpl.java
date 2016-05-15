@@ -1,4 +1,4 @@
-package jacz.peerengineclient.test;
+package jacz.peerengineclient.common;
 
 import jacz.commengine.communication.CommError;
 import jacz.peerengineservice.PeerId;
