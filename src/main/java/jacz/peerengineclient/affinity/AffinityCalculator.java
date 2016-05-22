@@ -6,6 +6,8 @@ import jacz.peerengineservice.PeerId;
 import jacz.util.date_time.TimedEventRecordSet;
 import jacz.util.numeric.NumericUtil;
 import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -13,14 +15,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by Alberto on 10/05/2016.
+ * This class takes care of updating affinity values for other peers. Affinity values help establish better connections
+ * (the peer engine uses this values to prioritize connections with peers holding higher affinities)
+ * <p>
+ * Affinities are calculated based on the amount of common files shared betwee us and other peers. The more common
+ * files, the higher the affinity
  */
 public class AffinityCalculator {
 
+    private final static Logger logger = LoggerFactory.getLogger(AffinityCalculator.class);
+
     /**
-     * 30 minutes for affinity recalculation
+     * 60 minutes for affinity recalculation
      */
-    private static final long TOO_RECENT_THRESHOLD = 1000L * 60L * 30L;
+    private static final long TOO_RECENT_THRESHOLD = 1000L * 60L * 60L;
 
     private static final int MIN_AFFINITY = 0;
 
@@ -65,8 +73,9 @@ public class AffinityCalculator {
             int affinity = (int) affinityFloat;
             affinity = NumericUtil.limitInRange(affinity, MIN_AFFINITY, MAX_AFFINITY);
             peerEngineClient.updatePeerAffinity(peerID, affinity);
+            logger.info("Updated affinity with peer " + peerID.toString() + ". New affinity is " + affinity);
         } catch (IOException e) {
-            // todo log
+            logger.info("Could not calculate affinity for peer " + peerID.toString());
         }
     }
 }

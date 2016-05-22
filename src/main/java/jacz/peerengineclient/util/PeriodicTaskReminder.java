@@ -1,6 +1,7 @@
 package jacz.peerengineclient.util;
 
 import jacz.peerengineclient.PeerEngineClient;
+import jacz.peerengineclient.affinity.AffinityCalculator;
 import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineclient.images.ImageDownloader;
@@ -64,6 +65,8 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final ImageDownloader imageDownloader;
 
+    private final AffinityCalculator affinityCalculator;
+
     private final Timer timer;
 
     private final AtomicBoolean alive;
@@ -76,6 +79,8 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final ExecutorService imageDownloaderTask;
 
+    private final ExecutorService affinityCalculatorTask;
+
     public PeriodicTaskReminder(
             PeerEngineClient peerEngineClient,
             DatabaseSynchManager databaseSynchManager,
@@ -84,6 +89,7 @@ public class PeriodicTaskReminder implements TimerAction {
         this.peerEngineClient = peerEngineClient;
         lastSynchedPeerId = null;
         this.imageDownloader = imageDownloader;
+        this.affinityCalculator = new AffinityCalculator(peerEngineClient);
         timer = new Timer(REMOTE_SYNCH_DELAY, this, false, "PeriodicTaskReminder");
         alive = new AtomicBoolean(true);
         databaseSynchManagerTask = new PeerSpecificTask() {
@@ -105,6 +111,7 @@ public class PeriodicTaskReminder implements TimerAction {
             }
         };
         imageDownloaderTask = Executors.newSingleThreadExecutor();
+        affinityCalculatorTask = Executors.newSingleThreadExecutor();
     }
 
     public void start() {
@@ -121,6 +128,7 @@ public class PeriodicTaskReminder implements TimerAction {
                 peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
             }
             imageDownloaderTask.submit(imageDownloader::downloadMissingImages);
+            affinityCalculatorTask.submit(() -> affinityCalculator.updateAffinity(lastSynchedPeerId));
             return null;
         } else {
             return 0L;
