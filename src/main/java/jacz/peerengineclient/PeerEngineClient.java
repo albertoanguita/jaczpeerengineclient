@@ -160,7 +160,7 @@ public class PeerEngineClient {
         return repairedFiles;
     }
 
-    private void loadTempDownloads() {
+    private void loadTempDownloads() throws IOException {
         for (String tempFile : tempFileManager.getExistingTempFiles()) {
             try {
                 TempFileWriter tempFileWriter = new TempFileWriter(tempFileManager, tempFile);
@@ -469,7 +469,7 @@ public class PeerEngineClient {
             location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
         }
         // this is the path in the media library where this file should go (file is created in the process)
-        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true).element1;
+        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
 
         if (!Paths.get(finalPath).getParent().equals(Paths.get(path))) {
             // the given path is not in the expected place in the media library -> needs to be moved

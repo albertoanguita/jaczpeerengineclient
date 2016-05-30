@@ -38,17 +38,21 @@ public class GeneralResourceStoreImpl implements GeneralResourceStore {
             }
         } catch (FileNotFoundException e) {
             // now check with the temp file manager
-            for (String tempFile : tempFileManager.getExistingTempFiles()) {
-                try {
-                    HashMap<String, Serializable> userDictionary = tempFileManager.getUserDictionary(tempFile);
-                    DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(userDictionary);
-                    if (resourceID.equals(downloadInfo.fileHash)) {
-                        // resource found!
-                        return ResourceStoreResponse.resourceApproved(new TempFileReader(tempFileManager, tempFile));
+            try {
+                for (String tempFile : tempFileManager.getExistingTempFiles()) {
+                    try {
+                        HashMap<String, Serializable> userDictionary = tempFileManager.getUserDictionary(tempFile);
+                        DownloadInfo downloadInfo = DownloadInfo.buildDownloadInfo(userDictionary);
+                        if (resourceID.equals(downloadInfo.fileHash)) {
+                            // resource found!
+                            return ResourceStoreResponse.resourceApproved(new TempFileReader(tempFileManager, tempFile));
+                        }
+                    } catch (IOException e1) {
+                        // ignore, check rest of files
                     }
-                } catch (IOException e1) {
-                    // ignore, check rest of files
                 }
+            } catch (IOException e2) {
+                // ignore
             }
             // resource not found
             return ResourceStoreResponse.resourceNotFound();

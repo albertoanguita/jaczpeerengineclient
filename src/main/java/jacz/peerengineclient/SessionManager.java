@@ -61,8 +61,7 @@ public class SessionManager {
             FileUtils.forceMkdir(new File(basePath));
         }
         try {
-            Duple<String, String> newUserDirectory = FileGenerator.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
-            String userPath = newUserDirectory.element1;
+            String userPath = FileGenerator.createDirectoryWithIndex(basePath, USER_BASE_PATH, "", "", false);
             String mediaPath = PathConstants.getDefaultMediaDir(userPath).getPath();
             String tempPath = PathConstants.getDefaultTempDir(userPath).getAbsolutePath();
 
