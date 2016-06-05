@@ -54,6 +54,7 @@ public class PeriodicTaskReminder implements TimerAction {
 
         public void stop() {
             daemon.blockUntilStateIsSolved();
+            daemon.stop();
         }
     }
 
@@ -137,11 +138,12 @@ public class PeriodicTaskReminder implements TimerAction {
 
     public synchronized void stop() {
         if (alive.getAndSet(false)) {
-            timer.stop();
+            timer.kill();
             databaseSynchManagerTask.stop();
             peerShareManagerRemoteShareTask.stop();
             peerShareManagerTempFilesTask.stop();
             imageDownloaderTask.shutdown();
+            affinityCalculatorTask.shutdown();
         }
     }
 }

@@ -32,10 +32,10 @@ public class SimpleTest {
             client.stop();
             System.out.println("client stopped!");
 
-            while (true) {
+            /*while (true) {
                 System.out.println(ThreadExecutor.getRegisteredClients());
                 ThreadUtil.safeSleep(1000);
-            }
+            }*/
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -25,6 +25,7 @@ import jacz.peerengineservice.client.GeneralEvents;
 import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.client.connection.ConnectedPeers;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
+import jacz.peerengineservice.client.connection.ConnectionState;
 import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
 import jacz.peerengineservice.util.PeerRelationship;
@@ -272,7 +273,7 @@ public class PeerEngineClient {
         peerClient.setExternalPort(port);
     }
 
-    public State getConnectionState() {
+    public ConnectionState getConnectionState() {
         return peerClient.getConnectionState();
     }
 

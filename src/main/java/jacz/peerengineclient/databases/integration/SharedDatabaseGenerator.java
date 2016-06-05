@@ -244,7 +244,7 @@ public class SharedDatabaseGenerator implements TimerAction {
     }
 
     public synchronized void stop() {
-        timer.stop();
+        timer.kill();
         sequentialTaskExecutor.shutdown();
     }
 }
