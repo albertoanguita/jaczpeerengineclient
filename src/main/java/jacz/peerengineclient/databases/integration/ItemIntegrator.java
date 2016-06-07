@@ -210,18 +210,22 @@ public class ItemIntegrator {
             if (matchedIntegratedItem != null) {
                 // we have a match -> merge with the match
                 // delete the item and report the matched item
+                // the item is no longer new
                 isAliveAndHasNewContent = mergeIntegratedItems(databases, integratedItem, matchedIntegratedItem);
                 deleteIntegratedItem(integratedItem);
-                if (isAliveAndHasNewContent.element2) {
-                    integrationEvents.integratedItemHasNewMediaContent(matchedIntegratedItem.getItemType(), matchedIntegratedItem.getId());
-                }
+                isNew = false;
+                integratedItem = matchedIntegratedItem;
+//                if (isAliveAndHasNewContent.element2) {
+//                    integrationEvents.integratedItemHasNewMediaContent(matchedIntegratedItem.getItemType(), matchedIntegratedItem.getId());
+//                }
+            }
+            // notify this item
+            if (isNew) {
+                integrationEvents.newIntegratedItem(integratedItem.getItemType(), integratedItem.getId());
+            } else if (isAliveAndHasNewContent.element2) {
+                integrationEvents.integratedItemHasNewMediaContent(integratedItem.getItemType(), integratedItem.getId());
             } else {
-                // no match with any other integrated item -> report this integrated item
-                if (isNew) {
-                    integrationEvents.newIntegratedItem(integratedItem.getItemType(), integratedItem.getId());
-                } else if (isAliveAndHasNewContent.element2) {
-                    integrationEvents.integratedItemHasNewMediaContent(integratedItem.getItemType(), integratedItem.getId());
-                }
+                integrationEvents.integratedItemHasBeenModified(integratedItem.getItemType(), integratedItem.getId());
             }
         } else {
             // the integrated item has died

@@ -19,6 +19,11 @@ public class IntegrationEventsImpl implements IntegrationEvents {
     }
 
     @Override
+    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id) {
+        System.out.println("Integrated item has been modified. Type: " + type + ", id: " + id);
+    }
+
+    @Override
     public void integratedItemsRemoved() {
         System.out.println("Integrated items removed");
     }

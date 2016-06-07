@@ -36,6 +36,12 @@ public class IntegrationEventsBridge implements IntegrationEvents {
     }
 
     @Override
+    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id) {
+        logger.info("integrated item has been modified. type: " + type + ", id: " + id);
+        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasBeenModified(type, id));
+    }
+
+    @Override
     public void integratedItemsRemoved() {
         logger.info("integrated item removed");
         sequentialTaskExecutor.submit(integrationEvents::integratedItemsRemoved);

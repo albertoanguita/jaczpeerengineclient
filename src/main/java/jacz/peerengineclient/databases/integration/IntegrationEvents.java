@@ -25,5 +25,13 @@ public interface IntegrationEvents {
      */
     void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id);
 
+    /**
+     * An item in the integrated database has been modified, but with no new media content
+     *
+     * @param type type of the item
+     * @param id       id of the item in the integrated database that has new media content
+     */
+    void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id);
+
     void integratedItemsRemoved();
 }
