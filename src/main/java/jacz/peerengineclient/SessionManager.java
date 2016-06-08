@@ -22,6 +22,7 @@ import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileGenerator;
 import jacz.util.io.serialization.VersionedObjectSerializer;
+import jacz.util.io.serialization.localstorage.LocalStorage;
 import jacz.util.lists.tuple.Duple;
 import org.apache.commons.io.FileUtils;
 
@@ -29,6 +30,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -116,6 +118,10 @@ public class SessionManager {
             throw new IOException(basePath + " is not a valid directory");
         }
         return userPaths;
+    }
+
+    public static synchronized Date profileCreationDate(String userPath) throws IOException {
+        return new LocalStorage(PathConstants.connectionConfigPath(userPath)).getCreationDate();
     }
 
     public static synchronized Duple<PeerEngineClient, List<String>> load(

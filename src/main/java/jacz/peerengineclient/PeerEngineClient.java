@@ -44,6 +44,7 @@ import jacz.util.files.FileGenerator;
 import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
 import jacz.util.io.serialization.VersionedSerializationException;
+import jacz.util.io.serialization.localstorage.LocalStorage;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.Triple;
 import jacz.util.log.ErrorFactory;
@@ -57,10 +58,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * PeerEngine client adapted for Jacuzzi
@@ -202,6 +200,10 @@ public class PeerEngineClient {
 
     public synchronized PeerId getOwnPeerId() {
         return peerClient.getOwnPeerId();
+    }
+
+    public synchronized Date profileCreationDate() throws IOException {
+        return SessionManager.profileCreationDate(basePath);
     }
 
     public void stop() {
