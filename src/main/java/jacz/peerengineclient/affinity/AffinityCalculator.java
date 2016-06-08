@@ -30,9 +30,9 @@ public class AffinityCalculator {
      */
     private static final long TOO_RECENT_THRESHOLD = 1000L * 60L * 60L;
 
-    private static final int MIN_AFFINITY = 0;
+    public static final int MIN_AFFINITY = 0;
 
-    private static final int MAX_AFFINITY = 25;
+    public static final int MAX_AFFINITY = 25;
 
     private final PeerEngineClient peerEngineClient;
 

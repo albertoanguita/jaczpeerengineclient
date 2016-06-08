@@ -27,6 +27,7 @@ import jacz.peerengineservice.client.connection.ConnectedPeers;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.ConnectionState;
 import jacz.peerengineservice.client.connection.State;
+import jacz.peerengineservice.client.connection.peers.PeerInfo;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
 import jacz.peerengineservice.util.PeerRelationship;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
@@ -299,8 +300,12 @@ public class PeerEngineClient {
         peerClient.setOwnNick(nick);
     }
 
-    public String getPeerNick(PeerId peerID) {
-        return peerClient.getPeerNick(peerID);
+    public PeerInfo getPeerInfo(PeerId peerId) {
+        return peerClient.getPeerInfo(peerId);
+    }
+
+    public String getPeerNick(PeerId peerId) {
+        return peerClient.getPeerNick(peerId);
     }
 
     public int getPeerAffinity(PeerId peerId) {
@@ -347,8 +352,8 @@ public class PeerEngineClient {
         peerClient.removeBlockedPeer(peerId);
     }
 
-    public PeerId getNextConnectedPeer(PeerId peerID) {
-        return peerClient.getNextConnectedPeer(peerID);
+    public PeerId getNextConnectedPeer(PeerId peerId) {
+        return peerClient.getNextConnectedPeer(peerId);
     }
 
     public boolean isWishForRegularConnections() {
@@ -399,12 +404,12 @@ public class PeerEngineClient {
         peerClient.setAdditionalCountries(additionalCountries);
     }
 
-    synchronized void peerConnected(PeerId peerID) {
-        peerShareManager.peerConnected(basePath, peerID);
+    synchronized void peerConnected(PeerId peerId) {
+        peerShareManager.peerConnected(basePath, peerId);
     }
 
-    synchronized void peerDisconnected(PeerId peerID) {
-        peerShareManager.peerDisconnected(basePath, peerID);
+    synchronized void peerDisconnected(PeerId peerId) {
+        peerShareManager.peerDisconnected(basePath, peerId);
     }
 
     /**
@@ -661,8 +666,8 @@ public class PeerEngineClient {
     }
 
 
-    public boolean synchronizeList(PeerId peerID, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
-        return peerClient.getDataSynchronizer().synchronizeData(peerID, dataAccessor, timeout, progress);
+    public boolean synchronizeList(PeerId peerId, DataAccessor dataAccessor, long timeout, ProgressNotificationWithError<Integer, SynchError> progress) throws UnavailablePeerException {
+        return peerClient.getDataSynchronizer().synchronizeData(peerId, dataAccessor, timeout, progress);
     }
 
     void clearFileHashDatabase() {
