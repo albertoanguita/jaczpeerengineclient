@@ -205,7 +205,6 @@ public class PeerShareManager {
     }
 
     public void stop() {
-        // @FUTURE@ todo once this stop could not wait because the cc inside was blocked in some unfinished synch process
         fileHashDataAccessorController.stop();
         tempFilesDataAccessorController.stop();
     }
