@@ -89,35 +89,35 @@ public class RemotePeerShareTest {
         ForeignSharesFake foreignShares = new ForeignSharesFake(peerClient);
         RemotePeerShare remotePeerShare = new RemotePeerShare(PeerId.buildTestPeerId("2"), foreignShares, bd);
         Assert.assertEquals("", remotePeerShare.getId());
-        Assert.assertEquals(-1L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(-1L), remotePeerShare.getMaxStoredTimestamp());
 
         remotePeerShare.addHash(3L, "hash1");
         remotePeerShare.addHash(4L, "hash2");
         remotePeerShare.addHash(6L, "hash3");
-        Assert.assertEquals(6L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(6L), remotePeerShare.getMaxStoredTimestamp());
         Assert.assertEquals(Arrays.asList("hash1", "hash2", "hash3"), foreignShares.activeResources);
 
         remotePeerShare.removeHash(8L, "hash2");
-        Assert.assertEquals(8L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(8L), remotePeerShare.getMaxStoredTimestamp());
         Assert.assertEquals(Arrays.asList("hash1", "hash3"), foreignShares.activeResources);
 
         // reload
         foreignShares = new ForeignSharesFake(peerClient);
         remotePeerShare = new RemotePeerShare(foreignShares, bd);
-        Assert.assertEquals(8L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(8L), remotePeerShare.getMaxStoredTimestamp());
         Assert.assertEquals(Arrays.asList("hash1", "hash3"), foreignShares.activeResources);
 
         // set id
         remotePeerShare.setId("asdf");
         Assert.assertEquals("asdf", remotePeerShare.getId());
-        Assert.assertEquals(-1L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(-1L), remotePeerShare.getMaxStoredTimestamp());
         Assert.assertEquals(new ArrayList<String>(), foreignShares.activeResources);
 
         // reload
         foreignShares = new ForeignSharesFake(peerClient);
         remotePeerShare = new RemotePeerShare(foreignShares, bd);
         Assert.assertEquals("asdf", remotePeerShare.getId());
-        Assert.assertEquals(-1L, remotePeerShare.getMaxStoredTimestamp());
+        Assert.assertEquals(new Long(-1L), remotePeerShare.getMaxStoredTimestamp());
         Assert.assertEquals(new ArrayList<String>(), foreignShares.activeResources);
 
 

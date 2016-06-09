@@ -20,12 +20,12 @@ public class ForeignShares {
     private final ForeignStoreShare imagesShare;
 
     public ForeignShares(PeerClient peerClient) {
-        videosShare = null;
-        imagesShare = null;
-        //this.videosShare = new ForeignStoreShare(peerClient);
-        //this.imagesShare = new ForeignStoreShare(peerClient);
-        //peerClient.addForeignResourceStore(PeerEngineClient.MEDIA_STORE, videosShare);
-        //peerClient.addForeignResourceStore(PeerEngineClient.IMAGE_STORE, imagesShare);
+        //videosShare = null;
+        //imagesShare = null;
+        this.videosShare = new ForeignStoreShare(peerClient);
+        this.imagesShare = new ForeignStoreShare(peerClient);
+        peerClient.addForeignResourceStore(PeerEngineClient.MEDIA_STORE, videosShare);
+        peerClient.addForeignResourceStore(PeerEngineClient.IMAGE_STORE, imagesShare);
     }
 
     public ForeignStoreShare getVideosShare() {

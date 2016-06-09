@@ -49,6 +49,7 @@ public class RemotePeerShare implements Updater {
         activeHashes = new DoubleMap<>();
         this.foreignShares = foreignShares;
         localStorage = loadLocalStorage(path);
+        System.out.println(localStorage.getLong(MAX_STORED_TIMESTAMP_KEY));
         for (String resourceId : activeHashes.values()) {
             foreignShares.addResourceProvider(resourceId, new PeerId(localStorage.getString(REMOTE_PEER_ID_KEY)));
         }
@@ -90,7 +91,8 @@ public class RemotePeerShare implements Updater {
         init(id, remotePeerId, -1L);
     }
 
-    public long getMaxStoredTimestamp() {
+    public Long getMaxStoredTimestamp() {
+        System.out.println(localStorage.getLong(MAX_STORED_TIMESTAMP_KEY));
         return localStorage.getLong(MAX_STORED_TIMESTAMP_KEY);
     }
 
