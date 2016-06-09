@@ -31,8 +31,18 @@ public class PeersEventsBridge implements PeersEvents {
     }
 
     @Override
-    public void newPeerNick(PeerId peerId, String nick, PeerInfo peerInfo) {
-        peersEvents.newPeerNick(peerId, nick, peerInfo);
+    public void modifiedMainCountry(PeerId peerId, PeerInfo peerInfo) {
+        peersEvents.modifiedMainCountry(peerId, peerInfo);
+    }
+
+    @Override
+    public void modifiedAffinity(PeerId peerId, PeerInfo peerInfo) {
+        peersEvents.modifiedAffinity(peerId, peerInfo);
+    }
+
+    @Override
+    public void newPeerNick(PeerId peerId, PeerInfo peerInfo) {
+        peersEvents.newPeerNick(peerId, peerInfo);
     }
 
     @Override

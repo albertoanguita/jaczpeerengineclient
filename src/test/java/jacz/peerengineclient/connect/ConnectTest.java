@@ -29,6 +29,8 @@ public class ConnectTest {
         Assert.assertTrue(peerEngineClient.isConnectedPeer(TestUtil.peerID(2)));
 
         ThreadUtil.safeSleep(CYCLE_LENGTH);
+
+        System.out.println("stopping...");
         peerEngineClient.stop();
 
         System.out.println("END");
@@ -45,6 +47,8 @@ public class ConnectTest {
         Assert.assertTrue(peerEngineClient.isConnectedPeer(TestUtil.peerID(1)));
 
         ThreadUtil.safeSleep(CYCLE_LENGTH);
+
+        System.out.println("stopping...");
         peerEngineClient.stop();
 
         System.out.println("END");

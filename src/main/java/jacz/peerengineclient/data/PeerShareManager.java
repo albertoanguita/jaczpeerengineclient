@@ -13,6 +13,8 @@ import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.util.notification.ProgressNotificationWithError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -98,6 +100,8 @@ public class PeerShareManager {
         }
     }
 
+    private final static Logger logger = LoggerFactory.getLogger(PeerShareManager.class);
+
     private static final long RECENTLY_THRESHOLD = 15000;
 
     private static final int LARGE_SHARED_SYNCH_COUNT = 10;
@@ -146,10 +150,12 @@ public class PeerShareManager {
     public synchronized void peerConnected(String basePath, PeerId peerID) {
         RemotePeerShare remotePeerShare;
         try {
+            logger.info("Loading remote peer share for peer " + peerID);
             remotePeerShare = PeerShareIO.loadRemoteShare(basePath, peerID, foreignShares);
         } catch (IOException e) {
             // could not load the share (maybe it did not exist) -> create a new one
             try {
+                logger.info("Creating new remote peer share for peer " + peerID);
                 remotePeerShare = new RemotePeerShare(peerID, foreignShares, PathConstants.remoteSharePath(basePath, peerID));
             } catch (IOException e1) {
                 peerEngineClient.reportFatalError("Could not create remote share for peer", peerID, PathConstants.remoteSharePath(basePath, peerID));
@@ -190,6 +196,7 @@ public class PeerShareManager {
     }
 
     public void synchRemoteShare(PeerId peerID) {
+        System.out.println("to synch remote share...");
         fileHashDataAccessorController.synchRemoteShare(peerID);
     }
 

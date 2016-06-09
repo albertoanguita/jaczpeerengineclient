@@ -72,7 +72,6 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final AtomicBoolean alive;
 
-//    private final Daemon daemon;
 
     private final PeerSpecificTask databaseSynchManagerTask;
     private final PeerSpecificTask peerShareManagerRemoteShareTask;
