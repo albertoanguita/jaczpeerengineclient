@@ -196,7 +196,6 @@ public class PeerShareManager {
     }
 
     public void synchRemoteShare(PeerId peerID) {
-        System.out.println("to synch remote share...");
         fileHashDataAccessorController.synchRemoteShare(peerID);
     }
 

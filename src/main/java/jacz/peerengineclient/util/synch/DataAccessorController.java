@@ -98,7 +98,6 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
                     !remoteSynchRecord.lastEventIsRecent(peerID)) {
                 try {
                     // initiate concurrent activity
-                    System.out.println("initiating!!");
                     concurrencyController.beginActivity(SYNCH_ACTIVITY);
 
                     boolean success = peerEngineClient.synchronizeList(
@@ -137,17 +136,14 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
     }
 
     public void remoteShareSynchFinished(PeerId remotePeerId) {
-        System.out.println("remote share finishing...");
         synchronized (activeRemoteShareSynchs) {
             logMessage("finished remote synch process with " + remotePeerId);
             activeRemoteShareSynchs.remove(remotePeerId);
         }
-        System.out.println("remote share finishing.. 2.");
         concurrencyController.endActivity(SYNCH_ACTIVITY);
     }
 
     public void stop() {
-        System.out.println(concurrencyController);
         concurrencyController.stopAndWaitForFinalization();
     }
 

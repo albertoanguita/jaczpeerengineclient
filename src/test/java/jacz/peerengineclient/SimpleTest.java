@@ -14,7 +14,7 @@ public class SimpleTest {
     public static void main(String[] args) {
         try {
             PeerEngineClient peerEngineClient = Client.loadClient("./etc/user_0");
-            peerEngineClient.addFavoritePeer(new PeerId("Yi8j6ITdv3UP0oP6tKKhXj5-x97_3l_oEDvabmfDyN8"));
+            peerEngineClient.addFavoritePeer(new PeerId("uoa_T4AERI7v7oRyqCxo7qhH9BhQYv6OUAyNHEfjW9a"));
             peerEngineClient.connect();
             ThreadUtil.safeSleep(35000);
             peerEngineClient.stop();
