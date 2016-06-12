@@ -714,4 +714,8 @@ public class PeerEngineClient {
             return new MD5();
         }
     }
+
+    public String getIntegratedDB() {
+        return databaseManager.getDatabases().getIntegratedDB();
+    }
 }
