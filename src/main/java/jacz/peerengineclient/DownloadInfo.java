@@ -21,6 +21,26 @@ public class DownloadInfo {
         }
     }
 
+    public class Title {
+
+        public final String title;
+
+        public final String tvSeriesTitle;
+
+        public final String season;
+
+        public final Integer chapterNumber;
+
+        public Title(String title, String tvSeriesTitle, String season, Integer chapterNumber) {
+            this.title = title;
+            this.tvSeriesTitle = tvSeriesTitle;
+            this.season = season;
+            this.chapterNumber = chapterNumber;
+        }
+
+
+    }
+
     /**
      * The type of downloaded file
      */
@@ -35,6 +55,8 @@ public class DownloadInfo {
      * Id of the container in the integrated database. Null for images
      */
     public final Integer containerId;
+
+    public final Title title;
 
     /**
      * In case the container is a chapter, the super container refers to the TVSeries containing that chapter.
@@ -63,6 +85,7 @@ public class DownloadInfo {
             Type type,
             DatabaseMediator.ItemType containerType,
             Integer containerId,
+            Title title,
             Integer superContainerId,
             Integer itemId,
             String fileHash,
@@ -70,6 +93,7 @@ public class DownloadInfo {
         this.type = type;
         this.containerType = containerType;
         this.containerId = containerId;
+        this.title = title;
         this.superContainerId = superContainerId;
         this.itemId = itemId;
         this.fileHash = fileHash;
