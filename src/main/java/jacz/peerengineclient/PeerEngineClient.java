@@ -17,6 +17,7 @@ import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineclient.util.PeriodicTaskReminder;
+import jacz.peerengineclient.util.PersistentIdFactory;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerId;
@@ -88,6 +89,8 @@ public class PeerEngineClient {
 
     private final PeerShareManager peerShareManager;
 
+    private final PersistentIdFactory persistentIdFactory;
+
     private final ImageDownloader imageDownloader;
 
     private final DatabaseManager databaseManager;
@@ -145,6 +148,7 @@ public class PeerEngineClient {
         fileAPI = new FileAPI(peerShareManager.getFileHash(), peerClient);
         imageDownloader = new ImageDownloader(this, databaseManager.getDatabases().getIntegratedDB(), fileAPI);
         peerShareManager.setPeerClient(peerClient);
+        persistentIdFactory = new PersistentIdFactory(basePath);
         periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader);
         tempFileManager = new TempFileManager(mediaPaths.getTempDownloadsPath(), tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
@@ -717,5 +721,9 @@ public class PeerEngineClient {
 
     public String getIntegratedDB() {
         return databaseManager.getDatabases().getIntegratedDB();
+    }
+
+    public String generatePersistentId() {
+        return persistentIdFactory.generateId();
     }
 }

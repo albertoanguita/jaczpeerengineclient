@@ -36,6 +36,8 @@ public class PathConstants {
 
     private static final String REMOTE_SHARES_DIR = FileUtils.getFile(DATA_DIR, "remote-shares").getPath();
 
+    private static final String UTIL_DIR = "util";
+
     private static final String DEFAULT_TEMP_DIR = "temp";
 
     private static final String DEFAULT_MEDIA_DIR = "media";
@@ -82,6 +84,8 @@ public class PathConstants {
     private static final String ITEM_RELATIONS_FILE = "item-relations";
 
     private static final String FILE_HASH_DATABASE_FILE = "hashes";
+
+    private static final String PERSISTENT_ID_FACTORY_FILE = "idFactory";
 
     /**********************
      * file extensions
@@ -132,6 +136,10 @@ public class PathConstants {
         return FileUtils.getFile(basePath, REMOTE_SHARES_DIR);
     }
 
+    public static File getUtilDir(String basePath) {
+        return FileUtils.getFile(basePath, UTIL_DIR);
+    }
+
     public static File getDefaultTempDir(String basePath) {
         return FileUtils.getFile(basePath, DEFAULT_TEMP_DIR);
     }
@@ -149,6 +157,7 @@ public class PathConstants {
         directories.add(getDatabasesDir(basePath));
         directories.add(getRemoteDatabasesDir(basePath));
         directories.add(getRemoteSharesDir(basePath));
+        directories.add(getUtilDir(basePath));
         directories.add(getDefaultTempDir(basePath));
         directories.add(getDefaultMediaDir(basePath));
         return directories;
@@ -316,9 +325,13 @@ public class PathConstants {
         return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_DB);
     }
 
-//    public static String remoteShareBackupPath(String basePath, PeerId peerID) {
-//        return getFilePath(basePath, REMOTE_SHARES_DIR, peerID.toString(), EXT_BACKUP);
-//    }
+    /************************
+     * util files
+     ***********************/
+
+    public static String persistentIDFactoryPath(String basePath) {
+        return getFilePath(basePath, UTIL_DIR, PERSISTENT_ID_FACTORY_FILE, EXT_DB);
+    }
 
     /************************
      * downloads
