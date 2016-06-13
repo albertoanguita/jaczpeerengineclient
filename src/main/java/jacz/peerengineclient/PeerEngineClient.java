@@ -27,7 +27,6 @@ import jacz.peerengineservice.client.PeerClient;
 import jacz.peerengineservice.client.connection.ConnectedPeers;
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.ConnectionState;
-import jacz.peerengineservice.client.connection.State;
 import jacz.peerengineservice.client.connection.peers.PeerInfo;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
 import jacz.peerengineservice.util.PeerRelationship;
@@ -36,6 +35,7 @@ import jacz.peerengineservice.util.data_synchronization.SynchError;
 import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
+import jacz.peerengineservice.util.datatransfer.master.DownloadState;
 import jacz.peerengineservice.util.datatransfer.master.MasterResourceStreamer;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
 import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileWriter;
@@ -107,6 +107,8 @@ public class PeerEngineClient {
 
     private final List<String> repairedFiles;
 
+    private final Collection<DownloadManager> initialStoppedDownloads;
+
     public PeerEngineClient(
             String basePath,
             PeerId ownPeerId,
@@ -156,7 +158,7 @@ public class PeerEngineClient {
 
         peerClient.setLocalGeneralResourceStore(new GeneralResourceStoreImpl(peerShareManager.getFileHash(), tempFileManager));
 
-        loadTempDownloads();
+        initialStoppedDownloads = loadTempDownloads();
         start();
     }
 
@@ -164,14 +166,18 @@ public class PeerEngineClient {
         return repairedFiles;
     }
 
-    private void loadTempDownloads() throws IOException {
+    private Collection<DownloadManager> loadTempDownloads() throws IOException {
+        Collection<DownloadManager> stoppedDownloads = new ArrayList<>();
         for (String tempFile : tempFileManager.getExistingTempFiles()) {
             try {
                 TempFileWriter tempFileWriter = new TempFileWriter(tempFileManager, tempFile);
                 String storeName = (String) tempFileWriter.getSystemDictionary().get(MasterResourceStreamer.RESOURCE_WRITER_STORE_NAME_FIELD);
                 String totalHash = (String) tempFileWriter.getSystemDictionary().get(MasterResourceStreamer.RESOURCE_WRITER_TOTAL_HASH_FIELD);
                 String hashAlgorithm = (String) tempFileWriter.getSystemDictionary().get(MasterResourceStreamer.RESOURCE_WRITER_HASH_ALGORITHM_FIELD);
-                downloadFile(storeName, totalHash, tempFileWriter, DEFAULT_STREAMING_NEED, hashAlgorithm);
+                DownloadManager downloadManager = downloadFile(storeName, totalHash, tempFileWriter, DEFAULT_STREAMING_NEED, hashAlgorithm);
+                if (downloadManager.getState() == DownloadState.STOPPED) {
+                    stoppedDownloads.add(downloadManager);
+                }
             } catch (IOException e) {
                 // error loading the temp file
                 errorHandlerBridge.temporaryDownloadFileCouldNotBeRecovered(FileUtils.getFile(mediaPaths.getTempDownloadsPath(), tempFile).getAbsolutePath());
@@ -179,7 +185,7 @@ public class PeerEngineClient {
                 // ignore, cannot happen
             }
         }
-
+        return stoppedDownloads;
     }
 
     private void start() {
@@ -193,6 +199,10 @@ public class PeerEngineClient {
 
     public ImageDownloader getImageDownloader() {
         return imageDownloader;
+    }
+
+    public Collection<DownloadManager> getInitialStoppedDownloads() {
+        return initialStoppedDownloads;
     }
 
     public void connect() {
