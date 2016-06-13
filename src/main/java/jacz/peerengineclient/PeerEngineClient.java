@@ -729,10 +729,6 @@ public class PeerEngineClient {
         }
     }
 
-    public String getIntegratedDB() {
-        return databaseManager.getDatabases().getIntegratedDB();
-    }
-
     public String generatePersistentId() {
         return persistentIdFactory.generateId();
     }
