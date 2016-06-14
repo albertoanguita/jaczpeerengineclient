@@ -34,31 +34,40 @@ public class DownloadInfo {
 
         public final Integer chapterNumber;
 
-        public final String chapterTitle;
-
-        public Title(String title, String tvSeriesTitle, Integer season, Integer chapterNumber, String chapterTitle) {
+        public Title(String title, String tvSeriesTitle, Integer season, Integer chapterNumber) {
             this.title = title;
             this.tvSeriesTitle = tvSeriesTitle;
             this.season = season;
             this.chapterNumber = chapterNumber;
-            this.chapterTitle = chapterTitle;
         }
 
         public String serialize() {
-            return Serializer.serializeListToReadableString(title, tvSeriesTitle, season, chapterNumber, chapterTitle);
+            return Serializer.serializeListToReadableString(title, tvSeriesTitle, season, chapterNumber);
         }
 
         public static Title deserialize(String str) {
             try {
                 List<String> elements = Serializer.deserializeListFromReadableString(str);
-                return new Title(elements.get(0), elements.get(1), Integer.parseInt(elements.get(2)), Integer.parseInt(elements.get(3)), elements.get(4));
+                Integer season = elements.get(2) != null ? Integer.parseInt(elements.get(2)) : null;
+                Integer chapterNumber = elements.get(3) != null ? Integer.parseInt(elements.get(3)) : null;
+                return new Title(elements.get(0), elements.get(1), season, chapterNumber);
             } catch (ParseException e) {
                 return nullTitle();
             }
         }
 
         public static Title nullTitle() {
-            return new Title(null, null, null, null, null);
+            return new Title(null, null, null, null);
+        }
+
+        @Override
+        public String toString() {
+            return "Title{" +
+                    "title='" + title + '\'' +
+                    ", tvSeriesTitle='" + tvSeriesTitle + '\'' +
+                    ", season=" + season +
+                    ", chapterNumber=" + chapterNumber +
+                    '}';
         }
     }
 
@@ -126,6 +135,7 @@ public class DownloadInfo {
         userDictionary.put("type", type);
         userDictionary.put("containerType", containerType);
         userDictionary.put("containerId", containerId);
+        userDictionary.put("title", title.serialize());
         userDictionary.put("superContainerId", superContainerId);
         userDictionary.put("itemId", itemId);
         userDictionary.put("fileHash", fileHash);

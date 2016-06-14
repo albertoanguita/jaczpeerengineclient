@@ -113,7 +113,7 @@ public class SimpleFileDownloadIT {
         // start downloading the first file
         Movie movie0 = Movie.getMovies(integratedDB).get(0);
         VideoFile videoFile = movie0.getVideoFiles().get(0);
-        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, videoFile.getId(), videoFile.getHash(), videoFile.getName());
+        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, videoFile.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager.getState());
 

@@ -90,7 +90,7 @@ public class FileDownloadIncompleteIT {
         // start downloading the file
         Movie movie = Movie.getMovies(integratedDB).get(0);
         VideoFile videoFile = movie.getVideoFiles().get(0);
-        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie.getId(), null, videoFile.getId(), videoFile.getHash(), videoFile.getName());
+        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie.getId(), null, videoFile.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager.getState());
 
@@ -147,7 +147,7 @@ public class FileDownloadIncompleteIT {
         // start downloading the file
         Movie movie = Movie.getMovies(integratedDB).get(0);
         VideoFile videoFile = movie.getVideoFiles().get(0);
-        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie.getId(), null, videoFile.getId(), videoFile.getHash(), videoFile.getName());
+        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie.getId(), null, videoFile.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager.getState());
 

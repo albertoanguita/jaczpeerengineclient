@@ -161,8 +161,8 @@ public class FileDownloadIT {
         Movie movie0 = Movie.getMovies(integratedDB).get(0);
         VideoFile videoFile = movie0.getVideoFiles().get(0);
         SubtitleFile subtitleFile = videoFile.getSubtitleFiles().get(0);
-        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, videoFile.getId(), videoFile.getHash(), videoFile.getName());
-        DownloadManager sbDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, subtitleFile.getId(), subtitleFile.getHash(), subtitleFile.getName());
+        DownloadManager vfDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, videoFile.getId());
+        DownloadManager sbDownloadManager = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie0.getId(), null, subtitleFile.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager.getState());
         Assert.assertEquals(DownloadState.RUNNING, sbDownloadManager.getState());
@@ -172,8 +172,8 @@ public class FileDownloadIT {
         Chapter chapter = tvSeries.getChapters().get(0);
         VideoFile videoFile2 = chapter.getVideoFiles().get(0);
         SubtitleFile subtitleFile2 = videoFile2.getSubtitleFiles().get(0);
-        DownloadManager vfDownloadManager2 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.CHAPTER, chapter.getId(), tvSeries.getId(), videoFile2.getId(), videoFile2.getHash(), videoFile2.getName());
-        DownloadManager sbDownloadManager2 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.CHAPTER, chapter.getId(), tvSeries.getId(), subtitleFile2.getId(), subtitleFile2.getHash(), subtitleFile2.getName());
+        DownloadManager vfDownloadManager2 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.CHAPTER, chapter.getId(), tvSeries.getId(), videoFile2.getId());
+        DownloadManager sbDownloadManager2 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.CHAPTER, chapter.getId(), tvSeries.getId(), subtitleFile2.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager2.getState());
         Assert.assertEquals(DownloadState.RUNNING, sbDownloadManager2.getState());
@@ -181,14 +181,14 @@ public class FileDownloadIT {
         // file 4
         Movie movie1 = Movie.getMovies(integratedDB).get(1);
         VideoFile videoFile4 = movie1.getVideoFiles().get(0);
-        DownloadManager vfDownloadManager3 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie1.getId(), null, videoFile4.getId(), videoFile4.getHash(), videoFile4.getName());
+        DownloadManager vfDownloadManager3 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie1.getId(), null, videoFile4.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager3.getState());
 
         // file 5, shared
         Movie movie2 = Movie.getMovies(integratedDB).get(2);
         VideoFile videoFile5 = movie2.getVideoFiles().get(0);
-        DownloadManager vfDownloadManager5 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie2.getId(), null, videoFile5.getId(), videoFile5.getHash(), videoFile5.getName());
+        DownloadManager vfDownloadManager5 = peerEngineClient.downloadMediaFile(DownloadInfo.Type.VIDEO_FILE, DatabaseMediator.ItemType.MOVIE, movie2.getId(), null, videoFile5.getId());
 
         Assert.assertEquals(DownloadState.RUNNING, vfDownloadManager5.getState());
         ThreadUtil.safeSleep(2000);

@@ -232,11 +232,11 @@ public class PeerEngineClient {
                 peerShareManager.stop();
 //                PeerShareIO.save(basePath, peerShareManager);
             }
-            if (tempFileManager != null) {
-                tempFileManager.stop();
-            }
             if (peerClient != null) {
                 peerClient.stop();
+            }
+            if (tempFileManager != null) {
+                tempFileManager.stop();
             }
         } catch (IOException e) {
             errorHandlerBridge.sessionDataCouldNotBeSaved();
@@ -517,13 +517,11 @@ public class PeerEngineClient {
             DatabaseMediator.ItemType containerType,
             int containerId,
             Integer superContainerId,
-            int itemId,
-            String fileHash,
-            String fileName) throws IOException, NotAliveException {
+            int itemId) throws IOException, NotAliveException {
         DownloadInfo.Title title;
         if (containerType == DatabaseMediator.ItemType.MOVIE) {
-            Movie movie = Movie.getMovieById(getDatabases().getIntegratedDB(), itemId);
-            title = movie != null ? new DownloadInfo.Title(movie.getTitle(), null, null, null, null) : DownloadInfo.Title.nullTitle();
+            Movie movie = Movie.getMovieById(getDatabases().getIntegratedDB(), containerId);
+            title = movie != null ? new DownloadInfo.Title(movie.getTitle(), null, null, null) : DownloadInfo.Title.nullTitle();
         } else {
             Chapter chapter = Chapter.getChapterById(getDatabases().getIntegratedDB(), itemId);
             if (chapter == null) {
@@ -532,9 +530,17 @@ public class PeerEngineClient {
                 List<TVSeries> tvSeriesList = chapter.getTVSeries();
                 TVSeries tvSeries = tvSeriesList != null && !tvSeriesList.isEmpty() ? tvSeriesList.get(0) : null;
                 String tvSeriesTitle = tvSeries != null ? tvSeries.getTitle() : null;
-                title = new DownloadInfo.Title(null, tvSeriesTitle, 0, 0, chapter.getTitle());
+                title = new DownloadInfo.Title(chapter.getTitle(), tvSeriesTitle, 0, 0);
             }
         }
+        jacz.database.File file;
+        if (type == DownloadInfo.Type.VIDEO_FILE) {
+            file = VideoFile.getVideoFileById(getDatabases().getIntegratedDB(), itemId);
+        } else {
+            file = SubtitleFile.getSubtitleFileById(getDatabases().getIntegratedDB(), itemId);
+        }
+        String fileHash = file.getHash();
+        String fileName = file.getName();
         HashMap<String, Serializable> userDictionary =
                 buildUserDictionary(type, containerType, containerId, title, superContainerId, itemId, fileHash, fileName);
         ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
