@@ -2,9 +2,12 @@ package jacz.peerengineclient;
 
 
 import jacz.database.DatabaseMediator;
+import jacz.util.io.serialization.Serializer;
 
 import java.io.Serializable;
+import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by Alberto on 13/12/2015.
@@ -21,24 +24,42 @@ public class DownloadInfo {
         }
     }
 
-    public class Title {
+    public static class Title {
 
         public final String title;
 
         public final String tvSeriesTitle;
 
-        public final String season;
+        public final Integer season;
 
         public final Integer chapterNumber;
 
-        public Title(String title, String tvSeriesTitle, String season, Integer chapterNumber) {
+        public final String chapterTitle;
+
+        public Title(String title, String tvSeriesTitle, Integer season, Integer chapterNumber, String chapterTitle) {
             this.title = title;
             this.tvSeriesTitle = tvSeriesTitle;
             this.season = season;
             this.chapterNumber = chapterNumber;
+            this.chapterTitle = chapterTitle;
         }
 
+        public String serialize() {
+            return Serializer.serializeListToReadableString(title, tvSeriesTitle, season, chapterNumber, chapterTitle);
+        }
 
+        public static Title deserialize(String str) {
+            try {
+                List<String> elements = Serializer.deserializeListFromReadableString(str);
+                return new Title(elements.get(0), elements.get(1), Integer.parseInt(elements.get(2)), Integer.parseInt(elements.get(3)), elements.get(4));
+            } catch (ParseException e) {
+                return nullTitle();
+            }
+        }
+
+        public static Title nullTitle() {
+            return new Title(null, null, null, null, null);
+        }
     }
 
     /**
@@ -117,6 +138,7 @@ public class DownloadInfo {
                 (Type) userDictionary.get("type"),
                 (DatabaseMediator.ItemType) userDictionary.get("containerType"),
                 (Integer) userDictionary.get("containerId"),
+                Title.deserialize((String) userDictionary.get("title")),
                 (Integer) userDictionary.get("superContainerId"),
                 (Integer) userDictionary.get("itemId"),
                 (String) userDictionary.get("fileHash"),

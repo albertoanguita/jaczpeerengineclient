@@ -520,15 +520,30 @@ public class PeerEngineClient {
             int itemId,
             String fileHash,
             String fileName) throws IOException, NotAliveException {
+        DownloadInfo.Title title;
+        if (containerType == DatabaseMediator.ItemType.MOVIE) {
+            Movie movie = Movie.getMovieById(getDatabases().getIntegratedDB(), itemId);
+            title = movie != null ? new DownloadInfo.Title(movie.getTitle(), null, null, null, null) : DownloadInfo.Title.nullTitle();
+        } else {
+            Chapter chapter = Chapter.getChapterById(getDatabases().getIntegratedDB(), itemId);
+            if (chapter == null) {
+                title = DownloadInfo.Title.nullTitle();
+            } else {
+                List<TVSeries> tvSeriesList = chapter.getTVSeries();
+                TVSeries tvSeries = tvSeriesList != null && !tvSeriesList.isEmpty() ? tvSeriesList.get(0) : null;
+                String tvSeriesTitle = tvSeries != null ? tvSeries.getTitle() : null;
+                title = new DownloadInfo.Title(null, tvSeriesTitle, 0, 0, chapter.getTitle());
+            }
+        }
         HashMap<String, Serializable> userDictionary =
-                buildUserDictionary(type, containerType, containerId, superContainerId, itemId, fileHash, fileName);
+                buildUserDictionary(type, containerType, containerId, title, superContainerId, itemId, fileHash, fileName);
         ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
         return downloadFile(MEDIA_STORE, fileHash, resourceWriter, DEFAULT_STREAMING_NEED, HASH_ALGORITHM);
     }
 
     public synchronized DownloadManager downloadImage(ImageHash imageHash) throws IOException, NotAliveException {
         HashMap<String, Serializable> userDictionary =
-                buildUserDictionary(DownloadInfo.Type.IMAGE, null, null, null, null, imageHash.getHash(), imageHash.serialize());
+                buildUserDictionary(DownloadInfo.Type.IMAGE, null, null, DownloadInfo.Title.nullTitle(), null, null, imageHash.getHash(), imageHash.serialize());
         ResourceWriter resourceWriter = new TempFileWriter(tempFileManager, userDictionary);
         return downloadFile(IMAGE_STORE, imageHash.getHash(), resourceWriter, DEFAULT_STREAMING_NEED, HASH_ALGORITHM);
     }
@@ -537,11 +552,12 @@ public class PeerEngineClient {
             DownloadInfo.Type type,
             DatabaseMediator.ItemType containerType,
             Integer containerId,
+            DownloadInfo.Title title,
             Integer superContainerId,
             Integer itemId,
             String fileHash,
             String fileName) {
-        DownloadInfo downloadInfo = new DownloadInfo(type, containerType, containerId, superContainerId, itemId, fileHash, fileName);
+        DownloadInfo downloadInfo = new DownloadInfo(type, containerType, containerId, title, superContainerId, itemId, fileHash, fileName);
         return downloadInfo.buildUserDictionary();
     }
 

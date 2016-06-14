@@ -21,7 +21,9 @@ import jacz.peerengineservice.util.datatransfer.ResourceTransferEvents;
 import jacz.peerengineservice.util.datatransfer.TransferStatistics;
 import jacz.peerengineservice.util.tempfile_api.TempFileManagerEvents;
 import jacz.util.files.FileGenerator;
+import jacz.util.hash.CRCMismatchException;
 import jacz.util.io.serialization.VersionedObjectSerializer;
+import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.io.serialization.localstorage.LocalStorage;
 import jacz.util.lists.tuple.Duple;
 import org.apache.commons.io.FileUtils;
@@ -162,8 +164,8 @@ public class SessionManager {
             repairedFiles.addAll(peerEngineClient.getRepairedFiles());
 
             return new Duple<>(peerEngineClient, repairedFiles);
-        } catch (Exception e) {
-            throw new IOException(e.getMessage());
+        } catch (VersionedSerializationException | CRCMismatchException | XMLStreamException e) {
+            throw new IOException(e);
         }
     }
 }
