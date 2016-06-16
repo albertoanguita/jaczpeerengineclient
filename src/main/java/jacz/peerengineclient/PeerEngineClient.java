@@ -453,7 +453,9 @@ public class PeerEngineClient {
     }
 
     public synchronized Duple<String, String> addLocalMovieFile(String path, String expectedFileName, Movie movie) throws IOException {
-        return addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
+        databaseManager.reportNewMedia(movie);
+        return pathAndHash;
     }
 
     public synchronized Duple<String, String> addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter) throws IOException {
@@ -461,7 +463,9 @@ public class PeerEngineClient {
     }
 
     public synchronized Duple<String, String> addLocalChapterFile(String path, String expectedFileName, TVSeries tvSeries, Chapter chapter) throws IOException {
-        return addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+        databaseManager.reportNewMedia(tvSeries);
+        return pathAndHash;
     }
 
     public synchronized Duple<String, String> addLocalImageFile(String path) throws IOException {
@@ -469,7 +473,9 @@ public class PeerEngineClient {
     }
 
     public synchronized Duple<String, String> addLocalImageFile(String path, String expectedFileName) throws IOException {
-        return addLocalFile(path, Paths.get(path).getFileName().toString(), MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
+        databaseManager.reportNewImage(pathAndHash.element2);
+        return pathAndHash;
     }
 
     private synchronized Duple<String, String> addLocalFile(
@@ -488,6 +494,7 @@ public class PeerEngineClient {
             }
         } else {
             // to images repo
+            // todo not use expectedFileName??
             location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
         }
         // this is the path in the media library where this file should go (file is created in the process)

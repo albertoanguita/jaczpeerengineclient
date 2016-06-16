@@ -25,5 +25,9 @@ public interface IntegrationEvents {
      */
     void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id, boolean hasNewMediaContent);
 
+    void integratedItemHasNewMedia(DatabaseMediator.ItemType type, Integer id);
+
+    void integratedItemHasNewImage(DatabaseMediator.ItemType type, Integer id);
+
     void integratedItemRemoved(DatabaseMediator.ItemType type, Integer id);
 }

@@ -42,6 +42,7 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     @Override
     public void setDatabaseID(String databaseID) {
+        // todo the existing data must be cleared!! also in other accessors??? yes if they remain stored in disk
         remotePeerShare.setId(databaseID);
     }
 

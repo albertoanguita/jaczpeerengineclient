@@ -1,6 +1,8 @@
 package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseItem;
+import jacz.database.Movie;
+import jacz.database.TVSeries;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationConcurrencyController;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
@@ -14,6 +16,7 @@ import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
 /**
  * This class manages data databases and their proper synchronization and integration
@@ -77,6 +80,16 @@ public class DatabaseManager {
      */
     public void localItemModified(DatabaseItem item) throws IllegalStateException {
         itemIntegrator.integrateLocalItem(databases, item);
+    }
+
+    public void reportNewMedia(DatabaseItem item) {
+        itemIntegrator.reportNewMedia(item);
+    }
+
+    public void reportNewImage(String hash) {
+        Stream.concat(Movie.getMovies(databases.getIntegratedDB()).stream(), TVSeries.getTVSeries(databases.getIntegratedDB()).stream())
+                .filter(item -> item.getImageHash() != null && item.getImageHash().getHash().equals(hash))
+                .forEach(itemIntegrator::reportNewImage);
     }
 
     public void removeLocalItem(DatabaseItem item) {

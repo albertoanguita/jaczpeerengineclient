@@ -14,17 +14,22 @@ public class IntegrationEventsImpl implements IntegrationEvents {
     }
 
     @Override
-    public void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id) {
-        System.out.println("Integrated item has new media content. Type: " + type + ", id: " + id);
-    }
-
-    @Override
-    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id) {
+    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id, boolean hasNewMediaContent) {
         System.out.println("Integrated item has been modified. Type: " + type + ", id: " + id);
     }
 
     @Override
-    public void integratedItemsRemoved() {
-        System.out.println("Integrated items removed");
+    public void integratedItemHasNewMedia(DatabaseMediator.ItemType type, Integer id) {
+        System.out.println("Integrated item has new media. Type: " + type + ", id: " + id);
+    }
+
+    @Override
+    public void integratedItemHasNewImage(DatabaseMediator.ItemType type, Integer id) {
+        System.out.println("Integrated item has new image. Type: " + type + ", id: " + id);
+    }
+
+    @Override
+    public void integratedItemRemoved(DatabaseMediator.ItemType type, Integer id) {
+        System.out.println("Integrated item removed. Type: " + type + ", id: " + id);
     }
 }
