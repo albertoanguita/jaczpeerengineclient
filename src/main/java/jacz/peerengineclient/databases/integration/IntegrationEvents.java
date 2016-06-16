@@ -18,20 +18,12 @@ public interface IntegrationEvents {
     void newIntegratedItem(DatabaseMediator.ItemType type, Integer id);
 
     /**
-     * An item in the integrated database has been modified and as a result has new media content
+     * An item in the integrated database has been modified
      *
      * @param type type of the item
-     * @param id       id of the item in the integrated database that has new media content
+     * @param id       id of the item in the integrated database
      */
-    void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id);
+    void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id, boolean hasNewMediaContent);
 
-    /**
-     * An item in the integrated database has been modified, but with no new media content
-     *
-     * @param type type of the item
-     * @param id       id of the item in the integrated database that has new media content
-     */
-    void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id);
-
-    void integratedItemsRemoved();
+    void integratedItemRemoved(DatabaseMediator.ItemType type, Integer id);
 }

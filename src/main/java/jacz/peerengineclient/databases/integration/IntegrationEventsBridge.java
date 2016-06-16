@@ -30,21 +30,15 @@ public class IntegrationEventsBridge implements IntegrationEvents {
     }
 
     @Override
-    public void integratedItemHasNewMediaContent(DatabaseMediator.ItemType type, Integer id) {
-        logger.info("integrated item has new media content. type: " + type + ", id: " + id);
-        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasNewMediaContent(type, id));
-    }
-
-    @Override
-    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id) {
+    public void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id, boolean hasNewMediaContent) {
         logger.info("integrated item has been modified. type: " + type + ", id: " + id);
-        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasBeenModified(type, id));
+        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasBeenModified(type, id, hasNewMediaContent));
     }
 
     @Override
-    public void integratedItemsRemoved() {
+    public void integratedItemRemoved(DatabaseMediator.ItemType type, Integer id) {
         logger.info("integrated item removed");
-        sequentialTaskExecutor.submit(integrationEvents::integratedItemsRemoved);
+        sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemRemoved(type, id));
     }
 
     public void stop() {

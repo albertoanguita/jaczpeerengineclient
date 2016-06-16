@@ -222,10 +222,8 @@ public class ItemIntegrator {
             // notify this item
             if (isNew) {
                 integrationEvents.newIntegratedItem(integratedItem.getItemType(), integratedItem.getId());
-            } else if (isAliveAndHasNewContent.element2) {
-                integrationEvents.integratedItemHasNewMediaContent(integratedItem.getItemType(), integratedItem.getId());
             } else {
-                integrationEvents.integratedItemHasBeenModified(integratedItem.getItemType(), integratedItem.getId());
+                integrationEvents.integratedItemHasBeenModified(integratedItem.getItemType(), integratedItem.getId(), isAliveAndHasNewContent.element2);
             }
         } else {
             // the integrated item has died
@@ -234,8 +232,10 @@ public class ItemIntegrator {
     }
 
     private void deleteIntegratedItem(DatabaseItem integratedItem) {
+        DatabaseMediator.ItemType type = integratedItem.getItemType();
+        Integer id = integratedItem.getId();
         integratedItem.delete();
-        integrationEvents.integratedItemsRemoved();
+        integrationEvents.integratedItemRemoved(type, id);
     }
 
     /**
