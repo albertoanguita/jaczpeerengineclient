@@ -21,7 +21,7 @@ public class NewConfigTest {
     @Test
     public void test() throws IOException {
 
-        Duple<String, PeerId> dirAndPeerId = SessionManager.createUserConfig("./etc", TestUtil.randomBytes(), "alb", CountryCode.ES);
+        Duple<String, PeerId> dirAndPeerId = SessionManager.createUserConfig("./etc", TestUtil.randomBytes(), "alb", CountryCode.ES, "0.1");
         String dir = dirAndPeerId.element1;
         PeerId peerId = dirAndPeerId.element2;
 

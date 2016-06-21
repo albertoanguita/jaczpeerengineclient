@@ -25,6 +25,7 @@ import jacz.util.hash.CRCMismatchException;
 import jacz.util.io.serialization.VersionedObjectSerializer;
 import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.io.serialization.localstorage.LocalStorage;
+import jacz.util.io.serialization.localstorage.VersionedLocalStorage;
 import jacz.util.lists.tuple.Duple;
 import org.apache.commons.io.FileUtils;
 
@@ -56,7 +57,7 @@ public class SessionManager {
     // store a list of existing media dirs, one of which is the "active" dir. Provide operations to move files from one to another, remove one
     // no need to store old dirs. We only care about current one. We can make a GUI to handle downloaded files (see a tree with location of files, sizes, etc)
 
-    public static synchronized Duple<String, PeerId> createUserConfig(String basePath, byte[] randomBytes, String nick, CountryCode mainCountry) throws IOException {
+    public static synchronized Duple<String, PeerId> createUserConfig(String basePath, byte[] randomBytes, String nick, CountryCode mainCountry, String customStorageVersion) throws IOException {
         // creates a new user account
         // first find a free user directory, then create all initial config files in it and return it
         // base path is created if needed
@@ -97,6 +98,9 @@ public class SessionManager {
 
             // statistics file
             TransferStatistics.createNew(PathConstants.statisticsPath(userPath)).stop();
+
+            // custom storage
+            VersionedLocalStorage.createNew(PathConstants.persistentIDFactoryPath(basePath), customStorageVersion);
 
             PeerShareIO.createNewFileStructure(userPath);
 //            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));

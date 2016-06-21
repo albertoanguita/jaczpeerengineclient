@@ -47,6 +47,7 @@ import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
 import jacz.util.io.serialization.VersionedSerializationException;
 import jacz.util.io.serialization.localstorage.LocalStorage;
+import jacz.util.io.serialization.localstorage.VersionedLocalStorage;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.Triple;
 import jacz.util.log.ErrorFactory;
@@ -90,6 +91,8 @@ public class PeerEngineClient {
     private final PeerShareManager peerShareManager;
 
     private final PersistentIdFactory persistentIdFactory;
+
+    private final VersionedLocalStorage customStorage;
 
     private final ImageDownloader imageDownloader;
 
@@ -151,6 +154,7 @@ public class PeerEngineClient {
         imageDownloader = new ImageDownloader(this, databaseManager.getDatabases().getIntegratedDB(), fileAPI);
         peerShareManager.setPeerClient(peerClient);
         persistentIdFactory = new PersistentIdFactory(basePath);
+        customStorage = new VersionedLocalStorage(PathConstants.persistentIDFactoryPath(basePath));
         periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader);
         tempFileManager = new TempFileManager(mediaPaths.getTempDownloadsPath(), tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
@@ -760,5 +764,9 @@ public class PeerEngineClient {
 
     public String generatePersistentId() {
         return persistentIdFactory.generateId();
+    }
+
+    public VersionedLocalStorage getCustomStorage() {
+        return customStorage;
     }
 }

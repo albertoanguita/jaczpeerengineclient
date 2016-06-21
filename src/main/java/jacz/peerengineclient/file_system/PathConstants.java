@@ -85,7 +85,9 @@ public class PathConstants {
 
     private static final String FILE_HASH_DATABASE_FILE = "hashes";
 
-    private static final String PERSISTENT_ID_FACTORY_FILE = "idFactory";
+    private static final String PERSISTENT_ID_FACTORY_FILE = "id-factory";
+
+    private static final String CUSTOM_STORAGE = "custom-storage";
 
     /**********************
      * file extensions
@@ -331,6 +333,10 @@ public class PathConstants {
 
     public static String persistentIDFactoryPath(String basePath) {
         return getFilePath(basePath, UTIL_DIR, PERSISTENT_ID_FACTORY_FILE, EXT_DB);
+    }
+
+    public static String customStorage(String basePath) {
+        return getFilePath(basePath, UTIL_DIR, CUSTOM_STORAGE, EXT_DB);
     }
 
     /************************
