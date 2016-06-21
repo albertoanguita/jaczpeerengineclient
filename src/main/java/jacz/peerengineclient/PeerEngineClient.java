@@ -452,32 +452,32 @@ public class PeerEngineClient {
         return peerShareManager.getFileHash().put(path);
     }
 
-    public synchronized Duple<String, String> addLocalMovieFile(String path, Movie movie) throws IOException {
-        return addLocalMovieFile(path, Paths.get(path).getFileName().toString(), movie);
+    public synchronized Duple<String, String> addLocalMovieFile(String path, Movie movie, boolean keepSource) throws IOException {
+        return addLocalMovieFile(path, Paths.get(path).getFileName().toString(), movie, keepSource);
     }
 
-    public synchronized Duple<String, String> addLocalMovieFile(String path, String expectedFileName, Movie movie) throws IOException {
-        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null);
+    public synchronized Duple<String, String> addLocalMovieFile(String path, String expectedFileName, Movie movie, boolean keepSource) throws IOException {
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null, keepSource);
         databaseManager.reportNewMedia(movie);
         return pathAndHash;
     }
 
-    public synchronized Duple<String, String> addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter) throws IOException {
-        return addLocalChapterFile(path, Paths.get(path).getFileName().toString(), tvSeries, chapter);
+    public synchronized Duple<String, String> addLocalChapterFile(String path, TVSeries tvSeries, Chapter chapter, boolean keepSource) throws IOException {
+        return addLocalChapterFile(path, Paths.get(path).getFileName().toString(), tvSeries, chapter, keepSource);
     }
 
-    public synchronized Duple<String, String> addLocalChapterFile(String path, String expectedFileName, TVSeries tvSeries, Chapter chapter) throws IOException {
-        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter);
+    public synchronized Duple<String, String> addLocalChapterFile(String path, String expectedFileName, TVSeries tvSeries, Chapter chapter, boolean keepSource) throws IOException {
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter, keepSource);
         databaseManager.reportNewMedia(tvSeries);
         return pathAndHash;
     }
 
-    public synchronized Duple<String, String> addLocalImageFile(String path) throws IOException {
-        return addLocalImageFile(path, Paths.get(path).getFileName().toString());
+    public synchronized Duple<String, String> addLocalImageFile(String path, boolean keepSource) throws IOException {
+        return addLocalImageFile(path, Paths.get(path).getFileName().toString(), keepSource);
     }
 
-    public synchronized Duple<String, String> addLocalImageFile(String path, String expectedFileName) throws IOException {
-        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null);
+    public synchronized Duple<String, String> addLocalImageFile(String path, String expectedFileName, boolean keepSource) throws IOException {
+        Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null, keepSource);
         databaseManager.reportNewImage(pathAndHash.element2);
         return pathAndHash;
     }
@@ -488,30 +488,76 @@ public class PeerEngineClient {
             MoveFileAction moveFileAction,
             Movie movie,
             TVSeries tvSeries,
-            Chapter chapter) throws IOException {
-        Triple<String, String, String> location;
-        if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
-            if (movie != null) {
-                location = PathConstants.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), expectedFileName);
+            Chapter chapter,
+            boolean keepSource) throws IOException {
+        // if the file already exists in the file hash database, no actions are required (the existing path is used)
+        if (containsFileByPath(path)) {
+            return new Duple<>(path, peerShareManager.getFileHash().containsSimilarFile(path).element2);
+        } else {
+            Duple<Boolean, String> containsAndHash = peerShareManager.getFileHash().containsSimilarFile(path);
+            String finalPath;
+            String hash;
+            if (containsAndHash.element1) {
+                // this file is not in the file hash database, but a similar file already exists -> use that file
+                finalPath = peerShareManager.getFileHash().getFilePath(containsAndHash.element2);
+                hash = containsAndHash.element2;
             } else {
-                location = PathConstants.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), expectedFileName);
+                // a new location is required for the file
+                Triple<String, String, String> location;
+                if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
+                    if (movie != null) {
+                        location = PathConstants.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), expectedFileName);
+                    } else {
+                        location = PathConstants.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), expectedFileName);
+                    }
+                } else {
+                    // to images repo
+                    // todo not use expectedFileName??
+                    location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
+                }
+                // this is the path in the media library where this file should go (file is created in the process)
+                finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
+                // move the given file to the new created file
+                Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+                // add the file to the file hash database
+                hash = addLocalFileFixedPath(finalPath);
             }
-        } else {
-            // to images repo
-            // todo not use expectedFileName??
-            location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
+            // if needed, delete the original file and return the result
+            if (!keepSource) {
+                Files.delete(Paths.get(path));
+            }
+            return new Duple<>(finalPath, hash);
         }
-        // this is the path in the media library where this file should go (file is created in the process)
-        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
-
-        if (!Paths.get(finalPath).getParent().equals(Paths.get(path))) {
-            // the given path is not in the expected place in the media library -> needs to be moved
-            Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            // the given path is already in its expected place in the media library -> use it as final path
-            finalPath = path;
-        }
-        return new Duple<>(finalPath, addLocalFileFixedPath(finalPath));
+//
+//
+//
+//        Triple<String, String, String> location;
+//        if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
+//            if (movie != null) {
+//                location = PathConstants.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), expectedFileName);
+//            } else {
+//                location = PathConstants.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), expectedFileName);
+//            }
+//        } else {
+//            // to images repo
+//            // todo not use expectedFileName??
+//            location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
+//        }
+//
+//
+//        // this is the path in the media library where this file should go (file is created in the process)
+//        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
+//
+//        if (!Paths.get(finalPath).getParent().equals(Paths.get(path))) {
+//            // the given path is not in the expected place in the media library -> needs to be moved
+//            Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+//        } else {
+//            // the given path is already in its expected place in the media library -> use it as final path
+//            // also delete the created files
+//            Files.delete(Paths.get(finalPath));
+//            finalPath = path;
+//        }
+//        return new Duple<>(finalPath, addLocalFileFixedPath(finalPath));
     }
 
     public synchronized void removeLocalFile(String key, boolean removeFile) {
@@ -734,7 +780,7 @@ public class PeerEngineClient {
     }
 
     boolean containsFileByPath(String path) throws IOException {
-        return peerShareManager.getFileHash().containsValue(path);
+        return peerShareManager.getFileHash().containsPath(path);
     }
 
     public String getFile(String hash) {
