@@ -80,18 +80,28 @@ public class ItemIntegrator {
         return integratedItem;
     }
 
-    public DatabaseItem removeLocalContent(
+    /**
+     * Removes the local content (local and deleted databases) associated to an integrated item
+     *
+     * @param databases      database paths
+     * @param integratedItem integrated item
+     * @return true if the integrated item has been removed as a consequence of removing its local content
+     */
+    public boolean removeLocalContent(
             Databases databases,
-            DatabaseItem localItem) {
+            DatabaseItem integratedItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
 
-        DatabaseMediator.ItemType type = localItem.getItemType();
-        DatabaseItem integratedItem = DatabaseMediator.getItem(
-                databases.getIntegratedDB(),
-                type,
-                databases.getItemRelations().getLocalToIntegrated().get(type, localItem.getId()));
-        databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
-        databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
+        DatabaseMediator.ItemType type = integratedItem.getItemType();
+        if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+            // there is a local item -> remote it
+            DatabaseItem localItem = DatabaseMediator.getItem(
+                    databases.getLocalDB(),
+                    type,
+                    databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
+            databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
+            databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
+        }
         if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
             // there is a deleted item -> remove it too
             DatabaseItem deletedItem = DatabaseMediator.getItem(
@@ -106,7 +116,7 @@ public class ItemIntegrator {
 
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
 
-        return integratedItem;
+        return integratedItem == null;
     }
 
 

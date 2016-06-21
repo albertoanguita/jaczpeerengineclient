@@ -267,15 +267,15 @@ public class PeerEngineClient {
     /**
      * A local item has been modified, and needs to be re-integrated in the integrated database
      *
-     * @param item modified item
+     * @param localItem modified local item
      * @throws IllegalStateException if the client has been previously stopped
      */
-    public DatabaseItem localItemModified(DatabaseItem item) throws IllegalStateException {
-        return databaseManager.localItemModified(item);
+    public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
+        return databaseManager.localItemModified(localItem);
     }
 
-    public DatabaseItem removeLocalItem(DatabaseItem item) {
-        return databaseManager.removeLocalItem(item);
+    public boolean removeLocalContent(DatabaseItem integratedItem) {
+        return databaseManager.removeLocalItem(integratedItem);
     }
 
     public int getLocalPort() {

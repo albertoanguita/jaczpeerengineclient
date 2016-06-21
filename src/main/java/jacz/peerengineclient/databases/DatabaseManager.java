@@ -76,10 +76,10 @@ public class DatabaseManager {
      * This method is blocking, and execution completes once the integrated database has been updated with the local changes. The request must
      * therefore be immediately attended
      *
-     * @param item the modified item
+     * @param localItem the modified local item
      */
-    public DatabaseItem localItemModified(DatabaseItem item) throws IllegalStateException {
-        return itemIntegrator.integrateLocalItem(databases, item);
+    public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
+        return itemIntegrator.integrateLocalItem(databases, localItem);
     }
 
     public void reportNewMedia(DatabaseItem item) {
@@ -92,10 +92,8 @@ public class DatabaseManager {
                 .forEach(itemIntegrator::reportNewImage);
     }
 
-    public DatabaseItem removeLocalItem(DatabaseItem item) {
-        DatabaseItem integratedItem = itemIntegrator.removeLocalContent(databases, item);
-        item.delete();
-        return integratedItem;
+    public boolean removeLocalItem(DatabaseItem integratedItem) {
+        return itemIntegrator.removeLocalContent(databases, integratedItem);
     }
 
     /**
