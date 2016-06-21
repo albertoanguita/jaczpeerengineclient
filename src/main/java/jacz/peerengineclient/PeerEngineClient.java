@@ -270,12 +270,12 @@ public class PeerEngineClient {
      * @param item modified item
      * @throws IllegalStateException if the client has been previously stopped
      */
-    public void localItemModified(DatabaseItem item) throws IllegalStateException {
-        databaseManager.localItemModified(item);
+    public DatabaseItem localItemModified(DatabaseItem item) throws IllegalStateException {
+        return databaseManager.localItemModified(item);
     }
 
-    public void removeLocalItem(DatabaseItem item) {
-        databaseManager.removeLocalItem(item);
+    public DatabaseItem removeLocalItem(DatabaseItem item) {
+        return databaseManager.removeLocalItem(item);
     }
 
     public int getLocalPort() {

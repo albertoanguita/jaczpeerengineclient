@@ -51,7 +51,7 @@ public class ItemIntegrator {
         integrationEvents.stop();
     }
 
-    public void integrateLocalItem(
+    public DatabaseItem integrateLocalItem(
             Databases databases,
             DatabaseItem localItem) throws IllegalStateException {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
@@ -76,9 +76,11 @@ public class ItemIntegrator {
         processIntegratedItem(databases, integratedItem, isNew);
 
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
+
+        return integratedItem;
     }
 
-    public void removeLocalContent(
+    public DatabaseItem removeLocalContent(
             Databases databases,
             DatabaseItem localItem) {
         concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
@@ -100,9 +102,11 @@ public class ItemIntegrator {
             databases.getItemRelations().getDeletedToIntegrated().remove(type, deletedItem.getId());
             deletedItem.delete();
         }
-        processIntegratedItem(databases, integratedItem, false);
+        integratedItem = processIntegratedItem(databases, integratedItem, false);
 
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
+
+        return integratedItem;
     }
 
 
@@ -201,7 +205,7 @@ public class ItemIntegrator {
         concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
     }
 
-    private void processIntegratedItem(Databases databases, DatabaseItem integratedItem, boolean isNew) {
+    private DatabaseItem processIntegratedItem(Databases databases, DatabaseItem integratedItem, boolean isNew) {
         Duple<Boolean, Boolean> isAliveAndHasNewContent = inflateIntegratedItem(databases, integratedItem, imageDownloader);
         if (isAliveAndHasNewContent.element1) {
             // the integrated item is alive
@@ -225,9 +229,11 @@ public class ItemIntegrator {
             } else {
                 integrationEvents.integratedItemHasBeenModified(integratedItem.getItemType(), integratedItem.getId(), isAliveAndHasNewContent.element2);
             }
+            return integratedItem;
         } else {
             // the integrated item has died
             deleteIntegratedItem(integratedItem);
+            return null;
         }
     }
 

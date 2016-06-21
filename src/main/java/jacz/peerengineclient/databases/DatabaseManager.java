@@ -78,8 +78,8 @@ public class DatabaseManager {
      *
      * @param item the modified item
      */
-    public void localItemModified(DatabaseItem item) throws IllegalStateException {
-        itemIntegrator.integrateLocalItem(databases, item);
+    public DatabaseItem localItemModified(DatabaseItem item) throws IllegalStateException {
+        return itemIntegrator.integrateLocalItem(databases, item);
     }
 
     public void reportNewMedia(DatabaseItem item) {
@@ -92,9 +92,10 @@ public class DatabaseManager {
                 .forEach(itemIntegrator::reportNewImage);
     }
 
-    public void removeLocalItem(DatabaseItem item) {
-        itemIntegrator.removeLocalContent(databases, item);
+    public DatabaseItem removeLocalItem(DatabaseItem item) {
+        DatabaseItem integratedItem = itemIntegrator.removeLocalContent(databases, item);
         item.delete();
+        return integratedItem;
     }
 
     /**
