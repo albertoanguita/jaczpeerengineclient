@@ -501,6 +501,10 @@ public class PeerEngineClient {
                 // this file is not in the file hash database, but a similar file already exists -> use that file
                 finalPath = peerShareManager.getFileHash().getFilePath(containsAndHash.element2);
                 hash = containsAndHash.element2;
+                // if needed, delete the original file and return the result
+                if (!keepSource) {
+                    Files.delete(Paths.get(path));
+                }
             } else {
                 // a new location is required for the file
                 Triple<String, String, String> location;
@@ -517,8 +521,13 @@ public class PeerEngineClient {
                 }
                 // this is the path in the media library where this file should go (file is created in the process)
                 finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
-                // move the given file to the new created file
-                Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+                // copy/move the given file to the new created file
+                // if needed, delete the original file and return the result
+                if (keepSource) {
+                    Files.copy(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
+                }
                 // add the file to the file hash database
                 hash = addLocalFileFixedPath(finalPath);
             }
