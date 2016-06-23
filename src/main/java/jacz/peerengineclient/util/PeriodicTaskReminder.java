@@ -155,6 +155,7 @@ public class PeriodicTaskReminder implements TimerAction {
             peerShareManagerTempFilesTask.stop();
             imageDownloaderTask.shutdown();
             affinityCalculatorTask.shutdown();
+            redundantFileCheckerTask.shutdown();
         }
     }
 }
