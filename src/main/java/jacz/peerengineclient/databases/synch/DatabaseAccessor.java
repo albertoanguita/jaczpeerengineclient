@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Accessor implementation for databases. Works both in client and server mode
@@ -59,7 +60,21 @@ public class DatabaseAccessor implements DataAccessor {
 
     @Override
     public void setDatabaseID(String databaseID) {
+        // the existing database is not valid -> remove all items contained in the current database.
+        // and then create a new one
+        clearLocalDatabase();
         DatabaseMediator.dropAndCreate(dbPath, databaseID);
+    }
+
+    private void clearLocalDatabase() {
+        // todo test
+        Stream<DatabaseItem> itemStream = Stream.empty();
+        itemStream = Stream.concat(itemStream, Movie.getMovies(dbPath).stream());
+        itemStream = Stream.concat(itemStream, TVSeries.getTVSeries(dbPath).stream());
+        itemStream = Stream.concat(itemStream, Chapter.getChapters(dbPath).stream());
+        itemStream = Stream.concat(itemStream, VideoFile.getVideoFiles(dbPath).stream());
+        itemStream = Stream.concat(itemStream, SubtitleFile.getSubtitleFiles(dbPath).stream());
+        itemStream.forEach(item -> databaseManager.remoteItemWillBeRemoved(remotePeerId, item));
     }
 
     @Override

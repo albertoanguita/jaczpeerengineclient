@@ -68,6 +68,8 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final AffinityCalculator affinityCalculator;
 
+    private final RedundantFileChecker redundantFileChecker;
+
     private final Timer timer;
 
     private final AtomicBoolean alive;
@@ -81,15 +83,19 @@ public class PeriodicTaskReminder implements TimerAction {
 
     private final ExecutorService affinityCalculatorTask;
 
+    private final ExecutorService redundantFileCheckerTask;
+
     public PeriodicTaskReminder(
             PeerEngineClient peerEngineClient,
             DatabaseSynchManager databaseSynchManager,
             PeerShareManager peerShareManager,
-            ImageDownloader imageDownloader) {
+            ImageDownloader imageDownloader,
+            RedundantFileChecker redundantFileChecker) {
         this.peerEngineClient = peerEngineClient;
         lastSynchedPeerId = null;
         this.imageDownloader = imageDownloader;
         this.affinityCalculator = new AffinityCalculator(peerEngineClient);
+        this.redundantFileChecker = redundantFileChecker;
         timer = new Timer(REMOTE_SYNCH_DELAY, this, false, "PeriodicTaskReminder");
         alive = new AtomicBoolean(true);
         databaseSynchManagerTask = new PeerSpecificTask() {
@@ -112,6 +118,7 @@ public class PeriodicTaskReminder implements TimerAction {
         };
         imageDownloaderTask = Executors.newSingleThreadExecutor();
         affinityCalculatorTask = Executors.newSingleThreadExecutor();
+        redundantFileCheckerTask = Executors.newSingleThreadExecutor();
     }
 
     public void start() {
@@ -123,16 +130,21 @@ public class PeriodicTaskReminder implements TimerAction {
         if (alive.get()) {
             lastSynchedPeerId = peerEngineClient.getNextConnectedPeer(lastSynchedPeerId);
             if (lastSynchedPeerId != null) {
-                databaseSynchManagerTask.addTaskForPeer(lastSynchedPeerId);
-                peerShareManagerRemoteShareTask.addTaskForPeer(lastSynchedPeerId);
-                peerShareManagerTempFilesTask.addTaskForPeer(lastSynchedPeerId);
+                synchWithPeer(lastSynchedPeerId);
             }
             imageDownloaderTask.submit(imageDownloader::downloadMissingImages);
-            affinityCalculatorTask.submit(() -> affinityCalculator.updateAffinity(lastSynchedPeerId));
+            redundantFileCheckerTask.submit(redundantFileChecker::requestPeriodicCheck);
             return null;
         } else {
             return 0L;
         }
+    }
+
+    public synchronized void synchWithPeer(PeerId peerId) {
+        databaseSynchManagerTask.addTaskForPeer(peerId);
+        peerShareManagerRemoteShareTask.addTaskForPeer(peerId);
+        peerShareManagerTempFilesTask.addTaskForPeer(peerId);
+        affinityCalculatorTask.submit(() -> affinityCalculator.updateAffinity(peerId));
     }
 
     public synchronized void stop() {
