@@ -117,7 +117,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                 if (downloadInfo.containerType == DatabaseMediator.ItemType.MOVIE) {
                     Movie movie = Movie.getMovieById(integratedPath, downloadInfo.containerId);
                     if (movie != null) {
-                        pathAndHash = peerEngineClient.addLocalMovieFile(resourceWriter.getPath(), downloadInfo.fileName, movie);
+                        pathAndHash = peerEngineClient.addLocalMovieFile(resourceWriter.getPath(), downloadInfo.fileName, movie, false);
                     } else {
                         peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
                         return;
@@ -128,7 +128,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     TVSeries tvSeries = downloadInfo.superContainerId != null ? TVSeries.getTVSeriesById(integratedPath, downloadInfo.superContainerId) : null;
                     Chapter chapter = Chapter.getChapterById(integratedPath, downloadInfo.containerId);
                     if (chapter != null) {
-                        pathAndHash = peerEngineClient.addLocalChapterFile(resourceWriter.getPath(), downloadInfo.fileName, tvSeries, chapter);
+                        pathAndHash = peerEngineClient.addLocalChapterFile(resourceWriter.getPath(), downloadInfo.fileName, tvSeries, chapter, false);
                     } else {
                         peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
                         return;
@@ -139,7 +139,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                 }
             } else {
                 // image file -> move to correct location
-                pathAndHash = peerEngineClient.addLocalImageFile(resourceWriter.getPath(), downloadInfo.fileName);
+                pathAndHash = peerEngineClient.addLocalImageFile(resourceWriter.getPath(), downloadInfo.fileName, false);
             }
             downloadEvents.completed(downloadInfo, pathAndHash.element1, downloadManager);
         } catch (IOException e) {
