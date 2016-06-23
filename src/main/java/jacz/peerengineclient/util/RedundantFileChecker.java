@@ -6,6 +6,9 @@ import jacz.util.date_time.TimedEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Allows checking and erasing redundant downloads (file already available, or another download with
  * higher downloaded size existing)
@@ -35,12 +38,32 @@ public class RedundantFileChecker {
 
     public void checkRedundantDownloads() {
         logger.info("Checking for redundant downloads...");
+        Map<String, DownloadManager> hashToDownloadMap = new HashMap<>();
         for (DownloadManager downloadManager : peerEngineClient.getAllDownloads()) {
-            if (peerEngineClient.getFileAPI().isHashLocallyAvailable(downloadManager.getResourceID())) {
-                logger.info("Redundant download found with hash " + downloadManager.getResourceID() + ". Cancellling download");
+            String hash = downloadManager.getResourceID();
+            if (peerEngineClient.getFileAPI().isHashLocallyAvailable(hash)) {
+                logger.info("Redundant download found with hash " + hash + ". Cancelling download");
                 downloadManager.cancel();
+            } else {
+                if (hashToDownloadMap.containsKey(hash)) {
+                    // there is another download for the same file -> keep the one with bigger downloaded size
+                    hashToDownloadMap.put(hash, selectDownloadWithGreaterProgress(downloadManager, hashToDownloadMap.get(hash)));
+                } else {
+                    // just include this download in the downloads map
+                    hashToDownloadMap.put(hash, downloadManager);
+                }
             }
         }
         timedEventRecord.newEvent();
+    }
+
+    private DownloadManager selectDownloadWithGreaterProgress(DownloadManager downloadManager, DownloadManager anotherDownloadManager) {
+        if (downloadManager.getStatistics().getDownloadedSizeThisResource() > anotherDownloadManager.getStatistics().getDownloadedSizeThisResource()) {
+            anotherDownloadManager.cancel();
+            return downloadManager;
+        } else {
+            downloadManager.cancel();
+            return anotherDownloadManager;
+        }
     }
 }
