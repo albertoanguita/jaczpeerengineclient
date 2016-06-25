@@ -42,12 +42,8 @@ public class ImageDownloader {
             logger.info("Searching for missing images...");
             Set<ImageHash> missingImages = getMissingImages();
             for (ImageHash imageHash : missingImages) {
-                try {
-                    logger.info("Downloading missing image " + imageHash);
-                    peerEngineClient.downloadImage(imageHash);
-                } catch (IOException | NotAliveException e) {
-                    // ignore
-                }
+                logger.info("Downloading missing image " + imageHash);
+                downloadImage(imageHash);
             }
             timedEventRecord.newEvent();
         }

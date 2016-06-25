@@ -39,6 +39,10 @@ public class FileAPI {
     }
 
     public boolean isHashAvailable(String hash) {
-        return getTempHashes().contains(hash) || fileHashDatabaseWithTimestamp.containsKey(hash);
+        return getTempHashes().contains(hash) || isHashLocallyAvailable(hash);
+    }
+
+    public boolean isHashLocallyAvailable(String hash) {
+        return fileHashDatabaseWithTimestamp.containsKey(hash);
     }
 }

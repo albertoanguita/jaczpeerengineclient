@@ -18,6 +18,7 @@ import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineclient.util.PeriodicTaskReminder;
 import jacz.peerengineclient.util.PersistentIdFactory;
+import jacz.peerengineclient.util.RedundantFileChecker;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerId;
@@ -96,6 +97,8 @@ public class PeerEngineClient {
 
     private final ImageDownloader imageDownloader;
 
+    private final RedundantFileChecker redundantFileChecker;
+
     private final DatabaseManager databaseManager;
 
     private final ErrorHandlerBridge errorHandlerBridge;
@@ -152,10 +155,11 @@ public class PeerEngineClient {
                 errorHandlerBridge);
         fileAPI = new FileAPI(peerShareManager.getFileHash(), peerClient);
         imageDownloader = new ImageDownloader(this, databaseManager.getDatabases().getIntegratedDB(), fileAPI);
+        redundantFileChecker = new RedundantFileChecker(this);
         peerShareManager.setPeerClient(peerClient);
         persistentIdFactory = new PersistentIdFactory(basePath);
         customStorage = new VersionedLocalStorage(PathConstants.persistentIDFactoryPath(basePath));
-        periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader);
+        periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader, redundantFileChecker);
         tempFileManager = new TempFileManager(mediaPaths.getTempDownloadsPath(), tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
         this.mediaPaths = mediaPaths;
@@ -428,6 +432,7 @@ public class PeerEngineClient {
 
     synchronized void peerConnected(PeerId peerId) {
         peerShareManager.peerConnected(basePath, peerId);
+        periodicTaskReminder.synchWithPeer(peerId);
     }
 
     synchronized void peerDisconnected(PeerId peerId) {
@@ -453,7 +458,10 @@ public class PeerEngineClient {
     }
 
     public synchronized String addLocalFileFixedPath(String path) throws IOException {
-        return peerShareManager.getFileHash().put(path);
+        String hash = peerShareManager.getFileHash().put(path);
+        // check if, after adding this file, there are some redundant downloads
+        redundantFileChecker.checkRedundantDownloads();
+        return hash;
     }
 
     public synchronized Duple<String, String> addLocalMovieFile(String path, Movie movie, boolean keepSource) throws IOException {
