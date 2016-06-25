@@ -1,6 +1,7 @@
 package jacz.peerengineclient.databases;
 
 import jacz.database.DatabaseItem;
+import jacz.database.DatabaseMediator;
 import jacz.database.Movie;
 import jacz.database.TVSeries;
 import jacz.peerengineclient.PeerEngineClient;
@@ -115,6 +116,30 @@ public class DatabaseManager {
      */
     public void remoteItemWillBeRemoved(PeerId peerID, DatabaseItem item) {
         itemIntegrator.removeRemoteItem(databases, peerID, item);
+    }
+
+    /**
+     * Copies all the content of an integrated item to its related local item (creating the local item if needed)
+     *
+     * @param integratedItem the integrated item
+     * @return the local item to which the content has been copied (might be a new item)
+     */
+    public DatabaseItem copyIntegratedItemToLocalItem(DatabaseItem integratedItem) {
+        DatabaseItem localItem;
+        DatabaseMediator.ItemType type = integratedItem.getItemType();
+        if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+            // retrieve the local item
+            localItem = DatabaseMediator.getItem(databases.getLocalDB(), type, integratedItem.getId());
+        } else {
+            // create a new local item and associate it with the integrated item
+            localItem = DatabaseMediator.createNewItem(databases.getLocalDB(), type);
+            databases.getItemRelations().getIntegratedToLocal().put(type, integratedItem.getId(), localItem.getId());
+            databases.getItemRelations().getLocalToIntegrated().put(type, localItem.getId(), integratedItem.getId());
+        }
+        localItem.resetPostponed();
+        localItem.mergeBasicPostponed(integratedItem);
+        localItem.flushChanges();
+        return localItem;
     }
 
     /**

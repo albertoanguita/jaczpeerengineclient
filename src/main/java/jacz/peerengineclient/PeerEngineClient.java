@@ -278,6 +278,10 @@ public class PeerEngineClient {
         return databaseManager.removeLocalItem(integratedItem);
     }
 
+    public DatabaseItem copyIntegratedItemToLocalItem(DatabaseItem integratedItem) {
+        return databaseManager.copyIntegratedItemToLocalItem(integratedItem);
+    }
+
     public int getLocalPort() {
         return peerClient.getLocalPort();
     }
