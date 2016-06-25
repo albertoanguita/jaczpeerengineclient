@@ -101,6 +101,7 @@ public class ItemIntegrator {
                     databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
             databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
             databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
+            localItem.delete();
         }
         if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
             // there is a deleted item -> remove it too
