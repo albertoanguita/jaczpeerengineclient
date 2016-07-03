@@ -143,6 +143,10 @@ public class PeerShareManager {
         return fileHash;
     }
 
+    public synchronized Set<PeerId> getFileProviders(String resourceID) {
+        return foreignShares.getForeignPeerShares(resourceID);
+    }
+
     public synchronized Set<Map.Entry<PeerId, RemotePeerShare>> getRemotePeerShares() {
         return remotePeerShares.entrySet();
     }

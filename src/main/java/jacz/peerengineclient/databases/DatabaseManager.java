@@ -139,6 +139,7 @@ public class DatabaseManager {
         localItem.resetPostponed();
         localItem.mergeBasicPostponed(integratedItem);
         localItem.flushChanges();
+        localItemModified(localItem);
         return localItem;
     }
 

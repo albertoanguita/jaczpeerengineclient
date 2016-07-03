@@ -37,6 +37,7 @@ public class IntegrationEventsBridge implements IntegrationEvents {
 
     @Override
     public void integratedItemHasNewMedia(DatabaseMediator.ItemType type, Integer id) {
+        // todo this is not true when adding local file. It is still not associated to the item
         logger.info("integrated item has new media. type: " + type + ", id: " + id);
         sequentialTaskExecutor.submit(() -> integrationEvents.integratedItemHasNewMedia(type, id));
     }

@@ -55,4 +55,10 @@ public class ForeignShares {
         videosShare.removeResourceProvider(peerID);
         imagesShare.removeResourceProvider(peerID);
     }
+
+    public synchronized Set<PeerId> getForeignPeerShares(String resourceID) {
+        Set<PeerId> providerPeers = videosShare.getForeignPeerShares(resourceID);
+        providerPeers.addAll(imagesShare.getForeignPeerShares(resourceID));
+        return providerPeers;
+    }
 }

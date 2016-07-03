@@ -42,6 +42,19 @@ public class FileAPI {
         return getTempHashes().contains(hash) || isHashLocallyAvailable(hash);
     }
 
+    public boolean isHashBeingDownloaded(String hash) {
+        return getHashDownloadManager(hash) != null;
+    }
+
+    public DownloadManager getHashDownloadManager(String hash) {
+        for (DownloadManager downloadManager : peerClient.getAllDownloads()) {
+            if (downloadManager.getResourceID().equals(hash)) {
+                return downloadManager;
+            }
+        }
+        return null;
+    }
+
     public boolean isHashLocallyAvailable(String hash) {
         return fileHashDatabaseWithTimestamp.containsKey(hash);
     }

@@ -47,7 +47,6 @@ import jacz.util.files.FileGenerator;
 import jacz.util.hash.HashFunction;
 import jacz.util.hash.MD5;
 import jacz.util.io.serialization.VersionedSerializationException;
-import jacz.util.io.serialization.localstorage.LocalStorage;
 import jacz.util.io.serialization.localstorage.VersionedLocalStorage;
 import jacz.util.lists.tuple.Duple;
 import jacz.util.lists.tuple.Triple;
@@ -277,6 +276,13 @@ public class PeerEngineClient {
     public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
         return databaseManager.localItemModified(localItem);
     }
+
+    public DatabaseItem removeLocalItem(DatabaseItem localItem) throws IllegalStateException {
+        // todo
+        return null;
+    }
+
+
 
     public boolean removeLocalContent(DatabaseItem integratedItem) {
         return databaseManager.removeLocalItem(integratedItem);
@@ -796,16 +802,20 @@ public class PeerEngineClient {
         return peerShareManager.getFileHash().removeValue(path);
     }
 
-    boolean containsFileByHash(String hash) {
+    public boolean containsFileByHash(String hash) {
         return peerShareManager.getFileHash().containsKey(hash);
     }
 
-    boolean containsFileByPath(String path) throws IOException {
+    public boolean containsFileByPath(String path) throws IOException {
         return peerShareManager.getFileHash().containsPath(path);
     }
 
     public String getFile(String hash) {
         return peerShareManager.getFileHash().getFilePath(hash);
+    }
+
+    public synchronized Set<PeerId> getFileProviders(String resourceID) {
+        return peerShareManager.getFileProviders(resourceID);
     }
 
     public synchronized String getBaseDataDir() {
