@@ -587,13 +587,14 @@ public class PeerEngineClient {
 //        return new Duple<>(finalPath, addLocalFileFixedPath(finalPath));
     }
 
-    public synchronized void removeLocalFile(String key, boolean removeFile) {
+    public synchronized String removeLocalFile(String key, boolean removeFile) {
         String path = peerShareManager.getFileHash().remove(key);
         if (path != null && removeFile) {
             File file = new File(path);
             //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
+        return path;
     }
 
     public synchronized DownloadManager downloadMediaFile(
