@@ -94,7 +94,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         Long timeStamp = getNextTimestamp();
         activeHashes.put(timeStamp, hash);
         getLocalStorage().setString(ACTIVE_TIMESTAMP_CATEGORY, timeStamp.toString(), hash);
-        fileHashDatabaseEvents.fileAdded(path, hash);
+        fileHashDatabaseEvents.fileAdded(hash, path);
         return hash;
     }
 
@@ -102,7 +102,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
     public synchronized String remove(String hash) {
         String path = super.remove(hash);
         moveFromActiveToDeleted(hash);
-        fileHashDatabaseEvents.fileRemoved(path, hash);
+        fileHashDatabaseEvents.fileRemoved(hash, path);
         return path;
     }
 
@@ -110,7 +110,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
     public synchronized String removeValue(String path) throws IOException {
         String hash = super.removeValue(path);
         moveFromActiveToDeleted(hash);
-        fileHashDatabaseEvents.fileRemoved(path, hash);
+        fileHashDatabaseEvents.fileRemoved(hash, path);
         return hash;
     }
 
