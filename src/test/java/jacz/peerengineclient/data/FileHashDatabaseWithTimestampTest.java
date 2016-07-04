@@ -1,5 +1,6 @@
 package jacz.peerengineclient.data;
 
+import jacz.peerengineclient.common.FileHashDatabaseEventsImpl;
 import jacz.util.files.FileReaderWriter;
 import jacz.util.hash.hashdb.FileHashDatabase;
 import jacz.util.lists.tuple.Duple;
@@ -59,7 +60,7 @@ public class FileHashDatabaseWithTimestampTest {
         Assert.assertEquals(items, fhd.getHashesFrom(1L));
 
         // load fhd again
-        fhd = new FileHashDatabaseWithTimestamp(bd);
+        fhd = new FileHashDatabaseWithTimestamp(bd, new FileHashDatabaseEventsImpl());
         Assert.assertEquals("id", fhd.getId());
         Assert.assertEquals(items, fhd.getHashesFrom(1L));
 

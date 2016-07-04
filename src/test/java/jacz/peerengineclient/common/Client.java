@@ -23,6 +23,7 @@ public class Client {
                 new DatabaseSynchEventsImpl(),
                 new DownloadEventsImpl(),
                 new IntegrationEventsImpl(),
+                new FileHashDatabaseEventsImpl(),
                 new ErrorEventsImpl());
 
         if (!duple.element2.isEmpty()) {

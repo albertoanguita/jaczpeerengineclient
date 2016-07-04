@@ -26,8 +26,8 @@ public class PeerShareIO {
         new FileHashDatabaseWithTimestamp(PathConstants.fileHashPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
     }
 
-    public static PeerShareManager load(String basePath, PeerEngineClient peerEngineClient) throws IOException, VersionedSerializationException {
-        FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(PathConstants.fileHashPath(basePath));
+    public static PeerShareManager load(String basePath, PeerEngineClient peerEngineClient, FileHashDatabaseEvents fileHashDatabaseEvents) throws IOException, VersionedSerializationException {
+        FileHashDatabaseWithTimestamp fileHash = new FileHashDatabaseWithTimestamp(PathConstants.fileHashPath(basePath), fileHashDatabaseEvents);
         return new PeerShareManager(peerEngineClient, fileHash);
     }
 

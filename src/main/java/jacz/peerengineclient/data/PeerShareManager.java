@@ -210,5 +210,6 @@ public class PeerShareManager {
     public void stop() {
         fileHashDataAccessorController.stop();
         tempFilesDataAccessorController.stop();
+        fileHash.stop();
     }
 }

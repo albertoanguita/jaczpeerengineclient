@@ -3,6 +3,7 @@ package jacz.peerengineclient;
 import com.neovisionaries.i18n.CountryCode;
 import jacz.database.*;
 import jacz.database.util.ImageHash;
+import jacz.peerengineclient.data.FileHashDatabaseEvents;
 import jacz.peerengineclient.data.MoveFileAction;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.data.PeerShareManager;
@@ -127,10 +128,11 @@ public class PeerEngineClient {
             DatabaseSynchEvents databaseSynchEvents,
             DownloadEvents downloadEvents,
             IntegrationEvents integrationEvents,
+            FileHashDatabaseEvents fileHashDatabaseEvents,
             ErrorEvents errorEvents) throws IOException, VersionedSerializationException {
         this.basePath = basePath;
         repairedFiles = new ArrayList<>();
-        peerShareManager = PeerShareIO.load(basePath, this);
+        peerShareManager = PeerShareIO.load(basePath, this, fileHashDatabaseEvents);
         repairedFiles.addAll(peerShareManager.getFileHash().getRepairedFiles());
         databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this);
         repairedFiles.addAll(databaseManager.getDatabases().getRepairedFiles());

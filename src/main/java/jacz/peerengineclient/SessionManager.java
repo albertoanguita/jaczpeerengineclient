@@ -1,6 +1,7 @@
 package jacz.peerengineclient;
 
 import com.neovisionaries.i18n.CountryCode;
+import jacz.peerengineclient.data.FileHashDatabaseEvents;
 import jacz.peerengineclient.data.PeerShareIO;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
@@ -140,6 +141,7 @@ public class SessionManager {
             DatabaseSynchEvents databaseSynchEvents,
             DownloadEvents downloadEvents,
             IntegrationEvents integrationEvents,
+            FileHashDatabaseEvents fileHashDatabaseEvents,
             ErrorEvents errorEvents) throws IOException {
 
         try {
@@ -163,6 +165,7 @@ public class SessionManager {
                     databaseSynchEvents,
                     downloadEvents,
                     integrationEvents,
+                    fileHashDatabaseEvents,
                     errorEvents);
 
             repairedFiles.addAll(peerEngineClient.getRepairedFiles());

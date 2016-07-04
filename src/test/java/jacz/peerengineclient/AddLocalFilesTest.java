@@ -133,18 +133,18 @@ public class AddLocalFilesTest {
         assertFile(peerEngineClient, new File(namePathAndHash(TestFile.VIDEO_1).element2), namePathAndHash(TestFile.VIDEO_1).element3);
         assertFile(peerEngineClient, new File(namePathAndHash(TestFile.SUB_1).element2), namePathAndHash(TestFile.SUB_1).element3);
 
-        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.VIDEO_2).element2, movie);
-        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.SUB_2).element2, movie);
+        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.VIDEO_2).element2, movie, true);
+        peerEngineClient.addLocalMovieFile(namePathAndHash(TestFile.SUB_2).element2, movie, true);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(TestFile.VIDEO_2).element1), namePathAndHash(TestFile.VIDEO_2).element3);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "movies", movie.getTitle() + "_" + movie.getId(), namePathAndHash(TestFile.SUB_2).element1), namePathAndHash(TestFile.SUB_2).element3);
 
-        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.VIDEO_3).element2, tvSeries, chapter);
-        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.SUB_3).element2, tvSeries, chapter);
+        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.VIDEO_3).element2, tvSeries, chapter, true);
+        peerEngineClient.addLocalChapterFile(namePathAndHash(TestFile.SUB_3).element2, tvSeries, chapter, true);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(TestFile.VIDEO_3).element1), namePathAndHash(TestFile.VIDEO_3).element3);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "series", tvSeries.getTitle() + "_" + tvSeries.getId(), chapter.getTitle() + "_" + chapter.getId(), namePathAndHash(TestFile.SUB_3).element1), namePathAndHash(TestFile.SUB_3).element3);
 
-        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2, true);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2, true);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "images", namePathAndHash(TestFile.GRAMOS).element3 + ".jpg"), namePathAndHash(TestFile.GRAMOS).element3);
         assertFile(peerEngineClient, FileUtils.getFile(mediaPath, "images", namePathAndHash(TestFile.MOON).element3 + ".jpeg"), namePathAndHash(TestFile.MOON).element3);
     }

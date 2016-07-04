@@ -238,9 +238,9 @@ public class ImageDownloadIT {
     }
 
     private static void addFiles2(PeerEngineClient peerEngineClient) throws IOException {
-        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2);
-        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.ALIEN).element2);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.GRAMOS).element2, true);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.MOON).element2, true);
+        peerEngineClient.addLocalImageFile(namePathAndHash(TestFile.ALIEN).element2, true);
     }
 
     private void assertFile(PeerEngineClient peerEngineClient, File path, String hash) {

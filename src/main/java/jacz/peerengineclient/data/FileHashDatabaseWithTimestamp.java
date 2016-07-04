@@ -39,6 +39,8 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
 
     private HashMap<Long, String> deletedHashes;
 
+    private final FileHashDatabaseEventsBridge fileHashDatabaseEvents;
+
     private Long getNextTimestamp() {
         long timestamp = getLocalStorage().getLong(TIMESTAMP_KEY);
         getLocalStorage().setLong(TIMESTAMP_KEY, timestamp + 1);
@@ -50,6 +52,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         getLocalStorage().setString(VERSION_KEY, CURRENT_VERSION);
         getLocalStorage().setString(ID_KEY, id);
         init();
+        this.fileHashDatabaseEvents = null;
     }
 
     private void init() {
@@ -58,7 +61,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         getLocalStorage().setLong(TIMESTAMP_KEY, 1L);
     }
 
-    public FileHashDatabaseWithTimestamp(String path) throws IOException {
+    public FileHashDatabaseWithTimestamp(String path, FileHashDatabaseEvents fileHashDatabaseEvents) throws IOException {
         super(path);
         updateFileHashDatabaseWithTimestamp(getLocalStorage().getString(VERSION_KEY));
         activeHashes = new DoubleMap<>();
@@ -69,6 +72,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         for (String deletedHashesKey : getLocalStorage().keys(DELETED_TIMESTAMP_CATEGORY)) {
             deletedHashes.put(Long.parseLong(deletedHashesKey), getLocalStorage().getString(DELETED_TIMESTAMP_CATEGORY, deletedHashesKey));
         }
+        this.fileHashDatabaseEvents = new FileHashDatabaseEventsBridge(fileHashDatabaseEvents);
     }
 
     @Override
@@ -145,5 +149,9 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         if (!storedVersion.equals(CURRENT_VERSION)) {
             throw new RuntimeException();
         }
+    }
+
+    public void stop() {
+        fileHashDatabaseEvents.stop();
     }
 }
