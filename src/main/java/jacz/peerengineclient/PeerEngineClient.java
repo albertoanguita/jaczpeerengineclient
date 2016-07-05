@@ -159,7 +159,7 @@ public class PeerEngineClient {
         redundantFileChecker = new RedundantFileChecker(this);
         peerShareManager.setPeerClient(peerClient);
         persistentIdFactory = new PersistentIdFactory(basePath);
-        customStorage = new VersionedLocalStorage(PathConstants.persistentIDFactoryPath(basePath));
+        customStorage = new VersionedLocalStorage(PathConstants.customStorage(basePath));
         periodicTaskReminder = new PeriodicTaskReminder(this, databaseManager.getDatabaseSynchManager(), peerShareManager, imageDownloader, redundantFileChecker);
         tempFileManager = new TempFileManager(mediaPaths.getTempDownloadsPath(), tempFileManagerEvents);
         this.downloadEvents = downloadEvents;
