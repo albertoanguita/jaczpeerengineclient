@@ -206,41 +206,47 @@ public class SharedDatabaseGenerator implements TimerAction {
     }
 
     private void addItem(DatabaseItem integratedItem) {
-        concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
+        if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name())) {
 
-        DatabaseItem sharedItem;
-        // retrieve the shared item: either it already exists or it must be created
-        if (integratedToShared.contains(integratedItem.getItemType(), integratedItem.getId())) {
-            // exists
-            int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
-            sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
+            DatabaseItem sharedItem;
+            // retrieve the shared item: either it already exists or it must be created
+            if (integratedToShared.contains(integratedItem.getItemType(), integratedItem.getId())) {
+                // exists
+                int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
+                sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
+            } else {
+                // must be created
+                sharedItem = DatabaseMediator.createNewItem(sharedPath, integratedItem.getItemType());
+                integratedToShared.put(integratedItem.getItemType(), integratedItem.getId(), sharedItem.getId());
+            }
+            // once we have a shared item, copy the data from the integrated item, if needed
+            if (!integratedItem.equals(sharedItem)) {
+                // only merge the item if the contents have changed
+                DatabaseMediator.ReferencedElements referencedElements = integratedItem.getReferencedElements();
+                referencedElements.mapIds(integratedToShared.getTypeMappings());
+                sharedItem.merge(integratedItem, referencedElements);
+            }
+
+            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
         } else {
-            // must be created
-            sharedItem = DatabaseMediator.createNewItem(sharedPath, integratedItem.getItemType());
-            integratedToShared.put(integratedItem.getItemType(), integratedItem.getId(), sharedItem.getId());
+            throw new IllegalStateException();
         }
-        // once we have a shared item, copy the data from the integrated item, if needed
-        if (!integratedItem.equals(sharedItem)) {
-            // only merge the item if the contents have changed
-            DatabaseMediator.ReferencedElements referencedElements = integratedItem.getReferencedElements();
-            referencedElements.mapIds(integratedToShared.getTypeMappings());
-            sharedItem.merge(integratedItem, referencedElements);
-        }
-
-        concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
     }
 
     private void removeItem(DatabaseItem integratedItem) {
-        concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
+        if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name())) {
 
-        if (integratedToShared.contains(integratedItem.getItemType(), integratedItem.getId())) {
-            int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
-            DatabaseItem sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
-            sharedItem.delete();
-            integratedToShared.remove(integratedItem.getItemType(), integratedItem.getId());
+            if (integratedToShared.contains(integratedItem.getItemType(), integratedItem.getId())) {
+                int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
+                DatabaseItem sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
+                sharedItem.delete();
+                integratedToShared.remove(integratedItem.getItemType(), integratedItem.getId());
+            }
+
+            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
+        } else {
+            throw new IllegalStateException();
         }
-
-        concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
     }
 
     public synchronized void stop() {

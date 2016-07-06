@@ -79,7 +79,7 @@ public class DatabaseManager {
      *
      * @param localItem the modified local item
      */
-    public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
+    public DatabaseItem localItemModified(DatabaseItem localItem) {
         return itemIntegrator.integrateLocalItem(databases, localItem);
     }
 

@@ -273,9 +273,11 @@ public class PeerEngineClient {
      * A local item has been modified, and needs to be re-integrated in the integrated database
      *
      * @param localItem modified local item
+     *                  @return the resulting integrated item
      * @throws IllegalStateException if the client has been previously stopped
      */
     public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
+        // todo check alive
         return databaseManager.localItemModified(localItem);
     }
 
