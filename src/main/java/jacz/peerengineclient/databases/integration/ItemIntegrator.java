@@ -262,11 +262,13 @@ public class ItemIntegrator {
     }
 
     public void reportNewMedia(DatabaseItem item) {
-        integrationEvents.integratedItemHasNewMedia(item.getItemType(), item.getId());
+        // todo deactivated until algorithm is changed. See interface for details
+        //integrationEvents.integratedItemHasNewMedia(item.getItemType(), item.getId());
     }
 
     public void reportNewImage(DatabaseItem item) {
-        integrationEvents.integratedItemHasNewImage(item.getItemType(), item.getId());
+        // todo deactivated until algorithm is changed. See interface for details
+        //integrationEvents.integratedItemHasNewImage(item.getItemType(), item.getId());
     }
 
     private void deleteIntegratedItem(DatabaseItem integratedItem) {

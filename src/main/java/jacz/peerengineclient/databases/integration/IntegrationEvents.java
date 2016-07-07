@@ -25,6 +25,10 @@ public interface IntegrationEvents {
      */
     void integratedItemHasBeenModified(DatabaseMediator.ItemType type, Integer id, boolean hasNewMediaContent);
 
+    // these two methods are currently deactivated. I need to change the algorithm. We must report in two cases:
+    // 1) the item exists, and we add a new file that did not exist before -> go through all items and check the ones
+    // that point to that hash
+    // 2) I inflate an integrated item, and as a result it points to a new file that DOES exist
     void integratedItemHasNewMedia(DatabaseMediator.ItemType type, Integer id);
 
     void integratedItemHasNewImage(DatabaseMediator.ItemType type, Integer id);

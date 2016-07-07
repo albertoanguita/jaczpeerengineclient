@@ -226,7 +226,7 @@ public class SynchAndIntegrateIT {
 
     private static void setupDB2(String db) {
         Movie movie = new Movie(db, "Avatar");
-        movie.setLanguage(LanguageCode.es);
+        //movie.setLanguage(LanguageCode.es);
         movie.setMinutes(150);
 //        Person person = new Person(db, "actor 1");
 //        person.addAlias("actor 1 1");
@@ -243,7 +243,7 @@ public class SynchAndIntegrateIT {
         movie.setOriginalTitle("Avatar orig");
         movie.addCountry(CountryCode.AC);
         movie.setImageHash(new ImageHash("abcd", "jpg"));
-        movie.addExternalURL("external URL 1");
+        movie.addExternalURI("external URL 1");
         VideoFile videoFile = new VideoFile(db, "abcdef");
         videoFile.setName("video file 1");
         videoFile.setQuality(QualityCode.HD);
@@ -261,7 +261,7 @@ public class SynchAndIntegrateIT {
         movie.addVideoFile(videoFile);
 
         movie = new Movie(db, "Star wars");
-        movie.setLanguage(LanguageCode.en);
+        //movie.setLanguage(LanguageCode.en);
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ADVENTURE);
         movie = new Movie(db, "The goonies");
@@ -270,7 +270,7 @@ public class SynchAndIntegrateIT {
 
         Chapter chapter1 = new Chapter(db, "Friends 1");
         chapter1.setYear(1989);
-        chapter1.setSeason("s01");
+        chapter1.setSeason(1);
         chapter1.setMinutes(45);
         videoFile = new VideoFile(db, "abcdefgh");
         videoFile.setName("vf");
@@ -302,7 +302,7 @@ public class SynchAndIntegrateIT {
         Movie movie2 = Movie.getMovies(db).get(1);
         Movie movie3 = Movie.getMovies(db).get(2);
         Assert.assertEquals("Avatar", movie1.getTitle());
-        Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
+        //Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
         Assert.assertEquals(new Integer(150), movie1.getMinutes());
         Assert.assertEquals(2, movie1.getActors().size());
         String actor1 = movie1.getActors().get(0);
@@ -328,8 +328,8 @@ public class SynchAndIntegrateIT {
         countries.add(CountryCode.AC);
         ListAssert.assertEquals(countries, movie1.getCountries());
         Assert.assertEquals(new ImageHash("abcd", "jpg"), movie1.getImageHash());
-        Assert.assertEquals(1, movie1.getExternalURLs().size());
-        Assert.assertEquals("external URL 1", movie1.getExternalURLs().get(0));
+        Assert.assertEquals(1, movie1.getExternalURIs().size());
+        Assert.assertEquals("external URL 1", movie1.getExternalURIs().get(0));
         Assert.assertEquals(1, movie1.getVideoFiles().size());
         VideoFile videoFile = movie1.getVideoFiles().get(0);
         Assert.assertEquals("abcdef", videoFile.getHash());
@@ -354,7 +354,7 @@ public class SynchAndIntegrateIT {
 
 
         Assert.assertEquals("Star wars", movie2.getTitle());
-        Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
+        //Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
         Assert.assertEquals("Star wars", movie2.getOriginalTitle());
         List<GenreCode> genres = new ArrayList<>();
         if (phase == 0) {
@@ -366,7 +366,7 @@ public class SynchAndIntegrateIT {
         }
         ListAssert.assertEquals(genres, movie2.getGenres());
         Assert.assertEquals("The goonies", movie3.getTitle());
-        Assert.assertEquals(null, movie3.getLanguage());
+        //Assert.assertEquals(null, movie3.getLanguage());
         Assert.assertEquals("The goonies orig", movie3.getOriginalTitle());
         Assert.assertEquals(new Integer(1996), movie3.getYear());
 
@@ -377,7 +377,7 @@ public class SynchAndIntegrateIT {
         Chapter chapter4 = Chapter.getChapters(db).get(3);
         Assert.assertEquals("Friends 1", chapter1.getTitle());
         Assert.assertEquals(new Integer(1989), chapter1.getYear());
-        Assert.assertEquals("s01", chapter1.getSeason());
+        Assert.assertEquals(new Integer(1), chapter1.getSeason());
         Assert.assertEquals(new Integer(45), chapter1.getMinutes());
         Assert.assertEquals(1, chapter1.getVideoFiles().size());
         videoFile = chapter1.getVideoFiles().get(0);
@@ -404,7 +404,7 @@ public class SynchAndIntegrateIT {
 
     private static void setupDB3(String db) {
         Movie movie = new Movie(db, "Star wars");
-        movie.setLanguage(LanguageCode.fr);
+        //movie.setLanguage(LanguageCode.fr);
         movie.setOriginalTitle("Star wars");
         movie.addGenre(GenreCode.ACTION);
         movie.addGenre(GenreCode.SCI_FI);
@@ -419,9 +419,9 @@ public class SynchAndIntegrateIT {
         Chapter chapter2 = new Chapter(db, "Game of thrones 2");
         chapter2.setMinutes(32);
         Chapter chapter3 = new Chapter(db, "Breaking bad 2 other");
-        chapter3.setSeason("one");
+        chapter3.setSeason(1);
         Chapter chapter4 = new Chapter(db, "Breaking bad 3");
-        chapter4.setSeason("one");
+        chapter4.setSeason(1);
 
         TVSeries tvSeries = new TVSeries(db, "Game of thrones");
         tvSeries.addChapter(chapter1);
@@ -444,7 +444,7 @@ public class SynchAndIntegrateIT {
         Movie movie2 = Movie.getMovies(db).get(1);
         Movie movie3 = Movie.getMovies(db).get(2);
         Assert.assertEquals("Star wars", movie1.getTitle());
-        Assert.assertEquals(LanguageCode.fr, movie1.getLanguage());
+        //Assert.assertEquals(LanguageCode.fr, movie1.getLanguage());
         Assert.assertEquals("Star wars", movie1.getOriginalTitle());
         List<GenreCode> genres = new ArrayList<>();
         genres.add(GenreCode.ACTION);
@@ -539,7 +539,7 @@ public class SynchAndIntegrateIT {
             }
             Assert.assertEquals("The lord of the rings", movie0.getTitle());
             Assert.assertEquals("Avatar", movie1.getTitle());
-            Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
+            //Assert.assertEquals(LanguageCode.es, movie1.getLanguage());
             Assert.assertEquals(new Integer(150), movie1.getMinutes());
             Assert.assertEquals(2, movie1.getActors().size());
             String actor1 = movie1.getActors().get(0);
@@ -565,8 +565,8 @@ public class SynchAndIntegrateIT {
             countries.add(CountryCode.AC);
             ListAssert.assertEquals(countries, movie1.getCountries());
             Assert.assertEquals(new ImageHash("abcd", "jpg"), movie1.getImageHash());
-            Assert.assertEquals(1, movie1.getExternalURLs().size());
-            Assert.assertEquals("external URL 1", movie1.getExternalURLs().get(0));
+            Assert.assertEquals(1, movie1.getExternalURIs().size());
+            Assert.assertEquals("external URL 1", movie1.getExternalURIs().get(0));
             Assert.assertEquals(1, movie1.getVideoFiles().size());
             VideoFile videoFile = movie1.getVideoFiles().get(0);
             Assert.assertEquals("abcdef", videoFile.getHash());
@@ -591,7 +591,7 @@ public class SynchAndIntegrateIT {
 
 
             Assert.assertEquals("Star wars", movie2.getTitle());
-            Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
+            //Assert.assertEquals(LanguageCode.en, movie2.getLanguage());
             Assert.assertEquals("Star wars", movie2.getOriginalTitle());
             List<GenreCode> genres = new ArrayList<>();
             countries = new ArrayList<>();
