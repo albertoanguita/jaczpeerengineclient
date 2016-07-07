@@ -25,7 +25,7 @@ public class ItemSerializer {
     static SerializedItem serializeChapter(Chapter chapter) {
         SerializedItem item = setupSerializeItem(chapter, true);
         serializeCreationItem(item, chapter);
-        item.addString(DatabaseMediator.Field.SEASON, chapter.getSeason());
+        item.addInteger(DatabaseMediator.Field.SEASON, chapter.getSeason());
         item.addInteger(DatabaseMediator.Field.MINUTES, chapter.getMinutes());
         item.addIntegerList(DatabaseMediator.Field.VIDEO_FILE_LIST, chapter.getVideoFilesIds());
         return item;
@@ -74,13 +74,13 @@ public class ItemSerializer {
     }
 
     static void serializeCreationItem(SerializedItem item, CreationItem creationItem) {
-        item.addLanguage(DatabaseMediator.Field.LANGUAGE, creationItem.getLanguage());
         item.addString(DatabaseMediator.Field.TITLE, creationItem.getTitle());
+        item.addLocalizedLanguage(DatabaseMediator.Field.TITLE_LOCALIZED_LANGUAGE, creationItem.getTitleLocalizedLanguage());
         item.addString(DatabaseMediator.Field.ORIGINAL_TITLE, creationItem.getOriginalTitle());
         item.addInteger(DatabaseMediator.Field.YEAR, creationItem.getYear());
         item.addString(DatabaseMediator.Field.SYNOPSIS, creationItem.getSynopsis());
         item.addCountryList(DatabaseMediator.Field.COUNTRIES, creationItem.getCountries());
-        item.addStringList(DatabaseMediator.Field.EXTERNAL_URLS, creationItem.getExternalURLs());
+        item.addStringList(DatabaseMediator.Field.URIS, creationItem.getExternalURIs());
         item.addStringList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreators());
         item.addStringList(DatabaseMediator.Field.ACTOR_LIST, creationItem.getActors());
 //        item.addIntegerList(DatabaseMediator.Field.CREATOR_LIST, creationItem.getCreatorsIds());
@@ -127,7 +127,7 @@ public class ItemSerializer {
 
     static void deserializeChapter(SerializedItem item, Chapter chapter) {
         deserializeCreationItem(item, chapter);
-        chapter.setSeasonPostponed(item.getString(DatabaseMediator.Field.SEASON));
+        chapter.setSeasonPostponed(item.getInteger(DatabaseMediator.Field.SEASON));
         chapter.setMinutesPostponed(item.getInteger(DatabaseMediator.Field.MINUTES));
         chapter.setVideoFilesIdsPostponed(item.getIntegerList(DatabaseMediator.Field.VIDEO_FILE_LIST));
         finishDeserialization(chapter);
@@ -169,13 +169,14 @@ public class ItemSerializer {
 
     static void deserializeCreationItem(SerializedItem item, CreationItem creationItem) {
         deserializeDatabaseItem(item, creationItem);
-        creationItem.setLanguagePostponed(item.getLanguage(DatabaseMediator.Field.LANGUAGE));
         creationItem.setTitlePostponed(item.getString(DatabaseMediator.Field.TITLE));
+        creationItem.setTitleLocalizedLanguagePostponed(item.getLocalizedLanguage(DatabaseMediator.Field.TITLE_LOCALIZED_LANGUAGE));
         creationItem.setOriginalTitlePostponed(item.getString(DatabaseMediator.Field.ORIGINAL_TITLE));
         creationItem.setYearPostponed(item.getInteger(DatabaseMediator.Field.YEAR));
         creationItem.setSynopsisPostponed(item.getString(DatabaseMediator.Field.SYNOPSIS));
+        creationItem.setSynopsisLocalizedLanguagePostponed(item.getLocalizedLanguage(DatabaseMediator.Field.SYNOPSIS_LOCALIZED_LANGUAGE));
         creationItem.setCountriesPostponed(item.getCountryList(DatabaseMediator.Field.COUNTRIES));
-        creationItem.setExternalURLsPostponed(item.getStringList(DatabaseMediator.Field.EXTERNAL_URLS));
+        creationItem.setExternalURIsPostponed(item.getStringList(DatabaseMediator.Field.URIS));
         creationItem.setCreatorsPostponed(item.getStringList(DatabaseMediator.Field.CREATOR_LIST));
         creationItem.setActorsPostponed(item.getStringList(DatabaseMediator.Field.ACTOR_LIST));
 //        creationItem.setCreatorsIdsPostponed(item.getIntegerList(DatabaseMediator.Field.CREATOR_LIST));
