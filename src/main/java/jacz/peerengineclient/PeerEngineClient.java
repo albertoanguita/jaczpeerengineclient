@@ -70,6 +70,8 @@ import java.util.*;
  */
 public class PeerEngineClient {
 
+    public static final String API_VERSION = "0.1.0";
+
     private static final String SERVER_URL = "https://jaczserver.appspot.com/_ah/api/server/v1/";
 
     public static final String DEFAULT_STORE = "@J_PEER_ENGINE_CLIENT_DEFAULT_RESOURCE_STORE";
