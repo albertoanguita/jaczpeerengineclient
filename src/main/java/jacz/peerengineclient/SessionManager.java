@@ -9,6 +9,7 @@ import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.MediaPaths;
 import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineclient.file_system.PeerIdConfig;
+import jacz.peerengineclient.util.PersistentIdFactory;
 import jacz.peerengineservice.PeerEncryption;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.GeneralEvents;
@@ -100,8 +101,11 @@ public class SessionManager {
             // statistics file
             TransferStatistics.createNew(PathConstants.statisticsPath(userPath)).stop();
 
+            // persistent id factory
+            PersistentIdFactory.createNew(userPath);
+
             // custom storage
-            VersionedLocalStorage.createNew(PathConstants.persistentIDFactoryPath(basePath), customStorageVersion);
+            VersionedLocalStorage.createNew(PathConstants.customStorage(userPath), customStorageVersion);
 
             PeerShareIO.createNewFileStructure(userPath);
 //            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));

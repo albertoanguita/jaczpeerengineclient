@@ -30,13 +30,20 @@ public class PersistentIdFactory implements Updater {
 
     public PersistentIdFactory(String basePath) throws IOException {
         String idFactoryPath = PathConstants.persistentIDFactoryPath(basePath);
-        if (!Files.isRegularFile(Paths.get(idFactoryPath))) {
-            // create id factory file
-            vls = VersionedLocalStorage.createNew(idFactoryPath, CURRENT_VERSION);
-            vls.setString(ID_KEY, AlphanumericString.nextAlphanumericString("", charTypeSequence));
-        } else {
-            vls = new VersionedLocalStorage(idFactoryPath, this, CURRENT_VERSION);
-        }
+        vls = new VersionedLocalStorage(idFactoryPath, this, CURRENT_VERSION);
+//        if (!Files.isRegularFile(Paths.get(idFactoryPath))) {
+//            // create id factory file
+//            vls = VersionedLocalStorage.createNew(idFactoryPath, CURRENT_VERSION);
+//            vls.setString(ID_KEY, AlphanumericString.nextAlphanumericString("", charTypeSequence));
+//        } else {
+//            vls = new VersionedLocalStorage(idFactoryPath, this, CURRENT_VERSION);
+//        }
+    }
+
+    public static void createNew(String basePath) throws IOException {
+        String idFactoryPath = PathConstants.persistentIDFactoryPath(basePath);
+        VersionedLocalStorage vls = VersionedLocalStorage.createNew(idFactoryPath, CURRENT_VERSION);
+        vls.setString(ID_KEY, AlphanumericString.nextAlphanumericString("", charTypeSequence));
     }
 
     public String generateId() {
