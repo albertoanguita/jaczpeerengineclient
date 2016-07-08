@@ -6,7 +6,7 @@ import jacz.peerengineservice.util.datatransfer.ResourceStoreResponse;
 import jacz.peerengineservice.util.datatransfer.resource_accession.BasicFileReader;
 import jacz.peerengineservice.util.datatransfer.resource_accession.TempFileReader;
 import jacz.peerengineservice.util.tempfile_api.TempFileManager;
-import jacz.util.hash.hashdb.FileHashDatabase;
+import org.aanguita.jacuzzi.hash.hashdb.FileHashDatabase;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

@@ -2,7 +2,7 @@ package jacz.peerengineclient.util.synch;
 
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.util.notification.ProgressNotificationWithError;
+import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
 
 /**
  * Created by Alberto on 17/02/2016.

@@ -5,7 +5,7 @@ import jacz.peerengineclient.SessionManager;
 import jacz.peerengineclient.common.TestUtil;
 import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
-import jacz.util.lists.tuple.Duple;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
 import org.junit.Assert;
 import org.junit.Test;
 

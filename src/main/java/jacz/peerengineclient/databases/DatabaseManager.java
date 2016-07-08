@@ -14,7 +14,7 @@ import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyController;
 
 import java.io.IOException;
 import java.util.stream.Stream;

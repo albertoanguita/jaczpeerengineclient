@@ -3,7 +3,7 @@ package jacz.peerengineclient.loadconfig;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
 import jacz.peerengineclient.common.Client;
-import jacz.util.concurrency.ThreadUtil;
+import org.aanguita.jacuzzi.concurrency.ThreadUtil;
 import org.junit.Test;
 
 import java.io.IOException;

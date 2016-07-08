@@ -10,10 +10,10 @@ import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
 import jacz.peerengineservice.util.datatransfer.master.ProviderStatistics;
 import jacz.peerengineservice.util.datatransfer.master.ResourcePart;
 import jacz.peerengineservice.util.datatransfer.resource_accession.ResourceWriter;
-import jacz.util.files.FileGenerator;
-import jacz.util.lists.tuple.Duple;
-import jacz.util.lists.tuple.Triple;
-import jacz.util.numeric.range.LongRange;
+import org.aanguita.jacuzzi.files.FileGenerator;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
+import org.aanguita.jacuzzi.lists.tuple.Triple;
+import org.aanguita.jacuzzi.numeric.range.LongRange;
 
 import java.io.IOException;
 

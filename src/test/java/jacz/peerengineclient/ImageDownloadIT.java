@@ -9,8 +9,8 @@ import jacz.peerengineclient.common.TestUtil;
 import jacz.peerengineservice.NotAliveException;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
-import jacz.util.concurrency.ThreadUtil;
-import jacz.util.lists.tuple.Triple;
+import org.aanguita.jacuzzi.concurrency.ThreadUtil;
+import org.aanguita.jacuzzi.lists.tuple.Triple;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 

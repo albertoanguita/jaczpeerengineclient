@@ -1,7 +1,7 @@
 package jacz.peerengineclient.databases.integration;
 
-import jacz.util.concurrency.concurrency_controller.ConcurrencyControllerAction;
-import jacz.util.maps.ObjectCount;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyControllerAction;
+import org.aanguita.jacuzzi.maps.ObjectCount;
 
 /**
  * Created by Alberto on 06/12/2015.

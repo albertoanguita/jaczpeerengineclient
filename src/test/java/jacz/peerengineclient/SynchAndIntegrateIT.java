@@ -13,7 +13,7 @@ import jacz.peerengineclient.common.TestUtil;
 import jacz.peerengineclient.test.IntegrationTest;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.UnavailablePeerException;
-import jacz.util.concurrency.ThreadUtil;
+import org.aanguita.jacuzzi.concurrency.ThreadUtil;
 import junitx.framework.ListAssert;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;

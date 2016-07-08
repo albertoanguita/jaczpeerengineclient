@@ -2,7 +2,7 @@ package jacz.peerengineclient.common;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.SessionManager;
-import jacz.util.lists.tuple.Duple;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
 
 import java.io.IOException;
 import java.util.List;

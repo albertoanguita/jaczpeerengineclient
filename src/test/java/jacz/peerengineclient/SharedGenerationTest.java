@@ -5,7 +5,7 @@ import jacz.database.VideoFile;
 import jacz.peerengineclient.databases.DatabaseIO;
 import jacz.peerengineclient.common.Client;
 import jacz.peerengineclient.common.TestUtil;
-import jacz.util.concurrency.ThreadUtil;
+import org.aanguita.jacuzzi.concurrency.ThreadUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 

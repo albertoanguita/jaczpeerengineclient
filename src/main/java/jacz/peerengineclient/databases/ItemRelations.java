@@ -3,8 +3,8 @@ package jacz.peerengineclient.databases;
 import jacz.database.DatabaseMediator;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerId;
-import jacz.util.io.serialization.*;
-import jacz.util.lists.tuple.Duple;
+import org.aanguita.jacuzzi.io.serialization.*;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
 
 import java.io.IOException;
 import java.io.NotSerializableException;

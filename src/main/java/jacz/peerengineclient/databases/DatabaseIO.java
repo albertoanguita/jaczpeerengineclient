@@ -6,8 +6,8 @@ import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
-import jacz.util.io.serialization.VersionedObjectSerializer;
-import jacz.util.io.serialization.VersionedSerializationException;
+import org.aanguita.jacuzzi.io.serialization.VersionedObjectSerializer;
+import org.aanguita.jacuzzi.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.File;

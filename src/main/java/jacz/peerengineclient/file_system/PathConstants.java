@@ -3,7 +3,7 @@ package jacz.peerengineclient.file_system;
 import jacz.database.util.ImageHash;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.PeerId;
-import jacz.util.lists.tuple.Triple;
+import org.aanguita.jacuzzi.lists.tuple.Triple;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;

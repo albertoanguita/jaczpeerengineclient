@@ -3,7 +3,7 @@ package jacz.peerengineclient.databases.synch;
 import jacz.peerengineclient.util.synch.SynchMode;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.util.notification.ProgressNotificationWithError;
+import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
 
 /**
  * Progress notifications for library synch processes

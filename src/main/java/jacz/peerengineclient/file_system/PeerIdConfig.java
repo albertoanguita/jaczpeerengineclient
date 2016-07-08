@@ -2,10 +2,10 @@ package jacz.peerengineclient.file_system;
 
 import jacz.peerengineclient.SessionManager;
 import jacz.peerengineservice.PeerId;
-import jacz.util.hash.CRCMismatchException;
-import jacz.util.io.xml.XMLReader;
-import jacz.util.io.xml.XMLWriter;
-import jacz.util.lists.tuple.Duple;
+import org.aanguita.jacuzzi.hash.CRCMismatchException;
+import org.aanguita.jacuzzi.io.xml.XMLReader;
+import org.aanguita.jacuzzi.io.xml.XMLWriter;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.FileNotFoundException;

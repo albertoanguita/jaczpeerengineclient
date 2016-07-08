@@ -1,9 +1,9 @@
 package jacz.peerengineclient.util;
 
 import jacz.peerengineclient.file_system.PathConstants;
-import jacz.util.io.serialization.localstorage.Updater;
-import jacz.util.io.serialization.localstorage.VersionedLocalStorage;
-import jacz.util.string.AlphanumericString;
+import org.aanguita.jacuzzi.io.serialization.localstorage.Updater;
+import org.aanguita.jacuzzi.io.serialization.localstorage.VersionedLocalStorage;
+import org.aanguita.jacuzzi.string.AlphanumericString;
 
 import java.io.IOException;
 import java.nio.file.Files;

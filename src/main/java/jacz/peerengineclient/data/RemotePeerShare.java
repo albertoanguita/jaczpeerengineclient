@@ -1,9 +1,9 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineservice.PeerId;
-import jacz.util.io.serialization.localstorage.Updater;
-import jacz.util.io.serialization.localstorage.VersionedLocalStorage;
-import jacz.util.maps.DoubleMap;
+import org.aanguita.jacuzzi.io.serialization.localstorage.Updater;
+import org.aanguita.jacuzzi.io.serialization.localstorage.VersionedLocalStorage;
+import org.aanguita.jacuzzi.maps.DoubleMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

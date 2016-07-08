@@ -5,7 +5,7 @@ import jacz.database.Movie;
 import jacz.database.TVSeries;
 import jacz.peerengineclient.common.Client;
 import jacz.peerengineclient.databases.DatabaseIO;
-import jacz.util.lists.tuple.Triple;
+import org.aanguita.jacuzzi.lists.tuple.Triple;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 

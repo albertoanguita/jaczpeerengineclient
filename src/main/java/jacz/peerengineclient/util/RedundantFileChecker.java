@@ -2,7 +2,7 @@ package jacz.peerengineclient.util;
 
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineservice.util.datatransfer.master.DownloadManager;
-import jacz.util.date_time.TimedEventRecord;
+import org.aanguita.jacuzzi.date_time.TimedEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

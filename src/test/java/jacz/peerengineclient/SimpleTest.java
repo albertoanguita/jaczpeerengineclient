@@ -2,7 +2,7 @@ package jacz.peerengineclient;
 
 import jacz.peerengineclient.common.Client;
 import jacz.peerengineservice.PeerId;
-import jacz.util.concurrency.ThreadUtil;
+import org.aanguita.jacuzzi.concurrency.ThreadUtil;
 
 import java.io.IOException;
 

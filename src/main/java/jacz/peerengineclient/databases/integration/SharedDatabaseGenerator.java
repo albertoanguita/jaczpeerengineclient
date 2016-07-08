@@ -4,9 +4,9 @@ import jacz.database.*;
 import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.util.FileAPI;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
-import jacz.util.concurrency.timer.Timer;
-import jacz.util.concurrency.timer.TimerAction;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyController;
+import org.aanguita.jacuzzi.concurrency.timer.Timer;
+import org.aanguita.jacuzzi.concurrency.timer.TimerAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

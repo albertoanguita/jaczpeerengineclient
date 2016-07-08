@@ -1,8 +1,8 @@
 package jacz.peerengineclient.data;
 
 import jacz.peerengineclient.PeerEngineClient;
-import jacz.util.hash.hashdb.FileHashDatabaseLS;
-import jacz.util.maps.DoubleMap;
+import org.aanguita.jacuzzi.hash.hashdb.FileHashDatabaseLS;
+import org.aanguita.jacuzzi.maps.DoubleMap;
 
 import java.io.IOException;
 import java.util.HashMap;

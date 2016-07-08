@@ -5,7 +5,7 @@ import jacz.database.util.ImageHash;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.util.FileAPI;
 import jacz.peerengineservice.NotAliveException;
-import jacz.util.date_time.TimedEventRecord;
+import org.aanguita.jacuzzi.date_time.TimedEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

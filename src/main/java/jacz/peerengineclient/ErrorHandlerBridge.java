@@ -1,6 +1,6 @@
 package jacz.peerengineclient;
 
-import jacz.util.log.ErrorHandler;
+import org.aanguita.jacuzzi.log.ErrorHandler;
 
 /**
  * Created by Alberto on 02/01/2016.

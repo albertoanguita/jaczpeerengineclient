@@ -5,9 +5,9 @@ import jacz.peerengineclient.databases.Databases;
 import jacz.peerengineclient.databases.ItemRelations;
 import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
-import jacz.util.hash.SHA_1;
-import jacz.util.lists.tuple.Duple;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyController;
+import org.aanguita.jacuzzi.hash.SHA_1;
+import org.aanguita.jacuzzi.lists.tuple.Duple;
 
 import java.io.IOException;
 import java.util.ArrayList;

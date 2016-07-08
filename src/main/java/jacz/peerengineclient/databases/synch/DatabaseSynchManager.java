@@ -10,7 +10,7 @@ import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.data_synchronization.DummyProgress;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.util.notification.ProgressNotificationWithError;
+import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
 
 import java.io.IOException;
 

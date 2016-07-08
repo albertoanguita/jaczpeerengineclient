@@ -6,10 +6,10 @@ import jacz.peerengineservice.UnavailablePeerException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyController;
-import jacz.util.concurrency.concurrency_controller.ConcurrencyControllerMaxActivities;
-import jacz.util.date_time.TimedEventRecordSet;
-import jacz.util.notification.ProgressNotificationWithError;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyController;
+import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyControllerMaxActivities;
+import org.aanguita.jacuzzi.date_time.TimedEventRecordSet;
+import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -6,10 +6,10 @@ import jacz.peerengineclient.data.PeerShareManager;
 import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
-import jacz.util.concurrency.daemon.Daemon;
-import jacz.util.concurrency.daemon.DaemonAction;
-import jacz.util.concurrency.timer.Timer;
-import jacz.util.concurrency.timer.TimerAction;
+import org.aanguita.jacuzzi.concurrency.daemon.Daemon;
+import org.aanguita.jacuzzi.concurrency.daemon.DaemonAction;
+import org.aanguita.jacuzzi.concurrency.timer.Timer;
+import org.aanguita.jacuzzi.concurrency.timer.TimerAction;
 
 import java.util.NoSuchElementException;
 import java.util.Queue;

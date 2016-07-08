@@ -2,7 +2,7 @@ package jacz.peerengineclient.common;
 
 import jacz.peerengineservice.client.connection.ConnectionEvents;
 import jacz.peerengineservice.client.connection.ConnectionState;
-import jacz.util.network.IP4Port;
+import org.aanguita.jacuzzi.network.IP4Port;
 
 /**
  * Connection events

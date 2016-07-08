@@ -3,7 +3,7 @@ package jacz.peerengineclient.databases;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
-import jacz.util.io.serialization.VersionedSerializationException;
+import org.aanguita.jacuzzi.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 import java.util.HashMap;

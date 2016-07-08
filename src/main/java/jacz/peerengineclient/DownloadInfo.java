@@ -2,7 +2,7 @@ package jacz.peerengineclient;
 
 
 import jacz.database.DatabaseMediator;
-import jacz.util.io.serialization.Serializer;
+import org.aanguita.jacuzzi.io.serialization.Serializer;
 
 import java.io.Serializable;
 import java.text.ParseException;
