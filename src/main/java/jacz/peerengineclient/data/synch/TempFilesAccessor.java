@@ -7,6 +7,8 @@ import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ import java.util.List;
  * server are merged here)
  */
 public class TempFilesAccessor implements DataAccessor {
+
+    private final static Logger logger = LoggerFactory.getLogger(TempFilesAccessor.class);
 
     public static final String NAME = "TEMP_FILE_HASH_DATA_ACCESSOR";
 
@@ -66,6 +70,7 @@ public class TempFilesAccessor implements DataAccessor {
     @Override
     public void beginSynchProcess(Mode mode) {
         // notify the RemotePeerTempShare, when in client mode
+        logger.info("begin synch in mode " + mode);
         if (mode.isClient()) {
             remotePeerTempShare.startNewSynch();
         }
@@ -89,6 +94,7 @@ public class TempFilesAccessor implements DataAccessor {
 
     @Override
     public List<? extends Serializable> getElementsFrom(long fromTimestamp) throws DataAccessException {
+        logger.info("retrieving all temp downloads");
         return new ArrayList<>(fileAPI.getTempHashes());
     }
 
@@ -104,12 +110,14 @@ public class TempFilesAccessor implements DataAccessor {
 
     @Override
     public void setElement(Object element) throws DataAccessException {
+        logger.info("set a remote temp download: " + element.toString());
         remotePeerTempShare.addTempResource((String) element);
     }
 
     @Override
     public void endSynchProcess(Mode mode, boolean success) {
         // notify the RemotePeerTempShare, when in client mode
+        logger.info("end synch in mode " + mode);
         if (mode.isClient()) {
             remotePeerTempShare.completeSynch();
         }
