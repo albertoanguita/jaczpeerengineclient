@@ -272,7 +272,7 @@ public class ItemRelations implements VersionedObject {
             for (Map.Entry<PeerId, ItemRelationsMap> entry : remoteToIntegrated.entrySet()) {
                 PeerId peerID = entry.getKey();
                 ItemRelationsMap itemRelationsMap = entry.getValue();
-                data.add(Serializer.serialize(peerID.toByteArray()), VersionedObjectSerializer.serialize(itemRelationsMap));
+                data.add(Serializer.serialize(peerID.toByteArray()), Serializer.serialize(VersionedObjectSerializer.serialize(itemRelationsMap)));
             }
             return data.generateArray();
         } catch (NotSerializableException e) {
