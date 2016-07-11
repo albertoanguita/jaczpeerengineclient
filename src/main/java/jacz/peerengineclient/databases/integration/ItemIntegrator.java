@@ -55,29 +55,31 @@ public class ItemIntegrator {
             Databases databases,
             DatabaseItem localItem) throws IllegalStateException {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name())) {
+            try {
+                DatabaseMediator.ItemType type = localItem.getItemType();
+                DatabaseItem integratedItem;
+                boolean isNew = !databases.getItemRelations().getLocalToIntegrated().contains(type, localItem.getId());
+                if (isNew) {
+                    // define a new integrated item for this local item
+                    // we assume that the use has checked that this local item does not merge with any existing
+                    // integrated item
+                    integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
+                    databases.getItemRelations().getLocalToIntegrated().put(type, localItem.getId(), integratedItem.getId());
+                    databases.getItemRelations().getIntegratedToLocal().put(type, integratedItem.getId(), localItem.getId());
+                } else {
+                    // we have a matching integrated item -> use it
+                    integratedItem = DatabaseMediator.getItem(
+                            databases.getIntegratedDB(),
+                            type,
+                            databases.getItemRelations().getLocalToIntegrated().get(type, localItem.getId()));
+                }
+                processIntegratedItem(databases, integratedItem, isNew);
 
-            DatabaseMediator.ItemType type = localItem.getItemType();
-            DatabaseItem integratedItem;
-            boolean isNew = !databases.getItemRelations().getLocalToIntegrated().contains(type, localItem.getId());
-            if (isNew) {
-                // define a new integrated item for this local item
-                // we assume that the use has checked that this local item does not merge with any existing
-                // integrated item
-                integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
-                databases.getItemRelations().getLocalToIntegrated().put(type, localItem.getId(), integratedItem.getId());
-                databases.getItemRelations().getIntegratedToLocal().put(type, integratedItem.getId(), localItem.getId());
-            } else {
-                // we have a matching integrated item -> use it
-                integratedItem = DatabaseMediator.getItem(
-                        databases.getIntegratedDB(),
-                        type,
-                        databases.getItemRelations().getLocalToIntegrated().get(type, localItem.getId()));
+                return integratedItem;
+            } finally {
+                concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
             }
-            processIntegratedItem(databases, integratedItem, isNew);
 
-            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
-
-            return integratedItem;
         } else {
             throw new IllegalStateException();
         }
@@ -95,33 +97,34 @@ public class ItemIntegrator {
             Databases databases,
             DatabaseItem integratedItem) throws IllegalStateException {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name())) {
+            try {
+                DatabaseMediator.ItemType type = integratedItem.getItemType();
+                if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+                    // there is a local item -> remote it
+                    DatabaseItem localItem = DatabaseMediator.getItem(
+                            databases.getLocalDB(),
+                            type,
+                            databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
+                    databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
+                    databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
+                    localItem.delete();
+                }
+                if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
+                    // there is a deleted item -> remove it too
+                    DatabaseItem deletedItem = DatabaseMediator.getItem(
+                            databases.getDeletedDB(),
+                            type,
+                            databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
+                    databases.getItemRelations().getIntegratedToDeleted().remove(type, integratedItem.getId());
+                    databases.getItemRelations().getDeletedToIntegrated().remove(type, deletedItem.getId());
+                    deletedItem.delete();
+                }
+                integratedItem = processIntegratedItem(databases, integratedItem, false);
 
-            DatabaseMediator.ItemType type = integratedItem.getItemType();
-            if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
-                // there is a local item -> remote it
-                DatabaseItem localItem = DatabaseMediator.getItem(
-                        databases.getLocalDB(),
-                        type,
-                        databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
-                databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
-                databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
-                localItem.delete();
+                return integratedItem == null;
+            } finally {
+                concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
             }
-            if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
-                // there is a deleted item -> remove it too
-                DatabaseItem deletedItem = DatabaseMediator.getItem(
-                        databases.getDeletedDB(),
-                        type,
-                        databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
-                databases.getItemRelations().getIntegratedToDeleted().remove(type, integratedItem.getId());
-                databases.getItemRelations().getDeletedToIntegrated().remove(type, deletedItem.getId());
-                deletedItem.delete();
-            }
-            integratedItem = processIntegratedItem(databases, integratedItem, false);
-
-            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
-
-            return integratedItem == null;
         } else {
             throw new IllegalStateException();
         }
@@ -133,49 +136,50 @@ public class ItemIntegrator {
             PeerId remotePeerId,
             DatabaseItem remoteItem) throws IllegalStateException {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name())) {
-
-            DatabaseMediator.ItemType type = remoteItem.getItemType();
-            DatabaseItem integratedItem;
-            boolean isNewIntegratedItem = false;
-            ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
-            if (!remoteToIntegratedItems.contains(type, remoteItem.getId())) {
-                // the given external item is not mapped to any integrated item
-                // (the remote item is new and it is not linked to any integrated item)
-                // we must find its corresponding integrated item, or create a new one
-                List<? extends DatabaseItem> allIntegratedItems =
-                        DatabaseMediator.getItems(databases.getIntegratedDB(), type);
-                integratedItem = null;
-                float maxMatch = -1;
-                for (DatabaseItem anIntegratedItem : allIntegratedItems) {
-                    float match = remoteItem.match(anIntegratedItem);
-                    if (match >= jacz.database.util.ItemIntegrator.THRESHOLD && match > maxMatch) {
-                        // match found! -> remember the integrated item and update the max match
-                        integratedItem = anIntegratedItem;
-                        maxMatch = match;
+            try {
+                DatabaseMediator.ItemType type = remoteItem.getItemType();
+                DatabaseItem integratedItem;
+                boolean isNewIntegratedItem = false;
+                ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
+                if (!remoteToIntegratedItems.contains(type, remoteItem.getId())) {
+                    // the given external item is not mapped to any integrated item
+                    // (the remote item is new and it is not linked to any integrated item)
+                    // we must find its corresponding integrated item, or create a new one
+                    List<? extends DatabaseItem> allIntegratedItems =
+                            DatabaseMediator.getItems(databases.getIntegratedDB(), type);
+                    integratedItem = null;
+                    float maxMatch = -1;
+                    for (DatabaseItem anIntegratedItem : allIntegratedItems) {
+                        float match = remoteItem.match(anIntegratedItem);
+                        if (match >= jacz.database.util.ItemIntegrator.THRESHOLD && match > maxMatch) {
+                            // match found! -> remember the integrated item and update the max match
+                            integratedItem = anIntegratedItem;
+                            maxMatch = match;
+                        }
                     }
+                    if (integratedItem == null) {
+                        // we did not find any match -> create a new integrated item
+                        integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
+                        isNewIntegratedItem = true;
+                    }
+                    remoteToIntegratedItems.put(type, remoteItem.getId(), integratedItem.getId());
+                    // we must put the equivalent pointer in the integrated database.
+                    databases.getItemRelations().getIntegratedToRemote().add(
+                            type,
+                            integratedItem.getId(),
+                            remotePeerId,
+                            remoteItem.getId());
+                } else {
+                    // we have a matching integrated item -> use it
+                    integratedItem = DatabaseMediator.getItem(
+                            databases.getIntegratedDB(),
+                            type,
+                            remoteToIntegratedItems.get(type, remoteItem.getId()));
                 }
-                if (integratedItem == null) {
-                    // we did not find any match -> create a new integrated item
-                    integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
-                    isNewIntegratedItem = true;
-                }
-                remoteToIntegratedItems.put(type, remoteItem.getId(), integratedItem.getId());
-                // we must put the equivalent pointer in the integrated database.
-                databases.getItemRelations().getIntegratedToRemote().add(
-                        type,
-                        integratedItem.getId(),
-                        remotePeerId,
-                        remoteItem.getId());
-            } else {
-                // we have a matching integrated item -> use it
-                integratedItem = DatabaseMediator.getItem(
-                        databases.getIntegratedDB(),
-                        type,
-                        remoteToIntegratedItems.get(type, remoteItem.getId()));
+                processIntegratedItem(databases, integratedItem, isNewIntegratedItem);
+            } finally {
+                concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
             }
-            processIntegratedItem(databases, integratedItem, isNewIntegratedItem);
-
-            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
         } else {
             throw new IllegalStateException();
         }
@@ -186,44 +190,45 @@ public class ItemIntegrator {
             PeerId remotePeerId,
             DatabaseItem remoteItem) throws IllegalStateException {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name())) {
-
-            DatabaseMediator.ItemType type = remoteItem.getItemType();
-            DatabaseItem integratedItem;
-            ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
-            if (remoteToIntegratedItems.contains(type, remoteItem.getId())) {
-                // we have a matching integrated item -> move the contents of the removed item to a deleted item
-                // and re-inflate the integrated item
-                integratedItem = DatabaseMediator.getItem(
-                        databases.getIntegratedDB(),
-                        type,
-                        remoteToIntegratedItems.get(type, remoteItem.getId()));
-
-                // get the deleted item
-                DatabaseItem deletedItem;
-                if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
-                    // we have a deleted item
-                    deletedItem = DatabaseMediator.getItem(
-                            databases.getDeletedDB(),
+            try {
+                DatabaseMediator.ItemType type = remoteItem.getItemType();
+                DatabaseItem integratedItem;
+                ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
+                if (remoteToIntegratedItems.contains(type, remoteItem.getId())) {
+                    // we have a matching integrated item -> move the contents of the removed item to a deleted item
+                    // and re-inflate the integrated item
+                    integratedItem = DatabaseMediator.getItem(
+                            databases.getIntegratedDB(),
                             type,
-                            databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
-                } else {
-                    // no deleted item -> build a new one
-                    deletedItem = DatabaseMediator.createNewItem(databases.getDeletedDB(), type);
-                    databases.getItemRelations().getIntegratedToDeleted().put(type, integratedItem.getId(), deletedItem.getId());
-                    databases.getItemRelations().getDeletedToIntegrated().put(type, deletedItem.getId(), integratedItem.getId());
+                            remoteToIntegratedItems.get(type, remoteItem.getId()));
+
+                    // get the deleted item
+                    DatabaseItem deletedItem;
+                    if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
+                        // we have a deleted item
+                        deletedItem = DatabaseMediator.getItem(
+                                databases.getDeletedDB(),
+                                type,
+                                databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
+                    } else {
+                        // no deleted item -> build a new one
+                        deletedItem = DatabaseMediator.createNewItem(databases.getDeletedDB(), type);
+                        databases.getItemRelations().getIntegratedToDeleted().put(type, integratedItem.getId(), deletedItem.getId());
+                        databases.getItemRelations().getDeletedToIntegrated().put(type, deletedItem.getId(), integratedItem.getId());
+                    }
+
+                    // copy the contents from the removed remote item to the deleted item
+                    deletedItem.merge(remoteItem);
+
+                    // remove the links from the remote item to the integrated item
+                    databases.getItemRelations().getIntegratedToRemote().remove(type, integratedItem.getId(), remotePeerId);
+                    databases.getItemRelations().getRemoteToIntegrated(remotePeerId).remove(type, remoteItem.getId());
+
+                    processIntegratedItem(databases, integratedItem, false);
                 }
-
-                // copy the contents from the removed remote item to the deleted item
-                deletedItem.merge(remoteItem);
-
-                // remove the links from the remote item to the integrated item
-                databases.getItemRelations().getIntegratedToRemote().remove(type, integratedItem.getId(), remotePeerId);
-                databases.getItemRelations().getRemoteToIntegrated(remotePeerId).remove(type, remoteItem.getId());
-
-                processIntegratedItem(databases, integratedItem, false);
+            } finally {
+                concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
             }
-
-            concurrencyController.endActivity(IntegrationConcurrencyController.Activity.REMOTE_TO_INTEGRATED.name());
         } else {
             throw new IllegalStateException();
         }

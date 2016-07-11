@@ -15,6 +15,8 @@ import jacz.peerengineclient.databases.synch.DatabaseSynchManager;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.ServerBusyException;
 import org.aanguita.jacuzzi.concurrency.concurrency_controller.ConcurrencyController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.stream.Stream;
@@ -23,6 +25,8 @@ import java.util.stream.Stream;
  * This class manages data databases and their proper synchronization and integration
  */
 public class DatabaseManager {
+
+    private final static Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
 
     private final PeerEngineClient peerEngineClient;
 
@@ -49,7 +53,7 @@ public class DatabaseManager {
         this.peerEngineClient = peerEngineClient;
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
-        dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController());
+        dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController(), logger::info, "Integration concurrency controller");
         sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
     }

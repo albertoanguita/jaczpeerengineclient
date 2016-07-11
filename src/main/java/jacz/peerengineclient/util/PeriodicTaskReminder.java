@@ -149,7 +149,7 @@ public class PeriodicTaskReminder implements TimerAction {
 
     public synchronized void stop() {
         if (alive.getAndSet(false)) {
-            timer.kill();
+            timer.stop();
             databaseSynchManagerTask.stop();
             peerShareManagerRemoteShareTask.stop();
             peerShareManagerTempFilesTask.stop();
