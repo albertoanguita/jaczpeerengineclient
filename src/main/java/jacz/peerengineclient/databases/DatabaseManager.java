@@ -53,7 +53,7 @@ public class DatabaseManager {
         this.peerEngineClient = peerEngineClient;
         this.databases = databases;
         this.databaseSynchManager = new DatabaseSynchManager(this, databaseSynchEvents, peerEngineClient, databases);
-        dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController(), logger::info, "Integration concurrency controller");
+        dataIntegrationConcurrencyController = new ConcurrencyController(new IntegrationConcurrencyController(), logger::info, "Integration conc. contr.");
         sharedDatabaseGenerator = new SharedDatabaseGenerator(databases, dataIntegrationConcurrencyController);
         itemIntegrator = new ItemIntegrator(dataIntegrationConcurrencyController, integrationEvents);
     }
