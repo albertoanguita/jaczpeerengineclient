@@ -194,8 +194,8 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
     }
 
     @Override
-    public void cancelled(String resourceID, String storeName, CancellationReason reason, DownloadManager downloadManager) {
-        downloadEvents.cancelled(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager, reason);
+    public void cancelled(String resourceID, String storeName, CancellationReason reason, Exception e, DownloadManager downloadManager) {
+        downloadEvents.cancelled(DownloadInfo.buildDownloadInfo(downloadManager.getResourceWriter().getUserDictionary()), downloadManager, reason, e);
     }
 
     @Override

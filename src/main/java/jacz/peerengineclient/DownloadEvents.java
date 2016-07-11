@@ -40,7 +40,7 @@ public interface DownloadEvents {
      * @param downloadManager download manager associated to this download
      * @param reason          reason of this cancellation
      */
-    void cancelled(DownloadInfo downloadInfo, DownloadManager downloadManager, DownloadProgressNotificationHandler.CancellationReason reason);
+    void cancelled(DownloadInfo downloadInfo, DownloadManager downloadManager, DownloadProgressNotificationHandler.CancellationReason reason, Exception e);
 
     /**
      * This is invoked when the download process was stopped by the user (with the intention of backing up the
