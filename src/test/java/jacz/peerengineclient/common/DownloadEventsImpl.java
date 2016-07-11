@@ -28,7 +28,9 @@ public class DownloadEventsImpl implements DownloadEvents {
     @Override
     public void cancelled(DownloadInfo downloadInfo, DownloadManager downloadManager, DownloadProgressNotificationHandler.CancellationReason reason, Exception e) {
         System.out.println("Download cancelled: " + downloadInfo);
-        e.printStackTrace();
+        if (e != null) {
+            e.printStackTrace();
+        }
     }
 
     @Override
