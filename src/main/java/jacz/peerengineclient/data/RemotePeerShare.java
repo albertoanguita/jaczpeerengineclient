@@ -44,6 +44,13 @@ public class RemotePeerShare implements Updater {
         init("", remotePeerId, -1L);
     }
 
+    /**
+     * Attempts to load an existing remote share
+     *
+     * @param foreignShares storage of foreign shares. Stored shares are reported here
+     * @param path          expected path of the local storage containing the saved share
+     * @throws IOException the remote share does not exist, or could not be loaded
+     */
     public RemotePeerShare(ForeignShares foreignShares, String path) throws IOException {
         activeHashes = new DoubleMap<>();
         this.foreignShares = foreignShares;
@@ -107,8 +114,10 @@ public class RemotePeerShare implements Updater {
 
     public void removeHash(long timestamp, String hash) {
         logger.info("Removed shared file for peer " + localStorage.getString(REMOTE_PEER_ID_KEY) + ": " + hash);
-        long oldTimestamp = activeHashes.removeReverse(hash);
-        localStorage.removeItem(HASH_CATEGORY, Long.toString(oldTimestamp));
+        Long oldTimestamp = activeHashes.removeReverse(hash);
+        if (oldTimestamp != null) {
+            localStorage.removeItem(HASH_CATEGORY, Long.toString(oldTimestamp));
+        }
         updateTimestamp(timestamp);
         foreignShares.removeResourceProvider(hash, new PeerId(localStorage.getString(REMOTE_PEER_ID_KEY)));
     }
