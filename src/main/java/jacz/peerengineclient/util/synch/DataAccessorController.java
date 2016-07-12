@@ -62,7 +62,7 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
         activeRemoteShareSynchs = new HashSet<>();
         sharedSynchRecord = new TimedEventRecordSet<>(recentlyThreshold);
         remoteSynchRecord = new TimedEventRecordSet<>(recentlyThreshold);
-        concurrencyController = new ConcurrencyControllerMaxActivities(maxConcurrentSynchs);
+        concurrencyController = new ConcurrencyControllerMaxActivities(maxConcurrentSynchs, logger::info, "Data accessor conc. contr.");
     }
 
     public LOCAL requestForLocalHashSynch(PeerId peerID) throws ServerBusyException {
