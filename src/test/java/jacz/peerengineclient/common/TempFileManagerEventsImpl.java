@@ -14,7 +14,7 @@ public class TempFileManagerEventsImpl implements TempFileManagerEvents {
 
     @Override
     public void indexFileRecovered(String indexFilePath) {
-        System.out.println("Index file recpvered: " + indexFilePath);
+        System.out.println("Index file recovered: " + indexFilePath);
     }
 
     @Override
