@@ -117,6 +117,8 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
                     }
                 } catch (Exception e) {
                     // peer is no longer connected, or could not retrieve its remote database -> ignore request
+                    logMessage("request raised an error -> terminating synch process");
+                    concurrencyController.endActivity(SYNCH_ACTIVITY);
                 }
             } else {
                 logMessage("request discarded");
