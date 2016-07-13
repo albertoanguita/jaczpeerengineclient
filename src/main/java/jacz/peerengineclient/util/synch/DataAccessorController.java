@@ -62,7 +62,7 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
         activeRemoteShareSynchs = new HashSet<>();
         sharedSynchRecord = new TimedEventRecordSet<>(recentlyThreshold);
         remoteSynchRecord = new TimedEventRecordSet<>(recentlyThreshold);
-        concurrencyController = new ConcurrencyControllerMaxActivities(maxConcurrentSynchs, logger::info, "Data accessor conc. contr.");
+        concurrencyController = new ConcurrencyControllerMaxActivities(maxConcurrentSynchs, logger::info, name + " conc. contr.");
     }
 
     public LOCAL requestForLocalHashSynch(PeerId peerID) throws ServerBusyException {
@@ -96,11 +96,13 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
             // we did not recently synched with this peer
             if (!activeRemoteShareSynchs.contains(peerID) &&
                     !remoteSynchRecord.lastEventIsRecent(peerID)) {
+
+                boolean success = false;
                 try {
                     // initiate concurrent activity
                     concurrencyController.beginActivity(SYNCH_ACTIVITY);
 
-                    boolean success = peerEngineClient.synchronizeList(
+                    success = peerEngineClient.synchronizeList(
                             peerID,
                             getRemoteDataAccessor(peerID),
                             synchTimeout,
@@ -112,13 +114,15 @@ public abstract class DataAccessorController<LOCAL extends DataAccessor, REMOTE 
                         remoteSynchRecord.newEvent(peerID);
                     } else {
                         logMessage("request unsuccessful -> terminating synch process");
-                        // immediately finish the concurrent activity, as it did not take place
-                        concurrencyController.endActivity(SYNCH_ACTIVITY);
                     }
                 } catch (Exception e) {
                     // peer is no longer connected, or could not retrieve its remote database -> ignore request
                     logMessage("request raised an error -> terminating synch process");
-                    concurrencyController.endActivity(SYNCH_ACTIVITY);
+                } finally {
+                    if (!success) {
+                        // immediately finish the concurrent activity, as it did not take place
+                        concurrencyController.endActivity(SYNCH_ACTIVITY);
+                    }
                 }
             } else {
                 logMessage("request discarded");
