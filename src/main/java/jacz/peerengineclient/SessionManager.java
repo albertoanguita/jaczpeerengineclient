@@ -105,8 +105,8 @@ public class SessionManager {
             PersistentIdFactory.createNew(userPath);
 
             // custom storage
-            VersionedLocalStorage.createNew(PathConstants.customStorage(userPath), customStorageVersion);
-            PeerEngineClient.saveApiVersions(new VersionedLocalStorage(PathConstants.customStorage(userPath)));
+            VersionedLocalStorage customStorage = VersionedLocalStorage.createNew(PathConstants.customStorage(userPath), customStorageVersion);
+            PeerEngineClient.saveApiVersions(customStorage);
 
             PeerShareIO.createNewFileStructure(userPath);
 //            PeerShareIO.saveLocalHash(userPath, new FileHashDatabaseWithTimestamp(RandomStringUtils.randomAlphanumeric(ID_LENGTH)));
