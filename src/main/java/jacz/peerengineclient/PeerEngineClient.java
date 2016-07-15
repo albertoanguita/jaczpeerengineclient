@@ -217,8 +217,8 @@ public class PeerEngineClient {
     private void logApiVersions() {
         logger.info("Restored peer engine client api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, API_VERSION));
         logger.info("Restored peer engine service api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, SERVICE_API_VERSION_KEY));
-        logger.info("Using peer engine client api " + API_VERSION_KEY);
-        logger.info("Using peer engine service api " + SERVICE_API_VERSION_KEY);
+        logger.info("Using peer engine client api " + API_VERSION);
+        logger.info("Using peer engine service api " + PeerClient.API_VERSION);
         saveApiVersions(customStorage);
     }
 
