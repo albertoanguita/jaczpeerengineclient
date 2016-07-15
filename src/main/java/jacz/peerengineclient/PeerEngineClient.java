@@ -58,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -844,8 +845,12 @@ public class PeerEngineClient {
         return peerShareManager.getFileHash().containsPath(path);
     }
 
-    public String getFile(String hash) {
+    public String getFilePath(String hash) {
         return peerShareManager.getFileHash().getFilePath(hash);
+    }
+
+    public File getFile(String hash) throws FileNotFoundException {
+        return peerShareManager.getFileHash().getFile(hash);
     }
 
     public synchronized Set<PeerId> getFileProviders(String resourceID) {
