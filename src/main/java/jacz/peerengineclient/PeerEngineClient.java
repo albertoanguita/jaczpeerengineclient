@@ -76,7 +76,7 @@ public class PeerEngineClient {
 
     public static final String API_VERSION = "0.1.0";
 
-    private static final String API_VERSIONS_KEY_CATEGORY = "apiKeys";
+    private static final String CLIENT_SERVICE_STORAGE_CATEGORY = "@@@client_service_storage@@@";
 
     private static final String API_VERSION_KEY = "peerEngineClientVersion";
 
@@ -215,16 +215,16 @@ public class PeerEngineClient {
     }
 
     private void logApiVersions() {
-        logger.info("Restored peer engine client api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, API_VERSION));
-        logger.info("Restored peer engine service api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, SERVICE_API_VERSION_KEY));
+        logger.info("Restored peer engine client api version " + customStorage.getString(CLIENT_SERVICE_STORAGE_CATEGORY, API_VERSION_KEY));
+        logger.info("Restored peer engine service api version " + customStorage.getString(CLIENT_SERVICE_STORAGE_CATEGORY, SERVICE_API_VERSION_KEY));
         logger.info("Using peer engine client api " + API_VERSION);
         logger.info("Using peer engine service api " + PeerClient.API_VERSION);
         saveApiVersions(customStorage);
     }
 
     static void saveApiVersions(VersionedLocalStorage customStorage) {
-        customStorage.setString(API_VERSIONS_KEY_CATEGORY, API_VERSION_KEY, API_VERSION);
-        customStorage.setString(API_VERSIONS_KEY_CATEGORY, SERVICE_API_VERSION_KEY, PeerClient.API_VERSION);
+        customStorage.setString(CLIENT_SERVICE_STORAGE_CATEGORY, API_VERSION_KEY, API_VERSION);
+        customStorage.setString(CLIENT_SERVICE_STORAGE_CATEGORY, SERVICE_API_VERSION_KEY, PeerClient.API_VERSION);
     }
 
     public List<String> getRepairedFiles() {
