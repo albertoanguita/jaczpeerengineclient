@@ -91,7 +91,7 @@ public class ItemRelations implements VersionedObject {
 
         private static final String CURRENT_VERSION = VERSION_0_1;
 
-        private HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> itemRelations;
+        private Map<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> itemRelations;
 
         public ItemToPeerListRelationsMap() {
             itemRelations = new HashMap<>();
@@ -135,19 +135,117 @@ public class ItemRelations implements VersionedObject {
 
         @Override
         public Map<String, Serializable> serialize() {
+            FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(itemRelations.size()));
+            for (Map.Entry<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> entry : itemRelations.entrySet()) {
+                data.add(Serializer.serialize(entry.getKey()));
+                data.add(serializeItemRelationsValue(entry.getValue()));
+            }
             Map<String, Serializable> attributes = new HashMap<>();
-            attributes.put("itemRelations", itemRelations);
+            attributes.put("itemRelations", data.generateArray());
             return attributes;
         }
+
+        private static byte[] serializeItemRelationsValue(Map<Integer, List<Duple<PeerId, Integer>>> map) {
+            FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(map.size()));
+            for (Map.Entry<Integer, List<Duple<PeerId, Integer>>> entry : map.entrySet()) {
+                data.add(Serializer.serialize(entry.getKey()));
+                data.add(serializePeerList(entry.getValue()));
+            }
+            return data.generateArray();
+        }
+
+        private static byte[] serializePeerList(List<Duple<PeerId, Integer>> list) {
+            FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(list.size()));
+            for (Duple<PeerId, Integer> peerAndId : list) {
+                data.add(peerAndId.element1.toByteArray());
+                data.add(Serializer.serialize(peerAndId.element2));
+            }
+            return data.generateArray();
+        }
+
+//        private static HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<byte[], Integer>>>> serializeItemRelations(
+//                Map<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> itemRelations) {
+//
+//            itemRelations.entrySet().stream()
+//                    .map(entry -> new Duple<>(
+//                                    entry.getKey(),
+//                                    entry.getValue().entrySet().stream()
+//                                            .map(typeEntry -> new Duple<>(
+//                                                    typeEntry.getKey(), typeEntry.getValue().stream()
+//                                                    .map(duple -> new Duple<>(duple.element1.toByteArray(), duple.element2))
+//                                                    .collect(Collectors.toList()))))
+//                    );
+//
+//            HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<byte[], Integer>>>> serializedItemRelations = new HashMap<>();
+//            for (Map.Entry<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> entry : itemRelations.entrySet()) {
+//                Map<Integer, List<Duple<byte[], Integer>>> value = new HashMap<>();
+//                for (Map.Entry<Integer, List<Duple<PeerId, Integer>>> typeEntry : entry.getValue().entrySet()) {
+//                    List<Duple<byte[], Integer>> list =
+//                            typeEntry.getValue().stream()
+//                                    .map(duple -> new Duple<>(duple.element1.toByteArray(), duple.element2))
+//                                    .collect(Collectors.toList());
+//                    value.put(typeEntry.getKey(), list);
+//                }
+//                serializedItemRelations.put(entry.getKey(), value);
+//            }
+//            return serializedItemRelations;
+//        }
 
         @Override
         public void deserialize(String version, Map<String, Object> attributes, VersionStack parentVersions) throws UnrecognizedVersionException {
             if (version.equals(CURRENT_VERSION)) {
-                itemRelations = (HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>>) attributes.get("itemRelations");
+                byte[] data = (byte[]) attributes.get("itemRelations");
+                MutableOffset offset = new MutableOffset();
+                int mapSize = Serializer.deserializeIntValue(data, offset);
+                itemRelations = new HashMap<>();
+                for (int i = 0; i < mapSize; i++) {
+                    DatabaseMediator.ItemType itemType = Serializer.deserializeEnum(DatabaseMediator.ItemType.class, data, offset);
+                    Map<Integer, List<Duple<PeerId, Integer>>> itemRelationsValue = deserializeItemRelationsValue(data, offset);
+                    itemRelations.put(itemType, itemRelationsValue);
+                }
             } else {
                 throw new UnrecognizedVersionException();
             }
         }
+
+        private static Map<Integer, List<Duple<PeerId, Integer>>> deserializeItemRelationsValue(byte[] data, MutableOffset offset) {
+            int mapSize = Serializer.deserializeIntValue(data, offset);
+            Map<Integer, List<Duple<PeerId, Integer>>> itemRelationsValue = new HashMap<>();
+            for (int i = 0; i < mapSize; i++) {
+                Integer id = Serializer.deserializeInt(data, offset);
+                List<Duple<PeerId, Integer>> peerList = deserializePeerList(data, offset);
+                itemRelationsValue.put(id, peerList);
+            }
+            return itemRelationsValue;
+        }
+
+        private static List<Duple<PeerId, Integer>> deserializePeerList(byte[] data, MutableOffset offset) {
+            int listSize = Serializer.deserializeIntValue(data, offset);
+            List<Duple<PeerId, Integer>> peerList = new ArrayList<>();
+            for (int i = 0; i < listSize; i++) {
+                PeerId peerId = new PeerId(Serializer.deserializeBytes(data, offset));
+                Integer id = Serializer.deserializeInt(data, offset);
+                peerList.add(new Duple<>(peerId, id));
+            }
+            return peerList;
+        }
+
+//        private Map<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> deserializeItemRelations(
+//                HashMap<DatabaseMediator.ItemType, Map<Integer, List<Duple<byte[], Integer>>>> serializedItemRelations) {
+//            Map<DatabaseMediator.ItemType, Map<Integer, List<Duple<PeerId, Integer>>>> itemRelations = new HashMap<>();
+//            for (Map.Entry<DatabaseMediator.ItemType, Map<Integer, List<Duple<byte[], Integer>>>> entry : serializedItemRelations.entrySet()) {
+//                Map<Integer, List<Duple<PeerId, Integer>>> value = new HashMap<>();
+//                for (Map.Entry<Integer, List<Duple<byte[], Integer>>> typeEntry : entry.getValue().entrySet()) {
+//                    List<Duple<PeerId, Integer>> list =
+//                            typeEntry.getValue().stream()
+//                                    .map(duple -> new Duple<>(new PeerId(duple.element1), duple.element2))
+//                                    .collect(Collectors.toList());
+//                    value.put(typeEntry.getKey(), list);
+//                }
+//                itemRelations.put(entry.getKey(), value);
+//            }
+//            return itemRelations;
+//        }
     }
 
     private static final String VERSION_0_1 = "0.1";
