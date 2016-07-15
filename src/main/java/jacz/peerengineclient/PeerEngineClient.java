@@ -54,6 +54,8 @@ import org.aanguita.jacuzzi.lists.tuple.Triple;
 import org.aanguita.jacuzzi.log.ErrorFactory;
 import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +72,17 @@ import java.util.*;
  */
 public class PeerEngineClient {
 
+    private final static Logger logger = LoggerFactory.getLogger(PeerEngineClient.class);
+
     public static final String API_VERSION = "0.1.0";
+
+    private static final String API_VERSIONS_KEY_CATEGORY = "apiKeys";
+
+    private static final String API_VERSION_KEY = "peerEngineClientVersion";
+
+    private static final String SERVICE_API_VERSION_KEY = "peerEngineServiceVersion";
+
+
 
     private static final String SERVER_URL = "https://jaczserver.appspot.com/_ah/api/server/v1/";
 
@@ -171,10 +183,8 @@ public class PeerEngineClient {
 
         initialStoppedDownloads = loadTempDownloads();
         start();
-    }
 
-    public List<String> getRepairedFiles() {
-        return repairedFiles;
+        logApiVersions();
     }
 
     private Collection<DownloadManager> loadTempDownloads() throws IOException {
@@ -202,6 +212,19 @@ public class PeerEngineClient {
     private void start() {
         databaseManager.start();
         periodicTaskReminder.start();
+    }
+
+    private void logApiVersions() {
+        logger.info("Restored peer engine client api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, API_VERSION));
+        logger.info("Restored peer engine service api version " + customStorage.getString(API_VERSIONS_KEY_CATEGORY, SERVICE_API_VERSION_KEY));
+        logger.info("Using peer engine client api " + API_VERSION_KEY);
+        logger.info("Using peer engine service api " + SERVICE_API_VERSION_KEY);
+        customStorage.setString(API_VERSIONS_KEY_CATEGORY, API_VERSION_KEY, API_VERSION);
+        customStorage.setString(API_VERSIONS_KEY_CATEGORY, SERVICE_API_VERSION_KEY, PeerClient.API_VERSION);
+    }
+
+    public List<String> getRepairedFiles() {
+        return repairedFiles;
     }
 
     public FileAPI getFileAPI() {
