@@ -569,7 +569,7 @@ public class PeerEngineClient {
                 } else {
                     // to images repo
                     // todo not use expectedFileName??
-                    location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
+                    location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), expectedFileName, path);
                 }
                 // this is the path in the media library where this file should go (file is created in the process)
                 finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
