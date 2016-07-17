@@ -119,7 +119,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     if (movie != null) {
                         pathAndHash = peerEngineClient.addLocalMovieFile(resourceWriter.getPath(), downloadInfo.fileName, movie, false);
                     } else {
-                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName, new IOException("No movie matches container id: " + downloadInfo.containerId));
                         return;
                     }
                 } else if (downloadInfo.containerType == DatabaseMediator.ItemType.CHAPTER) {
@@ -130,7 +130,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
                     if (chapter != null) {
                         pathAndHash = peerEngineClient.addLocalChapterFile(resourceWriter.getPath(), downloadInfo.fileName, tvSeries, chapter, false);
                     } else {
-                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+                        peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName, new IOException("No chapter matches container id: " + downloadInfo.containerId));
                         return;
                     }
                 } else {
@@ -143,7 +143,7 @@ public class DownloadProgressNotificationHandlerBridge implements DownloadProgre
             }
             downloadEvents.completed(downloadInfo, pathAndHash.element1, downloadManager);
         } catch (IOException e) {
-            peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName);
+            peerEngineClient.downloadedFileCouldNotBeLoaded(resourceWriter.getPath(), downloadInfo.fileName, e);
         }
 
 

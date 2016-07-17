@@ -2,6 +2,7 @@ package jacz.peerengineclient.common;
 
 import jacz.peerengineclient.ErrorEvents;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -20,8 +21,9 @@ public class ErrorEventsImpl implements ErrorEvents {
     }
 
     @Override
-    public void downloadedFileCouldNotBeLoaded(String path, String expectedFileName) {
-        System.err.println("Session could not be saved, path: " + path + ", expectedFileName: " + expectedFileName);
+    public void downloadedFileCouldNotBeLoaded(String path, String expectedFileName, IOException e) {
+        System.err.println("Downloaded file could not be loaded, path: " + path + ", expectedFileName: " + expectedFileName);
+        e.printStackTrace();
     }
 
     @Override

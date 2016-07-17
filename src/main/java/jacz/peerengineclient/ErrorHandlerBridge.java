@@ -2,6 +2,8 @@ package jacz.peerengineclient;
 
 import org.aanguita.jacuzzi.log.ErrorHandler;
 
+import java.io.IOException;
+
 /**
  * Created by Alberto on 02/01/2016.
  */
@@ -26,8 +28,8 @@ public class ErrorHandlerBridge implements ErrorHandler {
         errorEvents.sessionDataCouldNotBeSaved();
     }
 
-    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName) {
-        errorEvents.downloadedFileCouldNotBeLoaded(path, expectedFileName);
+    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName, IOException e) {
+        errorEvents.downloadedFileCouldNotBeLoaded(path, expectedFileName, e);
     }
 
     void temporaryDownloadFileCouldNotBeRecovered(String path) {

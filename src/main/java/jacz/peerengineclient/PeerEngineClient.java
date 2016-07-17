@@ -283,8 +283,8 @@ public class PeerEngineClient {
     }
 
 
-    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName) {
-        errorHandlerBridge.downloadedFileCouldNotBeLoaded(path, expectedFileName);
+    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName, IOException e) {
+        errorHandlerBridge.downloadedFileCouldNotBeLoaded(path, expectedFileName, e);
     }
 
     public void reportFatalError(String message, Object... data) {

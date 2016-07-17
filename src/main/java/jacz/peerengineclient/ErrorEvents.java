@@ -1,5 +1,6 @@
 package jacz.peerengineclient;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -11,7 +12,7 @@ public interface ErrorEvents {
 
     void sessionDataCouldNotBeSaved();
 
-    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName);
+    void downloadedFileCouldNotBeLoaded(String path, String expectedFileName, IOException e);
 
     void temporaryDownloadFileCouldNotBeRecovered(String path);
 }
