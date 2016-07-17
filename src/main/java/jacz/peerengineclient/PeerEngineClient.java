@@ -548,11 +548,10 @@ public class PeerEngineClient {
         } else {
             Duple<Boolean, String> containsAndHash = peerShareManager.getFileHash().containsSimilarFile(path);
             String finalPath;
-            String hash;
+            String hash = containsAndHash.element2;
             if (containsAndHash.element1) {
                 // this file is not in the file hash database, but a similar file already exists -> use that file
                 finalPath = peerShareManager.getFileHash().getFilePath(containsAndHash.element2);
-                hash = containsAndHash.element2;
                 // if needed, delete the original file and return the result
                 if (!keepSource) {
                     Files.delete(Paths.get(path));
@@ -569,7 +568,7 @@ public class PeerEngineClient {
                 } else {
                     // to images repo
                     // todo not use expectedFileName??
-                    location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), expectedFileName, path);
+                    location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), expectedFileName, hash);
                 }
                 // this is the path in the media library where this file should go (file is created in the process)
                 finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
