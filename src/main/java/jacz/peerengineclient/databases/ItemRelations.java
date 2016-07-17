@@ -157,7 +157,7 @@ public class ItemRelations implements VersionedObject {
         private static byte[] serializePeerList(List<Duple<PeerId, Integer>> list) {
             FragmentedByteArray data = new FragmentedByteArray(Serializer.serialize(list.size()));
             for (Duple<PeerId, Integer> peerAndId : list) {
-                data.add(peerAndId.element1.toByteArray());
+                data.add(Serializer.serialize(peerAndId.element1.toByteArray()));
                 data.add(Serializer.serialize(peerAndId.element2));
             }
             return data.generateArray();
