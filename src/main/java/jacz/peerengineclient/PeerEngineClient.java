@@ -583,10 +583,6 @@ public class PeerEngineClient {
                 // add the file to the file hash database
                 hash = addLocalFileFixedPath(finalPath);
             }
-            // if needed, delete the original file and return the result
-            if (!keepSource) {
-                Files.delete(Paths.get(path));
-            }
             return new Duple<>(finalPath, hash);
         }
 //
