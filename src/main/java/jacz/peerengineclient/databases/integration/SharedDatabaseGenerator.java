@@ -62,19 +62,19 @@ public class SharedDatabaseGenerator implements TimerAction {
         }
 
         public void checkTVSeries(TVSeries tvSeries) {
-            movies.remove(tvSeries.getId());
+            this.tvSeries.remove(tvSeries.getId());
         }
 
         public void checkChapter(Chapter chapter) {
-            movies.remove(chapter.getId());
+            chapters.remove(chapter.getId());
         }
 
         public void checkVideoFile(VideoFile videoFile) {
-            movies.remove(videoFile.getId());
+            videoFiles.remove(videoFile.getId());
         }
 
         public void checkSubtitleFile(SubtitleFile subtitleFile) {
-            movies.remove(subtitleFile.getId());
+            subtitleFiles.remove(subtitleFile.getId());
         }
 
         public Collection<DatabaseItem> remainingItems() {
