@@ -313,10 +313,10 @@ public class SharedDatabaseGenerator implements TimerAction {
                 if (!integratedItem.equals(sharedItem)) {
                     // only merge the item if the contents have changed
                     sharedItem.resetPostponed();
-                    logger.info("Shared item with id " + sharedItem.getId() + " modified");
                     DatabaseMediator.ReferencedElements referencedElements = integratedItem.getReferencedElements();
                     referencedElements.mapIds(integratedToShared.getTypeMappings());
                     sharedItem.merge(integratedItem, referencedElements);
+                    logger.info("Shared item with id " + sharedItem.getId() + " modified");
                 }
             } finally {
                 concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
