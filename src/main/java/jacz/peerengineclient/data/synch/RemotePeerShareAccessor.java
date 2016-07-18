@@ -2,14 +2,11 @@ package jacz.peerengineclient.data.synch;
 
 import jacz.peerengineclient.data.RemotePeerShare;
 import jacz.peerengineclient.data.SerializedHashItem;
-import jacz.peerengineclient.images.ImageDownloader;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.util.data_synchronization.DataAccessException;
 import jacz.peerengineservice.util.data_synchronization.DataAccessor;
 import jacz.peerengineservice.util.data_synchronization.SynchError;
 import org.aanguita.jacuzzi.notification.ProgressNotificationWithError;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.List;
@@ -42,7 +39,6 @@ public class RemotePeerShareAccessor implements DataAccessor {
 
     @Override
     public void setDatabaseID(String databaseID) {
-        // todo the existing data must be cleared!! also in other accessors??? yes if they remain stored in disk
         remotePeerShare.setId(databaseID);
     }
 
