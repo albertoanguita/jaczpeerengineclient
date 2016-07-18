@@ -97,7 +97,7 @@ public class DatabaseManager {
                 .forEach(itemIntegrator::reportNewImage);
     }
 
-    public boolean removeLocalItem(DatabaseItem integratedItem) {
+    public boolean removeLocalContent(DatabaseItem integratedItem) {
         return itemIntegrator.removeLocalContent(databases, integratedItem);
     }
 
