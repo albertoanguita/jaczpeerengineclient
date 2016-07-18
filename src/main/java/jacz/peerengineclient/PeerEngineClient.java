@@ -307,16 +307,8 @@ public class PeerEngineClient {
      * @throws IllegalStateException if the client has been previously stopped
      */
     public DatabaseItem localItemModified(DatabaseItem localItem) throws IllegalStateException {
-        // todo check alive
         return databaseManager.localItemModified(localItem);
     }
-
-    public DatabaseItem removeLocalItem(DatabaseItem localItem) throws IllegalStateException {
-        // todo
-        return null;
-    }
-
-
 
     public boolean removeLocalContent(DatabaseItem integratedItem) {
         return databaseManager.removeLocalItem(integratedItem);
@@ -567,7 +559,6 @@ public class PeerEngineClient {
                     }
                 } else {
                     // to images repo
-                    // todo not use expectedFileName??
                     location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), expectedFileName, hash);
                 }
                 // this is the path in the media library where this file should go (file is created in the process)
@@ -584,36 +575,6 @@ public class PeerEngineClient {
             }
             return new Duple<>(finalPath, hash);
         }
-//
-//
-//
-//        Triple<String, String, String> location;
-//        if (moveFileAction == MoveFileAction.MOVE_TO_MEDIA_REPO) {
-//            if (movie != null) {
-//                location = PathConstants.movieFilePath(mediaPaths.getBaseMediaPath(), movie.getId(), movie.getTitle(), expectedFileName);
-//            } else {
-//                location = PathConstants.seriesFilePath(mediaPaths.getBaseMediaPath(), tvSeries.getId(), tvSeries.getTitle(), chapter.getId(), chapter.getTitle(), expectedFileName);
-//            }
-//        } else {
-//            // to images repo
-//            // todo not use expectedFileName??
-//            location = PathConstants.imageFilePath(mediaPaths.getBaseMediaPath(), path);
-//        }
-//
-//
-//        // this is the path in the media library where this file should go (file is created in the process)
-//        String finalPath = FileGenerator.createFile(location.element1, location.element2, location.element3, "(", ")", true);
-//
-//        if (!Paths.get(finalPath).getParent().equals(Paths.get(path))) {
-//            // the given path is not in the expected place in the media library -> needs to be moved
-//            Files.move(Paths.get(path), Paths.get(finalPath), StandardCopyOption.REPLACE_EXISTING);
-//        } else {
-//            // the given path is already in its expected place in the media library -> use it as final path
-//            // also delete the created files
-//            Files.delete(Paths.get(finalPath));
-//            finalPath = path;
-//        }
-//        return new Duple<>(finalPath, addLocalFileFixedPath(finalPath));
     }
 
     public synchronized String removeLocalFile(String key, boolean removeFile) {
