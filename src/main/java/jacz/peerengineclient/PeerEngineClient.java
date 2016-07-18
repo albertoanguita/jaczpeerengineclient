@@ -491,6 +491,7 @@ public class PeerEngineClient {
 
     public synchronized String addLocalFileFixedPath(String path) throws IOException {
         String hash = peerShareManager.getFileHash().put(path);
+        databaseManager.checkReportNewMedia(hash);
         // check if, after adding this file, there are some redundant downloads
         redundantFileChecker.checkRedundantDownloads();
         return hash;
@@ -502,7 +503,6 @@ public class PeerEngineClient {
 
     public synchronized Duple<String, String> addLocalMovieFile(String path, String expectedFileName, Movie movie, boolean keepSource) throws IOException {
         Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, movie, null, null, keepSource);
-        databaseManager.reportNewMedia(movie);
         return pathAndHash;
     }
 
@@ -512,7 +512,6 @@ public class PeerEngineClient {
 
     public synchronized Duple<String, String> addLocalChapterFile(String path, String expectedFileName, TVSeries tvSeries, Chapter chapter, boolean keepSource) throws IOException {
         Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_MEDIA_REPO, null, tvSeries, chapter, keepSource);
-        databaseManager.reportNewMedia(tvSeries);
         return pathAndHash;
     }
 
@@ -522,7 +521,6 @@ public class PeerEngineClient {
 
     public synchronized Duple<String, String> addLocalImageFile(String path, String expectedFileName, boolean keepSource) throws IOException {
         Duple<String, String> pathAndHash = addLocalFile(path, expectedFileName, MoveFileAction.MOVE_TO_IMAGE_REPO, null, null, null, keepSource);
-        databaseManager.reportNewImage(pathAndHash.element2);
         return pathAndHash;
     }
 

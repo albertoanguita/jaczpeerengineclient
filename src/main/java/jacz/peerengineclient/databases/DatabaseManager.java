@@ -1,9 +1,6 @@
 package jacz.peerengineclient.databases;
 
-import jacz.database.DatabaseItem;
-import jacz.database.DatabaseMediator;
-import jacz.database.Movie;
-import jacz.database.TVSeries;
+import jacz.database.*;
 import jacz.peerengineclient.PeerEngineClient;
 import jacz.peerengineclient.databases.integration.IntegrationConcurrencyController;
 import jacz.peerengineclient.databases.integration.IntegrationEvents;
@@ -19,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -87,14 +86,35 @@ public class DatabaseManager {
         return itemIntegrator.integrateLocalItem(databases, localItem);
     }
 
-    public void reportNewMedia(DatabaseItem item) {
-        itemIntegrator.reportNewMedia(item);
-    }
+    public void checkReportNewMedia(String hash) {
+        // movie video and subtitle files
+        Stream<Movie> movies = Movie.getMovies(databases.getIntegratedDB()).stream();
+        movies.forEach(movie -> {
+            if (getVideoAndSubtitleFiles(movie.getVideoFiles()).anyMatch(file -> file.getHash().equals(hash))) {
+                itemIntegrator.reportNewMedia(movie);
+            }
+        });
 
-    public void reportNewImage(String hash) {
+        // chapter video and subtitle files
+        Stream<Chapter> chapters = Chapter.getChapters(databases.getIntegratedDB()).stream();
+        chapters.forEach(chapter -> {
+            if (getVideoAndSubtitleFiles(chapter.getVideoFiles()).anyMatch(file -> file.getHash().equals(hash))) {
+                itemIntegrator.reportNewMedia(chapter);
+            }
+        });
+
+        // images
         Stream.concat(Movie.getMovies(databases.getIntegratedDB()).stream(), TVSeries.getTVSeries(databases.getIntegratedDB()).stream())
                 .filter(item -> item.getImageHash() != null && item.getImageHash().getHash().equals(hash))
-                .forEach(itemIntegrator::reportNewImage);
+                .forEach(itemIntegrator::reportNewMedia);
+    }
+
+    private Stream<File> getVideoAndSubtitleFiles(List<VideoFile> videoFiles) {
+        return Stream.concat(
+            videoFiles.stream(),
+                videoFiles.stream().map(VideoFile::getSubtitleFiles)
+                        .flatMap(Collection::stream)
+        );
     }
 
     public boolean removeLocalContent(DatabaseItem integratedItem) {
