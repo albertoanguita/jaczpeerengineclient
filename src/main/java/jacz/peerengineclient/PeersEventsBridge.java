@@ -1,9 +1,9 @@
 package jacz.peerengineclient;
 
-import jacz.commengine.communication.CommError;
 import jacz.peerengineservice.PeerId;
 import jacz.peerengineservice.client.connection.peers.PeerInfo;
 import jacz.peerengineservice.client.connection.peers.PeersEvents;
+import org.aanguita.jtcpserver.communication.CommError;
 
 /**
  * This class captures connections and disconnections of peers

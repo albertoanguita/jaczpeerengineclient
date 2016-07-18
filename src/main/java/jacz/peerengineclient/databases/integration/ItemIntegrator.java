@@ -87,6 +87,39 @@ public class ItemIntegrator {
     }
 
     /**
+     * Removes a local item. If needed, re-inflates its associated integrated item
+     *
+     * @param databases database paths
+     * @param localItem local item to delete
+     * @return the integrated item associated to this local item, if any
+     */
+    public DatabaseItem removeLocalItem(
+            Databases databases,
+            DatabaseItem localItem) throws IllegalStateException {
+        if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name())) {
+            try {
+                DatabaseMediator.ItemType type = localItem.getItemType();
+                DatabaseItem integratedItem = null;
+                if (databases.getItemRelations().getLocalToIntegrated().contains(type, localItem.getId())) {
+                    // there is an associated integrated item -> remote it
+                    integratedItem = DatabaseMediator.getItem(
+                            databases.getIntegratedDB(),
+                            type,
+                            databases.getItemRelations().getLocalToIntegrated().get(type, localItem.getId()));
+                    databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
+                    databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
+                    localItem.delete();
+                }
+                return processIntegratedItem(databases, integratedItem, false);
+            } finally {
+                concurrencyController.endActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name());
+            }
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    /**
      * Removes the local content (local and deleted databases) associated to an integrated item
      *
      * @param databases      database paths
@@ -100,7 +133,7 @@ public class ItemIntegrator {
             try {
                 DatabaseMediator.ItemType type = integratedItem.getItemType();
                 if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
-                    // there is a local item -> remote it
+                    // there is a local item -> remove it
                     DatabaseItem localItem = DatabaseMediator.getItem(
                             databases.getLocalDB(),
                             type,

@@ -117,6 +117,10 @@ public class DatabaseManager {
         );
     }
 
+    public DatabaseItem removeLocalItem(DatabaseItem integratedItem) {
+        return itemIntegrator.removeLocalItem(databases, integratedItem);
+    }
+
     public boolean removeLocalContent(DatabaseItem integratedItem) {
         return itemIntegrator.removeLocalContent(databases, integratedItem);
     }

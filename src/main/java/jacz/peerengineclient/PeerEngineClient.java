@@ -310,6 +310,10 @@ public class PeerEngineClient {
         return databaseManager.localItemModified(localItem);
     }
 
+    public DatabaseItem removeLocalItem(DatabaseItem localItem) {
+        return databaseManager.removeLocalItem(localItem);
+    }
+
     public boolean removeLocalContent(DatabaseItem integratedItem) {
         return databaseManager.removeLocalContent(integratedItem);
     }
