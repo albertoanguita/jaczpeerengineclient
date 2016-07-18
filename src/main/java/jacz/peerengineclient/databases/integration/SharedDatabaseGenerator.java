@@ -303,7 +303,6 @@ public class SharedDatabaseGenerator implements TimerAction {
                     // exists
                     int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
                     sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
-                    sharedItem.resetPostponed();
                 } else {
                     // must be created
                     sharedItem = DatabaseMediator.createNewItem(sharedPath, integratedItem.getItemType());
@@ -313,6 +312,7 @@ public class SharedDatabaseGenerator implements TimerAction {
                 // once we have a shared item, copy the data from the integrated item, if needed
                 if (!integratedItem.equals(sharedItem)) {
                     // only merge the item if the contents have changed
+                    sharedItem.resetPostponed();
                     logger.info("Shared item with id " + sharedItem.getId() + " modified");
                     DatabaseMediator.ReferencedElements referencedElements = integratedItem.getReferencedElements();
                     referencedElements.mapIds(integratedToShared.getTypeMappings());
