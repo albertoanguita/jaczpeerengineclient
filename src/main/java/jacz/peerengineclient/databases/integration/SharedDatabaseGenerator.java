@@ -303,6 +303,7 @@ public class SharedDatabaseGenerator implements TimerAction {
                     // exists
                     int sharedId = integratedToShared.get(integratedItem.getItemType(), integratedItem.getId());
                     sharedItem = DatabaseMediator.getItem(sharedPath, integratedItem.getItemType(), sharedId);
+                    sharedItem.resetPostponed();
                 } else {
                     // must be created
                     sharedItem = DatabaseMediator.createNewItem(sharedPath, integratedItem.getItemType());
