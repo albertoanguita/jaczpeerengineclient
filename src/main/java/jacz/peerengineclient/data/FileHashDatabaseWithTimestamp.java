@@ -67,10 +67,10 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         activeHashes = new DoubleMap<>();
         deletedHashes = new HashMap<>();
         for (String activeHashesKey : getLocalStorage().keys(ACTIVE_TIMESTAMP_CATEGORY)) {
-            activeHashes.put(Long.parseLong(activeHashesKey), getLocalStorage().getString(ACTIVE_TIMESTAMP_CATEGORY, activeHashesKey));
+            activeHashes.put(Long.parseLong(activeHashesKey), getLocalStorage().getString(activeHashesKey, ACTIVE_TIMESTAMP_CATEGORY));
         }
         for (String deletedHashesKey : getLocalStorage().keys(DELETED_TIMESTAMP_CATEGORY)) {
-            deletedHashes.put(Long.parseLong(deletedHashesKey), getLocalStorage().getString(DELETED_TIMESTAMP_CATEGORY, deletedHashesKey));
+            deletedHashes.put(Long.parseLong(deletedHashesKey), getLocalStorage().getString(deletedHashesKey, DELETED_TIMESTAMP_CATEGORY));
         }
         this.fileHashDatabaseEvents = new FileHashDatabaseEventsBridge(fileHashDatabaseEvents);
     }
@@ -93,7 +93,7 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         String hash = super.put(path);
         Long timeStamp = getNextTimestamp();
         activeHashes.put(timeStamp, hash);
-        getLocalStorage().setString(ACTIVE_TIMESTAMP_CATEGORY, timeStamp.toString(), hash);
+        getLocalStorage().setString(timeStamp.toString(), hash, ACTIVE_TIMESTAMP_CATEGORY);
         fileHashDatabaseEvents.fileAdded(hash, path);
         return hash;
     }
@@ -118,10 +118,10 @@ public class FileHashDatabaseWithTimestamp extends FileHashDatabaseLS {
         Long timestamp = activeHashes.removeReverse(hash);
         if (timestamp != null) {
             // the item did exist in activeHashes -> add to deleted hashes
-            getLocalStorage().removeItem(ACTIVE_TIMESTAMP_CATEGORY, timestamp.toString());
+            getLocalStorage().removeItem(timestamp.toString(), ACTIVE_TIMESTAMP_CATEGORY);
             Long newTimestamp = getNextTimestamp();
             deletedHashes.put(newTimestamp, hash);
-            getLocalStorage().setString(DELETED_TIMESTAMP_CATEGORY, newTimestamp.toString(), hash);
+            getLocalStorage().setString(newTimestamp.toString(), hash, DELETED_TIMESTAMP_CATEGORY);
         }
     }
 
