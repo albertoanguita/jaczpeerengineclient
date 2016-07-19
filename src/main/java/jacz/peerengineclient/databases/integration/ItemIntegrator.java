@@ -65,7 +65,6 @@ public class ItemIntegrator {
                     // integrated item
                     integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
                     databases.getItemRelations().getLocalToIntegrated().put(type, localItem.getId(), integratedItem.getId());
-                    databases.getItemRelations().getIntegratedToLocal().put(type, integratedItem.getId(), localItem.getId());
                 } else {
                     // we have a matching integrated item -> use it
                     integratedItem = DatabaseMediator.getItem(
@@ -107,7 +106,6 @@ public class ItemIntegrator {
                             type,
                             databases.getItemRelations().getLocalToIntegrated().get(type, localItem.getId()));
                     databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
-                    databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
                     localItem.delete();
                 }
                 return processIntegratedItem(databases, integratedItem, false);
@@ -132,23 +130,21 @@ public class ItemIntegrator {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.LOCAL_TO_INTEGRATED.name())) {
             try {
                 DatabaseMediator.ItemType type = integratedItem.getItemType();
-                if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+                if (databases.getItemRelations().getLocalToIntegrated().containsReverse(type, integratedItem.getId())) {
                     // there is a local item -> remove it
                     DatabaseItem localItem = DatabaseMediator.getItem(
                             databases.getLocalDB(),
                             type,
-                            databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
+                            databases.getItemRelations().getLocalToIntegrated().getReverse(type, integratedItem.getId()));
                     databases.getItemRelations().getLocalToIntegrated().remove(type, localItem.getId());
-                    databases.getItemRelations().getIntegratedToLocal().remove(type, integratedItem.getId());
                     localItem.delete();
                 }
-                if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
+                if (databases.getItemRelations().getDeletedToIntegrated().containsReverse(type, integratedItem.getId())) {
                     // there is a deleted item -> remove it too
                     DatabaseItem deletedItem = DatabaseMediator.getItem(
                             databases.getDeletedDB(),
                             type,
-                            databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
-                    databases.getItemRelations().getIntegratedToDeleted().remove(type, integratedItem.getId());
+                            databases.getItemRelations().getDeletedToIntegrated().getReverse(type, integratedItem.getId()));
                     databases.getItemRelations().getDeletedToIntegrated().remove(type, deletedItem.getId());
                     deletedItem.delete();
                 }
@@ -173,8 +169,8 @@ public class ItemIntegrator {
                 DatabaseMediator.ItemType type = remoteItem.getItemType();
                 DatabaseItem integratedItem;
                 boolean isNewIntegratedItem = false;
-                ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
-                if (!remoteToIntegratedItems.contains(type, remoteItem.getId())) {
+                ItemRelations.PeerItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated();
+                if (!remoteToIntegratedItems.contains(remotePeerId, type, remoteItem.getId())) {
                     // the given external item is not mapped to any integrated item
                     // (the remote item is new and it is not linked to any integrated item)
                     // we must find its corresponding integrated item, or create a new one
@@ -195,7 +191,7 @@ public class ItemIntegrator {
                         integratedItem = DatabaseMediator.createNewItem(databases.getIntegratedDB(), type);
                         isNewIntegratedItem = true;
                     }
-                    remoteToIntegratedItems.put(type, remoteItem.getId(), integratedItem.getId());
+                    remoteToIntegratedItems.put(remotePeerId, type, remoteItem.getId(), integratedItem.getId());
                     // we must put the equivalent pointer in the integrated database.
                     databases.getItemRelations().getIntegratedToRemote().add(
                             type,
@@ -207,7 +203,7 @@ public class ItemIntegrator {
                     integratedItem = DatabaseMediator.getItem(
                             databases.getIntegratedDB(),
                             type,
-                            remoteToIntegratedItems.get(type, remoteItem.getId()));
+                            remoteToIntegratedItems.get(remotePeerId, type, remoteItem.getId()));
                 }
                 processIntegratedItem(databases, integratedItem, isNewIntegratedItem);
             } finally {
@@ -226,27 +222,26 @@ public class ItemIntegrator {
             try {
                 DatabaseMediator.ItemType type = remoteItem.getItemType();
                 DatabaseItem integratedItem;
-                ItemRelations.ItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated(remotePeerId);
-                if (remoteToIntegratedItems.contains(type, remoteItem.getId())) {
+                ItemRelations.PeerItemRelationsMap remoteToIntegratedItems = databases.getItemRelations().getRemoteToIntegrated();
+                if (remoteToIntegratedItems.contains(remotePeerId, type, remoteItem.getId())) {
                     // we have a matching integrated item -> move the contents of the removed item to a deleted item
                     // and re-inflate the integrated item
                     integratedItem = DatabaseMediator.getItem(
                             databases.getIntegratedDB(),
                             type,
-                            remoteToIntegratedItems.get(type, remoteItem.getId()));
+                            remoteToIntegratedItems.get(remotePeerId, type, remoteItem.getId()));
 
                     // get the deleted item
                     DatabaseItem deletedItem;
-                    if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
+                    if (databases.getItemRelations().getDeletedToIntegrated().containsReverse(type, integratedItem.getId())) {
                         // we have a deleted item
                         deletedItem = DatabaseMediator.getItem(
                                 databases.getDeletedDB(),
                                 type,
-                                databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
+                                databases.getItemRelations().getDeletedToIntegrated().getReverse(type, integratedItem.getId()));
                     } else {
                         // no deleted item -> build a new one
                         deletedItem = DatabaseMediator.createNewItem(databases.getDeletedDB(), type);
-                        databases.getItemRelations().getIntegratedToDeleted().put(type, integratedItem.getId(), deletedItem.getId());
                         databases.getItemRelations().getDeletedToIntegrated().put(type, deletedItem.getId(), integratedItem.getId());
                     }
 
@@ -255,7 +250,7 @@ public class ItemIntegrator {
 
                     // remove the links from the remote item to the integrated item
                     databases.getItemRelations().getIntegratedToRemote().remove(type, integratedItem.getId(), remotePeerId);
-                    databases.getItemRelations().getRemoteToIntegrated(remotePeerId).remove(type, remoteItem.getId());
+                    databases.getItemRelations().getRemoteToIntegrated().remove(remotePeerId, type, remoteItem.getId());
 
                     processIntegratedItem(databases, integratedItem, false);
                 }
@@ -332,11 +327,11 @@ public class ItemIntegrator {
         integratedItem.resetPostponed();
 
         // local item
-        if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+        if (databases.getItemRelations().getLocalToIntegrated().containsReverse(type, integratedItem.getId())) {
             DatabaseItem localItem = DatabaseMediator.getItem(
                     databases.getLocalDB(),
                     type,
-                    databases.getItemRelations().getIntegratedToLocal().get(type, integratedItem.getId()));
+                    databases.getItemRelations().getLocalToIntegrated().getReverse(type, integratedItem.getId()));
             integratedItem.mergeBasicPostponed(localItem);
             DatabaseMediator.ReferencedElements referencedElements = localItem.getReferencedElements();
             referencedElements.mapIds(databases.getItemRelations().getLocalToIntegrated().getTypeMappings());
@@ -364,16 +359,16 @@ public class ItemIntegrator {
         for (Duple<PeerId, DatabaseItem> peerAndRemoteItem : remoteItems) {
             integratedItem.mergeBasicPostponed(peerAndRemoteItem.element2);
             DatabaseMediator.ReferencedElements referencedElements = peerAndRemoteItem.element2.getReferencedElements();
-            referencedElements.mapIds(databases.getItemRelations().getRemoteToIntegrated(peerAndRemoteItem.element1).getTypeMappings());
+            referencedElements.mapIds(databases.getItemRelations().getRemoteToIntegrated().getTypeMappings(peerAndRemoteItem.element1));
             integratedItem.mergeReferencedElementsPostponed(referencedElements);
         }
 
         // deleted item
-        if (databases.getItemRelations().getIntegratedToDeleted().contains(type, integratedItem.getId())) {
+        if (databases.getItemRelations().getDeletedToIntegrated().containsReverse(type, integratedItem.getId())) {
             DatabaseItem deletedItem = DatabaseMediator.getItem(
                     databases.getDeletedDB(),
                     type,
-                    databases.getItemRelations().getIntegratedToDeleted().get(type, integratedItem.getId()));
+                    databases.getItemRelations().getDeletedToIntegrated().getReverse(type, integratedItem.getId()));
             integratedItem.mergeBasicPostponed(deletedItem);
             DatabaseMediator.ReferencedElements referencedElements = deletedItem.getReferencedElements();
             referencedElements.mapIds(databases.getItemRelations().getDeletedToIntegrated().getTypeMappings());
@@ -433,7 +428,7 @@ public class ItemIntegrator {
         // (i.e. are fed by two items of the same peer)
         DatabaseMediator.ItemType type = integratedItem.getItemType();
         List<? extends DatabaseItem> allIntegratedItems = DatabaseMediator.getItems(databases.getIntegratedDB(), type);
-        ItemRelations.ItemRelationsMap integratedToLocal = databases.getItemRelations().getIntegratedToLocal();
+        ItemRelations.ItemRelationsMap localToIntegrated = databases.getItemRelations().getLocalToIntegrated();
         ItemRelations.ItemToPeerListRelationsMap integratedToRemote = databases.getItemRelations().getIntegratedToRemote();
         DatabaseItem matchedIntegratedItem = null;
         float maxMatch = -1;
@@ -442,7 +437,7 @@ public class ItemIntegrator {
                 // do not compare with itself
                 continue;
             }
-            if (haveSimilarSources(integratedItem, anIntegratedItem, integratedToLocal, integratedToRemote)) {
+            if (haveSimilarSources(integratedItem, anIntegratedItem, localToIntegrated, integratedToRemote)) {
                 // they both have local source -> cannot match
                 continue;
             }
@@ -459,10 +454,10 @@ public class ItemIntegrator {
     private boolean haveSimilarSources(
             DatabaseItem integratedItem,
             DatabaseItem anotherIntegratedItem,
-            ItemRelations.ItemRelationsMap integratedToLocal,
+            ItemRelations.ItemRelationsMap localToIntegrated,
             ItemRelations.ItemToPeerListRelationsMap integratedToRemote) {
         DatabaseMediator.ItemType type = integratedItem.getItemType();
-        if (integratedToLocal.contains(type, integratedItem.getId()) && integratedToLocal.contains(type, anotherIntegratedItem.getId())) {
+        if (localToIntegrated.containsReverse(type, integratedItem.getId()) && localToIntegrated.containsReverse(type, anotherIntegratedItem.getId())) {
             // they both have local source -> cannot match
             return true;
         }
@@ -481,10 +476,9 @@ public class ItemIntegrator {
     private Duple<Boolean, Boolean> mergeIntegratedItems(Databases databases, DatabaseItem fromItem, DatabaseItem toItem) {
         // all sources of fromItem are to be transferred to toItem. There cannot be similar sources (local and remote)
         DatabaseMediator.ItemType type = fromItem.getItemType();
-        if (databases.getItemRelations().getIntegratedToLocal().contains(type, fromItem.getId())) {
+        if (databases.getItemRelations().getLocalToIntegrated().containsReverse(type, fromItem.getId())) {
             // transfer the local source
-            int localId = databases.getItemRelations().getIntegratedToLocal().get(type, fromItem.getId());
-            databases.getItemRelations().getIntegratedToLocal().put(type, toItem.getId(), localId);
+            int localId = databases.getItemRelations().getLocalToIntegrated().getReverse(type, fromItem.getId());
             databases.getItemRelations().getLocalToIntegrated().put(type, localId, toItem.getId());
         }
         List<Duple<PeerId, Integer>> remoteSources = databases.getItemRelations().getIntegratedToRemote().get(type, fromItem.getId());
@@ -492,7 +486,7 @@ public class ItemIntegrator {
             PeerId peerID = remoteSource.element1;
             int remoteId = remoteSource.element2;
             databases.getItemRelations().getIntegratedToRemote().add(type, toItem.getId(), peerID, remoteId);
-            databases.getItemRelations().getRemoteToIntegrated(peerID).put(type, remoteId, toItem.getId());
+            databases.getItemRelations().getRemoteToIntegrated().put(peerID, type, remoteId, toItem.getId());
         }
         return inflateIntegratedItem(databases, toItem, imageDownloader);
     }

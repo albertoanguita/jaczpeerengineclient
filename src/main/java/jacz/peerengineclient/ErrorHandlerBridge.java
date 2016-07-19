@@ -24,10 +24,6 @@ public class ErrorHandlerBridge implements ErrorHandler {
         peerEngineClient.stop();
     }
 
-    void sessionDataCouldNotBeSaved() {
-        errorEvents.sessionDataCouldNotBeSaved();
-    }
-
     void downloadedFileCouldNotBeLoaded(String path, String expectedFileName, IOException e) {
         errorEvents.downloadedFileCouldNotBeLoaded(path, expectedFileName, e);
     }

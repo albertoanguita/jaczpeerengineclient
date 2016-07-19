@@ -6,7 +6,6 @@ import jacz.peerengineclient.databases.integration.IntegrationEvents;
 import jacz.peerengineclient.databases.synch.DatabaseSynchEvents;
 import jacz.peerengineclient.file_system.PathConstants;
 import jacz.peerengineservice.PeerId;
-import org.aanguita.jacuzzi.io.serialization.VersionedObjectSerializer;
 import org.aanguita.jacuzzi.io.serialization.VersionedSerializationException;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -40,21 +39,12 @@ public class DatabaseIO {
                 peerEngineClient);
     }
 
-    public static void save(String basePath, DatabaseManager databaseManager) throws IOException {
-        saveItemRelations(basePath, databaseManager.getDatabases().getItemRelations());
-    }
-
-    private static void saveItemRelations(String basePath, ItemRelations itemRelations) throws IOException {
-        VersionedObjectSerializer.serialize(itemRelations, CRCBytes, PathConstants.itemRelationsPath(basePath), PathConstants.itemRelationsBackupPath(basePath));
-    }
-
     public static void createNewDatabaseFileStructure(String basePath) throws IOException {
         DatabaseMediator.dropAndCreate(PathConstants.integratedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
         DatabaseMediator.dropAndCreate(PathConstants.localDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
         DatabaseMediator.dropAndCreate(PathConstants.sharedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
         DatabaseMediator.dropAndCreate(PathConstants.deletedDBPath(basePath), RandomStringUtils.randomAlphanumeric(ID_LENGTH));
-        ItemRelations itemRelations = new ItemRelations();
-        saveItemRelations(basePath, itemRelations);
+        ItemRelations.createNewFiles(basePath);
     }
 
     static String createNewRemoteDatabase(String basePath, PeerId peerID) throws IOException {

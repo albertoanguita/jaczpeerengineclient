@@ -150,7 +150,6 @@ public class PeerEngineClient {
         peerShareManager = PeerShareIO.load(basePath, this, fileHashDatabaseEvents);
         repairedFiles.addAll(peerShareManager.getFileHash().getRepairedFiles());
         databaseManager = DatabaseIO.load(basePath, databaseSynchEvents, integrationEvents, this);
-        repairedFiles.addAll(databaseManager.getDatabases().getRepairedFiles());
         errorHandlerBridge = new ErrorHandlerBridge(this, errorEvents);
         DataAccessorContainerImpl dataAccessorContainer = new DataAccessorContainerImpl(this, databaseManager, peerShareManager);
         peerClient = new PeerClient(
@@ -216,16 +215,16 @@ public class PeerEngineClient {
     }
 
     private void logApiVersions() {
-        logger.info("Restored peer engine client api version " + customStorage.getString(CLIENT_SERVICE_STORAGE_CATEGORY, API_VERSION_KEY));
-        logger.info("Restored peer engine service api version " + customStorage.getString(CLIENT_SERVICE_STORAGE_CATEGORY, SERVICE_API_VERSION_KEY));
+        logger.info("Restored peer engine client api version " + customStorage.getString(API_VERSION_KEY, CLIENT_SERVICE_STORAGE_CATEGORY));
+        logger.info("Restored peer engine service api version " + customStorage.getString(SERVICE_API_VERSION_KEY, CLIENT_SERVICE_STORAGE_CATEGORY));
         logger.info("Using peer engine client api " + API_VERSION);
         logger.info("Using peer engine service api " + PeerClient.API_VERSION);
         saveApiVersions(customStorage);
     }
 
     static void saveApiVersions(VersionedLocalStorage customStorage) {
-        customStorage.setString(CLIENT_SERVICE_STORAGE_CATEGORY, API_VERSION_KEY, API_VERSION);
-        customStorage.setString(CLIENT_SERVICE_STORAGE_CATEGORY, SERVICE_API_VERSION_KEY, PeerClient.API_VERSION);
+        customStorage.setString(API_VERSION_KEY, API_VERSION, CLIENT_SERVICE_STORAGE_CATEGORY);
+        customStorage.setString(SERVICE_API_VERSION_KEY, PeerClient.API_VERSION, CLIENT_SERVICE_STORAGE_CATEGORY);
     }
 
     public List<String> getRepairedFiles() {
@@ -261,24 +260,19 @@ public class PeerEngineClient {
     }
 
     public void stop() {
-        try {
-            periodicTaskReminder.stop();
-            if (databaseManager != null) {
-                databaseManager.stop();
-                DatabaseIO.save(basePath, databaseManager);
-            }
-            if (peerShareManager != null) {
-                peerShareManager.stop();
-//                PeerShareIO.save(basePath, peerShareManager);
-            }
-            if (peerClient != null) {
-                peerClient.stop();
-            }
-            if (tempFileManager != null) {
-                tempFileManager.stop();
-            }
-        } catch (IOException e) {
-            errorHandlerBridge.sessionDataCouldNotBeSaved();
+        periodicTaskReminder.stop();
+        if (databaseManager != null) {
+            databaseManager.stop();
+        }
+        if (peerShareManager != null) {
+            peerShareManager.stop();
+//            PeerShareIO.save(basePath, peerShareManager);
+        }
+        if (peerClient != null) {
+            peerClient.stop();
+        }
+        if (tempFileManager != null) {
+            tempFileManager.stop();
         }
     }
 

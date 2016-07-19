@@ -155,13 +155,12 @@ public class DatabaseManager {
     public DatabaseItem copyIntegratedItemToLocalItem(DatabaseItem integratedItem) {
         DatabaseItem localItem;
         DatabaseMediator.ItemType type = integratedItem.getItemType();
-        if (databases.getItemRelations().getIntegratedToLocal().contains(type, integratedItem.getId())) {
+        if (databases.getItemRelations().getLocalToIntegrated().containsReverse(type, integratedItem.getId())) {
             // retrieve the local item
             localItem = DatabaseMediator.getItem(databases.getLocalDB(), type, integratedItem.getId());
         } else {
             // create a new local item and associate it with the integrated item
             localItem = DatabaseMediator.createNewItem(databases.getLocalDB(), type);
-            databases.getItemRelations().getIntegratedToLocal().put(type, integratedItem.getId(), localItem.getId());
             databases.getItemRelations().getLocalToIntegrated().put(type, localItem.getId(), integratedItem.getId());
         }
         localItem.resetPostponed();

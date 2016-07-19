@@ -3,7 +3,6 @@ package jacz.peerengineclient.common;
 import jacz.peerengineclient.ErrorEvents;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Created by Alberto on 28/04/2016.
@@ -13,11 +12,6 @@ public class ErrorEventsImpl implements ErrorEvents {
     @Override
     public void fatalError(String errorMessage) {
         System.err.println(errorMessage);
-    }
-
-    @Override
-    public void sessionDataCouldNotBeSaved() {
-        System.err.println("Session could not be saved");
     }
 
     @Override

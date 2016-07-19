@@ -38,8 +38,11 @@ public class NewConfigTest {
         Assert.assertTrue(Files.exists(Paths.get(PathConstants.deletedDBPath(dir))));
         Assert.assertTrue(Files.exists(Paths.get(PathConstants.localDBPath(dir))));
         Assert.assertTrue(Files.exists(Paths.get(PathConstants.sharedDBPath(dir))));
-        Assert.assertTrue(Files.exists(Paths.get(PathConstants.itemRelationsPath(dir))));
-        Assert.assertTrue(Files.exists(Paths.get(PathConstants.itemRelationsBackupPath(dir))));
+        Assert.assertTrue(Files.exists(Paths.get(PathConstants.localToIntegratedPath(dir))));
+        Assert.assertTrue(Files.exists(Paths.get(PathConstants.deletedToIntegratedPath(dir))));
+        Assert.assertTrue(Files.exists(Paths.get(PathConstants.integratedToSharedPath(dir))));
+        Assert.assertTrue(Files.exists(Paths.get(PathConstants.remoteToIntegratedPath(dir))));
+        Assert.assertTrue(Files.exists(Paths.get(PathConstants.integratedToRemotePath(dir))));
         Assert.assertTrue(PathConstants.getRemoteDatabasesDir(dir).isDirectory());
 
         Assert.assertTrue(PathConstants.getRemoteSharesDir(dir).isDirectory());

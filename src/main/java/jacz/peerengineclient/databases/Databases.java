@@ -7,7 +7,6 @@ import org.aanguita.jacuzzi.io.serialization.VersionedSerializationException;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,7 +38,7 @@ public class Databases {
         }
         sharedDB = PathConstants.sharedDBPath(basePath);
         deletedDB = PathConstants.deletedDBPath(basePath);
-        itemRelations = new ItemRelations(peerEngineClient, PathConstants.itemRelationsPath(basePath), PathConstants.itemRelationsBackupPath(basePath));
+        itemRelations = new ItemRelations(basePath);
     }
 
     public String getIntegratedDB() {
@@ -81,9 +80,5 @@ public class Databases {
 
     public ItemRelations getItemRelations() {
         return itemRelations;
-    }
-
-    public List<String> getRepairedFiles() {
-        return itemRelations.getRepairedFiles();
     }
 }

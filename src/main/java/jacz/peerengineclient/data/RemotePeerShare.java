@@ -65,7 +65,7 @@ public class RemotePeerShare implements Updater {
             VersionedLocalStorage localStorage = new VersionedLocalStorage(localStoragePath, this, CURRENT_VERSION);
             for (String key : localStorage.keys(HASH_CATEGORY)) {
                 // this is a file hash -> extract the hash and the path and load
-                activeHashes.put(Long.parseLong(key), localStorage.getString(HASH_CATEGORY, key));
+                activeHashes.put(Long.parseLong(key), localStorage.getString(key, HASH_CATEGORY));
             }
             return localStorage;
         } else {
@@ -107,7 +107,7 @@ public class RemotePeerShare implements Updater {
     public void addHash(long timestamp, String hash) {
         logger.info("Added shared file for peer " + localStorage.getString(REMOTE_PEER_ID_KEY) + ": " + hash);
         activeHashes.put(timestamp, hash);
-        localStorage.setString(HASH_CATEGORY, Long.toString(timestamp), hash);
+        localStorage.setString(Long.toString(timestamp), hash, HASH_CATEGORY);
         updateTimestamp(timestamp);
         foreignShares.addResourceProvider(hash, new PeerId(localStorage.getString(REMOTE_PEER_ID_KEY)));
     }
@@ -116,7 +116,7 @@ public class RemotePeerShare implements Updater {
         logger.info("Removed shared file for peer " + localStorage.getString(REMOTE_PEER_ID_KEY) + ": " + hash);
         Long oldTimestamp = activeHashes.removeReverse(hash);
         if (oldTimestamp != null) {
-            localStorage.removeItem(HASH_CATEGORY, Long.toString(oldTimestamp));
+            localStorage.removeItem(Long.toString(oldTimestamp), HASH_CATEGORY);
         }
         updateTimestamp(timestamp);
         foreignShares.removeResourceProvider(hash, new PeerId(localStorage.getString(REMOTE_PEER_ID_KEY)));

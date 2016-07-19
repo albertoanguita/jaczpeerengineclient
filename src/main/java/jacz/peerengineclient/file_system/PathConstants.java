@@ -34,6 +34,8 @@ public class PathConstants {
 
     private static final String REMOTE_DATABASES_DIR = FileUtils.getFile(DATABASES_DIR, "remote").getPath();
 
+    private static final String ITEM_RELATIONS_DIR = FileUtils.getFile(DATABASES_DIR, "mappings").getPath();
+
     private static final String REMOTE_SHARES_DIR = FileUtils.getFile(DATA_DIR, "remote-shares").getPath();
 
     private static final String UTIL_DIR = "util";
@@ -81,7 +83,17 @@ public class PathConstants {
 
     private static final String DELETED_DB_FILE = "deleted";
 
-    private static final String ITEM_RELATIONS_FILE = "item-relations";
+    //private static final String ITEM_RELATIONS_FILE = "item-relations";
+
+    private static final String LOCAL_TO_INTEGRATED_RELATIONS_FILE = "local_to_integrated";
+
+    private static final String DELETED_TO_INTEGRATED_RELATIONS_FILE = "deleted_to_integrated";
+
+    private static final String INTEGRATED_TO_SHARED_RELATIONS_FILE = "integrated_to_shared";
+
+    private static final String REMOTE_TO_INTEGRATED_RELATIONS_FILE = "remote_to_integrated";
+
+    private static final String INTEGRATED_TO_REMOTE_RELATIONS_FILE = "integrated_to_remote";
 
     private static final String FILE_HASH_DATABASE_FILE = "hashes";
 
@@ -295,12 +307,32 @@ public class PathConstants {
         return getFilePath(basePath, DATABASES_DIR, DELETED_DB_FILE, EXT_DB);
     }
 
-    public static String itemRelationsPath(String basePath) {
-        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_VERSIONED);
+//    public static String itemRelationsPath(String basePath) {
+//        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_VERSIONED);
+//    }
+//
+//    public static String itemRelationsBackupPath(String basePath) {
+//        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_BACKUP);
+//    }
+
+    public static String localToIntegratedPath(String basePath) {
+        return getFilePath(basePath, ITEM_RELATIONS_DIR, LOCAL_TO_INTEGRATED_RELATIONS_FILE, EXT_DB);
     }
 
-    public static String itemRelationsBackupPath(String basePath) {
-        return getFilePath(basePath, DATABASES_DIR, ITEM_RELATIONS_FILE, EXT_BACKUP);
+    public static String deletedToIntegratedPath(String basePath) {
+        return getFilePath(basePath, ITEM_RELATIONS_DIR, DELETED_TO_INTEGRATED_RELATIONS_FILE, EXT_DB);
+    }
+
+    public static String integratedToSharedPath(String basePath) {
+        return getFilePath(basePath, ITEM_RELATIONS_DIR, INTEGRATED_TO_SHARED_RELATIONS_FILE, EXT_DB);
+    }
+
+    public static String remoteToIntegratedPath(String basePath) {
+        return getFilePath(basePath, ITEM_RELATIONS_DIR, REMOTE_TO_INTEGRATED_RELATIONS_FILE, EXT_DB);
+    }
+
+    public static String integratedToRemotePath(String basePath) {
+        return getFilePath(basePath, ITEM_RELATIONS_DIR, INTEGRATED_TO_REMOTE_RELATIONS_FILE, EXT_DB);
     }
 
     /************************

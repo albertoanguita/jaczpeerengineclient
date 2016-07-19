@@ -346,7 +346,10 @@ public class SharedDatabaseGenerator implements TimerAction {
     private void removeRemainingSharedItems() {
         if (concurrencyController.beginActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name())) {
             try {
-                existingSharedItems.remainingItems().stream().forEach(DatabaseItem::delete);
+                existingSharedItems.remainingItems().stream().forEach(item -> {
+                    integratedToShared.removeReverse(item.getItemType(), item.getId());
+                    item.delete();
+                });
             } finally {
                 concurrencyController.endActivity(IntegrationConcurrencyController.Activity.INTEGRATED_TO_SHARED.name());
             }
