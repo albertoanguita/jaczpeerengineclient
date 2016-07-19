@@ -146,6 +146,10 @@ public class PathConstants {
         return FileUtils.getFile(basePath, REMOTE_DATABASES_DIR);
     }
 
+    public static File getItemRelationsDir(String basePath) {
+        return FileUtils.getFile(basePath, ITEM_RELATIONS_DIR);
+    }
+
     public static File getRemoteSharesDir(String basePath) {
         return FileUtils.getFile(basePath, REMOTE_SHARES_DIR);
     }
@@ -170,6 +174,7 @@ public class PathConstants {
         directories.add(getDataDir(basePath));
         directories.add(getDatabasesDir(basePath));
         directories.add(getRemoteDatabasesDir(basePath));
+        directories.add(getItemRelationsDir(basePath));
         directories.add(getRemoteSharesDir(basePath));
         directories.add(getUtilDir(basePath));
         directories.add(getDefaultTempDir(basePath));
