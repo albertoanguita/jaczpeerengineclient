@@ -97,12 +97,12 @@
     <dependency>
       <groupId>jacz.peerengine</groupId>
       <artifactId>peerengineservice</artifactId>
-      <version>1.0a</version>
+      <version>0.1.0</version>
     </dependency>
     <dependency>
       <groupId>jacz.store</groupId>
       <artifactId>store</artifactId>
-      <version>0.1a</version>
+      <version>0.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
